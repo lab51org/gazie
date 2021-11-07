@@ -27,13 +27,6 @@ require("../../library/include/datlib.inc.php");
 $admin_aziend = checkAdmin();
 $message = "";
 
-function print_querytime($prev) {
-    list($usec, $sec) = explode(" ", microtime());
-    $this_time = ((float) $usec + (float) $sec);
-    echo round($this_time - $prev, 3);
-    return $this_time;
-}
-
 $partner_select = !gaz_dbi_get_row($gTables['company_config'], 'var', 'partner_select_mode')['val'];
 $tesdoc_e_partners = $gTables['tesdoc'] . " LEFT JOIN " . $gTables['clfoco'] . " ON " . $gTables['tesdoc'] . ".clfoco = " . $gTables['clfoco'] . ".codice LEFT JOIN " . $gTables['anagra'] . ' ON ' . $gTables['clfoco'] . '.id_anagra = ' . $gTables['anagra'] . '.id';
 
@@ -68,12 +61,25 @@ $sortable_headers = array(
 
 require("../../library/include/header.php");
 $script_transl = HeadMain();
-
+if (count($_GET)<1) {
+	// ultima fattura ricevuta
+	$rs_last = gaz_dbi_dyn_query('seziva, YEAR(datemi) AS yearde', $gTables['tesdoc'], "tipdoc LIKE 'AF%'", 'datreg DESC, id_tes DESC', 0, 1);
+	$last = gaz_dbi_fetch_array($rs_last);
+	if ($last) {
+		$default_where=['sezione' => $last['seziva'], 'tipo' => 'AF_', 'anno'=>$last['yearde']];
+        $_GET['anno']=$last['yearde'];
+	} else {
+		$default_where=['sezione' => 1, 'tipo' => 'AF_', 'anno'=> date('Y')];
+	}
+} else {
+	$si=(isset($_GET['sezione']))?intval($_GET['sezione']):1;
+	$default_where=['sezione' => $si, 'tipo' => 'AF_'];
+}
 $ts = new TableSorter(
     !$partner_select && isset($_GET["fornitore"]) ? $tesdoc_e_partners : $gTables['tesdoc'], 
     $passo, 
     ['datreg' => 'desc', 'protoc' => 'desc'], 
-    ['sezione' => 1, 'tipo' => 'AF_']
+    $default_where,
 );
 
 # le select spaziano solo tra i documenti d'acquisto del sezionale corrente
@@ -118,6 +124,7 @@ $(function() {
 });
 </script>
 <form method="GET" >
+  <input type="hidden" name="info" value="none" />
 	<div style="display:none" id="dialog_delete" title="Conferma eliminazione">
         <p><b>documento di acquisto:</b></p>
         <p>ID:</p>
@@ -139,9 +146,6 @@ $(function() {
         </select>
     </div>
 <?php
-    list ($usec, $sec) = explode(' ', microtime());
-    $querytime = ((float) $usec + (float) $sec);
-    $querytime_before = $querytime;
     $ts->output_navbar();
 ?>
     <div class="box-primary table-responsive">
@@ -280,10 +284,10 @@ while ($row = gaz_dbi_fetch_array($result)) {
             gaz_dbi_query("UPDATE ".$gTables['tesdoc']." SET id_con = 0 WHERE id_tes = ".$row['id_tes']);
             gaz_dbi_query("UPDATE ".$gTables['tesdoc']." SET status = 'IDCON".$row["id_con"]."' WHERE id_tes = ".$row['id_tes']);
         }
-        echo "<a class=\"btn btn-xs btn-default btn-cont\" href=\"accounting_documents.php?type=A&last=" . $row["protoc"] . "\">Contabilizza</a>";					
+        echo "<a class=\"btn btn-xs btn-default btn-cont\" href=\"accounting_documents.php?type=AF&last=" . $row["protoc"] . "\">Contabilizza</a>";					
       }
     } else {
-        echo "<a class=\"btn btn-xs btn-default btn-cont\" href=\"accounting_documents.php?type=A&last=" . $row["protoc"] . "\">Contabilizza</a>";					
+        echo "<a class=\"btn btn-xs btn-default btn-cont\" href=\"accounting_documents.php?type=AF&last=" . $row["protoc"] . "\">Contabilizza</a>";					
     }
     if ($check) { // ho qualche rigo da traferire
         echo " <a class=\"btn btn-xs btn-default btn-warning\" href=\"../magazz/genera_movmag.php\">Movimenta magazzino</a> ";
@@ -306,7 +310,6 @@ while ($row = gaz_dbi_fetch_array($result)) {
 		}
     echo "</td></tr>";
 }
-	echo '<tr><td colspan="6"></td><td colspan="3">Query & render: '; print_querytime($querytime); echo " sec.</td></tr>\n";
 ?>
     </table>
 </div>
