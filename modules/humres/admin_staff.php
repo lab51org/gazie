@@ -58,6 +58,11 @@ if (isset($_POST['Insert']) || isset($_POST['Update'])) {   //se non e' il primo
             $form['codice'] ++; // lo aumento di 1
             $msg .= "18+";
         }
+        $rs_same_id_contract = gaz_dbi_dyn_query('*', $gTables['staff'], " id_contract = " . $form['id_contract'], "id_staff", 0, 1);
+        $same_id_contract = gaz_dbi_fetch_array($rs_same_id_contract);
+        if ($same_id_contract) { // matricola esistente
+            $msg .= "22+";
+        }
         require("../../library/include/check.inc.php");
         if (strlen($form["ragso1"]) < 2 || strlen($form["ragso2"]) < 2) {
             $msg.='0+';
@@ -282,6 +287,11 @@ echo "<tr>\n";
 echo "\t<td class=\"FacetFieldCaptionTD\">" . $script_transl['ragso2'] . "* </td>\n";
 echo "\t<td colspan=\"2\" class=\"FacetDataTD\">
       <input type=\"text\" name=\"ragso2\" value=\"" . $form['ragso2'] . "\" align=\"right\" maxlength=\"50\"  /></td>\n";
+echo "<tr>\n";
+echo "\t<td class=\"FacetFieldCaptionTD\">" . $script_transl['id_contract'] . " </td>\n";
+echo "\t<td colspan=\"2\" class=\"FacetDataTD\">
+      <input type=\"text\" name=\"id_contract\" value=\"" . $form['id_contract'] . "\" align=\"right\" maxlength=\4\"  /></td>\n";
+echo "</tr>\n";
 echo "<tr>\n";
 echo "\t<td class=\"FacetFieldCaptionTD\">" . $script_transl['job_title'] . " </td>\n";
 echo "\t<td colspan=\"2\" class=\"FacetDataTD\">

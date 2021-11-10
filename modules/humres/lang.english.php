@@ -51,12 +51,14 @@ $strScript = array("admin_staff.php" =>
             'Il codice del cliente &egrave; gi&agrave; esistente, riprova l\'inserimento con quello proposto (aumentato di 1)',
             'La data di nascita &egrave; sbagliata',
             'Indirizzo email formalmente sbagliato',
-            '&Egrave; necessario indicare il conto Mastro collaboratori in configurazione Azienda'
+            '&Egrave; necessario indicare il conto Mastro collaboratori in configurazione Azienda',
+            'Matricola esistente'
         ),
         'link_anagra' => ' Clicca sotto per inserire l\'anagrafica esistente sul piano dei conti',
         'codice' => "Codice ",
         'ragso1' => "Cognome",
         'ragso2' => "Nome",
+        'id_contract' => 'Numero di matricola',
         'luonas' => 'Luogo di nascita',
         'datnas' => 'Data di Nascita',
         'pronas' => 'Provincia di nascita',
