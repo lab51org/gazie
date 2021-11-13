@@ -1785,7 +1785,7 @@ $strScript = array("admin_client.php" =>
     "fae_packaging.php" =>
     array('title' => 'Genera un file zip contenente una o più fatture elettroniche di vendita',
         'errors' => array('Data non corretta',
-            'Non ci sono fatture nell\'intervallo selezionato'
+            'Non sono state trovate fatture da impacchettare'
         ),
         'vat_section' => ' della sezione IVA n.',
         'date' => 'Fino al :',
@@ -1807,7 +1807,9 @@ $strScript = array("admin_client.php" =>
             'FND' => 'NOTA DEBITO',
             'VCO' => 'FATTURA ALLEGATA A SCONTRINO',
             'VRI' => 'RICEVUTA',
-        ),
+            'XFA' => 'FATTURA DI ACQUISTO (REVERSE)',
+            'XNC' => 'NOTA DI CREDITO SU ACQUISTO (REVERSE)'
+		),
         'customer' => 'Cliente',
         'pec' => "all'indirizzo PEC: ",
         'sdi' => 'al Codice SDI: ',
@@ -1833,6 +1835,8 @@ $strScript = array("admin_client.php" =>
             'FND' => 'NOTA DEBITO',
             'VCO' => 'CORRISPETTIVO',
             'VRI' => 'RICEVUTA',
+            'XNC' => 'NOTA CREDITO (REVERSE)',
+            'XFA' => 'FATTURA ACQUISTO (REVERSE)'
         ),
 		'danger_confirm'=>'Sono consapevole. Eliminalo comunque!'
     ),
