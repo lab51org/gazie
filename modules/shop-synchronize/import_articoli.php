@@ -67,7 +67,7 @@ if (!isset($_GET['success'])){
 		if (!$xml){ // se non è stato creato o non ho accesso
 			?>
 			<script>
-			alert("<?php echo "Errore! Il file xml non è stato creato oppure non è possibile accedervi"; ?>");
+			alert("<?php echo "Errore! Il file xml non è stato creato oppure c'è un errore nella sua formattazione"; ?>");
 			location.replace("<?php echo $_POST['ritorno']; ?>");
 			</script>
 			<?php
