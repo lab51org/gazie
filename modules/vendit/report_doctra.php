@@ -24,7 +24,7 @@
  */
 require("../../library/include/datlib.inc.php");
 $admin_aziend = checkAdmin();
-
+$pdf_to_modal = gaz_dbi_get_row($gTables['company_config'], 'var', 'pdf_reports_send_to_modal')['val'];
 $partner_select = !gaz_dbi_get_row($gTables['company_config'], 'var', 'partner_select_mode')['val'];
 $tesdoc_e_partners = $gTables['tesdoc'] . " LEFT JOIN " . $gTables['clfoco'] . " ON " . $gTables['tesdoc'] . ".clfoco = " . $gTables['clfoco'] . ".codice LEFT JOIN " . $gTables['anagra'] . ' ON ' . $gTables['clfoco'] . '.id_anagra = ' . $gTables['anagra'] . '.id';
 
@@ -85,10 +85,10 @@ if (!isset($_GET['sezione'])) {
 	$default_where=['sezione' => intval($_GET['sezione']), 'tipo' => 'DD_'];
 }
 $ts = new TableSorter(
-    $tesdoc_e_partners, 
-    $passo, 
-    ['datemi' => 'desc', 'numdoc' => 'desc'], 
-    $default_where,
+    $tesdoc_e_partners,
+    $passo,
+    ['datemi' => 'desc', 'numdoc' => 'desc'],
+    $default_where
 );
 
 # le <select> spaziano solo tra i documenti di vendita del sezionale corrente
@@ -138,8 +138,8 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
-				delete:{ 
-					text:'Elimina', 
+				delete:{
+					text:'Elimina',
 					'class':'btn btn-danger delete-button',
 					click:function (event, ui) {
 					$.ajax({
@@ -157,19 +157,19 @@ $(function() {
 				}
 			}
 		});
-		$("#dialog_delete" ).dialog( "open" );  
+		$("#dialog_delete" ).dialog( "open" );
 	});
 	$('#closePdf').on( "click", function() {
 		$('.framePdf').css({'display': 'none'});
-	});	
-	
+	});
+
 });
 function printPdf(urlPrintDoc){
-	$(function(){			
+	$(function(){
 		$('#framePdf').attr('src',urlPrintDoc);
 		$('#framePdf').css({'height': '100%'});
 		$('.framePdf').css({'display': 'block','width': '90%', 'height': '80%', 'z-index':'2000'});
-	});	
+	});
 };
 </script>
 <form method="GET">
@@ -181,9 +181,9 @@ function printPdf(urlPrintDoc){
 			<iframe id="framePdf"  style="height: 100%; width: 100%" src=""></iframe>
 	</div>
 	<?php
-	if (isset($_SESSION['print_request']) && intval($_SESSION['print_request'])>0){	
+	if (isset($_SESSION['print_request']) && intval($_SESSION['print_request'])>0){
 		?>
-		<script> printPdf('stampa_docven.php?id_tes=<?php echo $_SESSION['print_request'].$_SESSION['template']; ?>'); </script>	
+		<script> printPdf('stampa_docven.php?id_tes=<?php echo $_SESSION['print_request'].$_SESSION['template']; ?>'); </script>
 		<?php
 		$_SESSION['print_request']="";
 		$_SESSION['template']="";
@@ -232,7 +232,7 @@ function printPdf(urlPrintDoc){
                     <?php gaz_flt_disp_select("anno", "YEAR(datemi) as anno", $gTables["tesdoc"], $where_select, "anno DESC"); ?>
                 </td>
                 <td class="FacetFieldCaptionTD" colspan=2>
-		    <?php 
+		    <?php
                     if ($partner_select) {
                         gaz_flt_disp_select("cliente", "clfoco AS cliente, ragso1 as nome",$tesdoc_e_partners, $where_select.((isset($_GET['anno']) && intval($_GET['anno']) >= 2000)?' AND YEAR(datemi)='.intval($_GET['anno']):''), "nome ASC", "nome");
                     } else {
@@ -260,7 +260,7 @@ function printPdf(urlPrintDoc){
                 ?>
             </tr>
             <?php
-			
+
             $rs_ultimo_documento = gaz_dbi_dyn_query("*", $gTables['tesdoc'], $where_select.((isset($_GET['anno']) && intval($_GET['anno']) >= 2000)?' AND YEAR(datemi)='.intval($_GET['anno']):''), "datemi desc, numdoc desc", 0, 1);
             $ultimo_documento = gaz_dbi_fetch_array($rs_ultimo_documento);
             if ($ultimo_documento)
@@ -322,8 +322,9 @@ function printPdf(urlPrintDoc){
                             $urlPrintDoc = "stampa_docven.php?id_tes=" . $r["id_tes"] . "&template=DDT";
                             $urlPrintEtichette = "stampa_docven.php?id_tes=" . $r["id_tes"] . "&template=Etichette";
                             $urlPrintCmr = "stampa_docven.php?id_tes=" . $r["id_tes"]."&template=Cmr";
+                            $targetPrintDoc = ($pdf_to_modal==0)?'href="stampa_docven.php?id_tes=' . $r["id_tes"] .'&template=DDT" target="_blank" ':"onclick=\"printPdf('stampa_docven.php?id_tes=" . $r["id_tes"] . "&template=DDT')\"";
                             echo "<td>";
-							echo "<a class=\"btn btn-xs btn-default\" style=\"cursor:pointer;\" onclick=\"printPdf('".$urlPrintDoc."')\" data-toggle=\"modal\" data-target=\"#print_doc\" ><i class=\"glyphicon glyphicon-print\" title=\"Stampa documento\"></i></a>";
+							echo '<a class="btn btn-xs btn-default" style="cursor:pointer;" '.$targetPrintDoc.' ><i class="glyphicon glyphicon-print" title="Stampa documento"></i></a>';
                             echo "<a class=\"btn btn-xs btn-default\" style=\"cursor:pointer;\" onclick=\"printPdf('".$urlPrintEtichette."')\" data-toggle=\"modal\" data-target=\"#print_doc\" ><i class=\"glyphicon glyphicon-tag\" title=\"Stampa etichetta\"></i></a>";
 							echo "</td>\n";
 
@@ -390,8 +391,9 @@ function printPdf(urlPrintDoc){
 
                             $urlPrintDoc = "../acquis/stampa_docacq.php?id_tes=" . $r["id_tes"] . "&template=DDT";
                             $urlPrintEtichette = "stampa_docven.php?id_tes=" . $r["id_tes"] . "&template=Etichette";
+                            $targetPrintDoc = ($pdf_to_modal==0)?'href="stampa_docven.php?id_tes=' . $r["id_tes"] .'&template=DDT" target="_blank" ':"onclick=\"printPdf('stampa_docven.php?id_tes=" . $r["id_tes"] . "&template=DDT')\"";
                             echo "<td>";
-                            echo "<a class=\"btn btn-xs btn-default\" style=\"cursor:pointer;\" onclick=\"printPdf('".$urlPrintDoc."')\" data-toggle=\"modal\" data-target=\"#print_doc\" ><i class=\"glyphicon glyphicon-print\" title=\"Stampa documento\"></i></a>";
+							echo '<a class="btn btn-xs btn-default" style="cursor:pointer;" '.$targetPrintDoc.' ><i class="glyphicon glyphicon-print" title="Stampa documento"></i></a>';
                             echo "<a class=\"btn btn-xs btn-default\" style=\"cursor:pointer;\" onclick=\"printPdf('".$urlPrintEtichette."')\" data-toggle=\"modal\" data-target=\"#print_doc\" ><i class=\"glyphicon glyphicon-tag\" title=\"Stampa etichetta\"></i></a>";
 							echo "</td>\n";
 
@@ -477,11 +479,11 @@ function printPdf(urlPrintDoc){
                                 while ( $rigdoc = gaz_dbi_fetch_array($rigdoc_result) ) {
                                     if($rigdoc['id_order']>0){
                                         $tesbro_result = gaz_dbi_dyn_query('*', $gTables['tesbro'], "id_tes = " . $rigdoc['id_order'], 'id_tes');
-                                        $t_r = gaz_dbi_fetch_array($tesbro_result);  
-										if ($t_r) {	
+                                        $t_r = gaz_dbi_fetch_array($tesbro_result);
+										if ($t_r) {
 										 echo "<a title=\"" . $script_transl['view_ord'] . "\" href=\"stampa_ordcli.php?id_tes=" . $rigdoc['id_order'] . "\" style=\"font-size:10px;\">Ord." . $t_r['numdoc'] . "</a>\n";
 										}
-                                    }									
+                                    }
                                 }
                             }
                             echo "</td>";
@@ -502,7 +504,7 @@ $(document).ready(function(){
   var _sezi = $("select[name='sezione'] option:selected").text();
   $.each(['DDT','CMR'], function( i, v ) {
     var _href = $("a[href*='admin_docven.php?Insert&tipdoc=" + v + "']").attr('href');
-    $("a[href*='admin_docven.php?Insert&tipdoc=" + v + "']").attr('href', _href + '&seziva=' + _sezi);  
+    $("a[href*='admin_docven.php?Insert&tipdoc=" + v + "']").attr('href', _href + '&seziva=' + _sezi);
   });
 });
 </script>

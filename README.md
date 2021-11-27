@@ -9,6 +9,7 @@
 [![Download GAzie - Gestione Aziendale](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/gazie/files/latest/download)
 ## Sommario
 
+
 - [GAzie - Gestione Aziendale](#gazie---gestione-aziendale)
     * [Che cos'è GAzie](#che-cos-gazie)
     * [TL;DR](#tldr)
@@ -28,6 +29,8 @@
         + [Licenza](#licenza)
     * [Informazioni sulle versioni](#informazioni-sulle-versioni) 
     * [To Do](#to-do)
+
+
 
 ## Che cos'è GAzie
 GAzie è un software gestionale (ERP) multiazienda in grado di gestire tanti aspetti dell'azienda, dalla gestione ordini, alla produzione, al magazzino a lotti, la contabilità, il registratore di cassa, le fatture elettroniche attive e passive, il quaderno di campagna, il registro SIAN, la Sincronizzazione con e-commerce.
@@ -113,6 +116,7 @@ GAzie è la soluzione ideale per piccole aziende che operano nel commercio, nell
 ### Utente Finale / Webmaster
 
 Per l'installazione seguire [la guida sopra](#tldr) oppure dare una letta al file [INSTALL.md](docs/INSTALL.md)
+
 È disponibile un Help in linea all'interno del programma e il supporto della community a questo [link](https://sourceforge.net/projects/gazie/support)
 
 ### Sviluppatori

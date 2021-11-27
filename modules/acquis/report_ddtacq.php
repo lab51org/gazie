@@ -24,7 +24,7 @@
  */
 require("../../library/include/datlib.inc.php");
 $admin_aziend = checkAdmin();
-
+$pdf_to_modal = gaz_dbi_get_row($gTables['company_config'], 'var', 'pdf_reports_send_to_modal')['val'];
 $tipdoc=array('DDL', 'RDL', 'DDR','ADT', 'AFT');
 
 $partner_select = !gaz_dbi_get_row($gTables['company_config'], 'var', 'partner_select_mode')['val'];
@@ -69,8 +69,8 @@ require("../../library/include/header.php");
 $script_transl = HeadMain();
 
 $ts = new TableSorter(
-    !$partner_select && isset($_GET["fornitore"]) ? $tesdoc_e_partners : $gTables['tesdoc'], 
-    $passo, ['id_tes' => 'desc'], ['sezione'=>1],[], " (tipdoc = 'DDL' OR tipdoc = 'RDL' OR tipdoc = 'DDR' OR tipdoc = 'ADT' OR tipdoc = 'AFT')" 
+    !$partner_select && isset($_GET["fornitore"]) ? $tesdoc_e_partners : $gTables['tesdoc'],
+    $passo, ['id_tes' => 'desc'], ['sezione'=>1],[], " (tipdoc = 'DDL' OR tipdoc = 'RDL' OR tipdoc = 'DDR' OR tipdoc = 'ADT' OR tipdoc = 'AFT')"
 );
 
 ?>
@@ -88,8 +88,8 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
-				delete:{ 
-					text:'Elimina', 
+				delete:{
+					text:'Elimina',
 					'class':'btn btn-danger delete-button',
 					click:function (event, ui) {
 					$.ajax({
@@ -107,18 +107,18 @@ $(function() {
 				}
 			}
 		});
-		$("#dialog_delete" ).dialog( "open" );  
+		$("#dialog_delete" ).dialog( "open" );
 	});
 });
 function printPdf(urlPrintDoc){
-	$(function(){			
+	$(function(){
 		$('#framePdf').attr('src',urlPrintDoc);
 		$('#framePdf').css({'height': '100%'});
 		$('.framePdf').css({'display': 'block','width': '90%', 'height': '80%', 'z-index':'2000'});
 		$('#closePdf').on( "click", function() {
 			$('.framePdf').css({'display': 'none'});
-		});	
-	});	
+		});
+	});
 };
 </script>
 <form method="GET" action="<?php echo $_SERVER['PHP_SELF']; ?>"  name="auxil">
@@ -168,9 +168,9 @@ function printPdf(urlPrintDoc){
                 <?php  gaz_flt_disp_select("anno", "YEAR(datemi) as anno", $tesdoc_e_partners, $ts->where, "anno DESC"); ?>
             </td>
             <td  class="FacetFieldCaptionTD">
-		    <?php 
+		    <?php
                     if ($partner_select) {
-                        gaz_flt_disp_select("fornitore", "clfoco AS fornitore, ragso1 as nome", 
+                        gaz_flt_disp_select("fornitore", "clfoco AS fornitore, ragso1 as nome",
 					    $tesdoc_e_partners,
 					    $ts->where, "nome ASC", "nome");
                     } else {
@@ -250,7 +250,7 @@ function printPdf(urlPrintDoc){
 				$order='id_tes DESC';
 				$title="Modifica documento";
 			}
-			
+
 			if ($r['tipdoc']=="AFT" AND $r['ddt_type']=="T"){
 				$addtip="ADT &#8594; ";
 			} elseif ($r['tipdoc']=="AFT" AND $r['ddt_type']=="L"){
@@ -265,26 +265,26 @@ function printPdf(urlPrintDoc){
             echo '<td class="text-center">'. gaz_format_date($r["datemi"]). " &nbsp;</td>";
             echo "<td>" . $r["ragso1"] . "&nbsp;</td>";
 			if (intval(preg_replace("/[^0-9]/","",$r['numfat']))>=1){
-				echo "<td align=\"center\"><a class=\"btn btn-xs btn-default\" style=\"cursor:pointer;\" onclick=\"printPdf('stampa_docacq.php?id_tes=" . $r["id_tes"] ."')\"><i class=\"glyphicon glyphicon-print\" title=\"Stampa fattura n. " . $r["numfat"] . " PDF\"></i> fatt. n. " . $r["numfat"] . "</a></td>";
+				echo "<td align=\"center\"><a class=\"btn btn-xs btn-default\" style=\"cursor:pointer;\" ".($pdf_to_modal==0?'href="stampa_docacq.php?id_tes=' . $r["id_tes"] .'" target="_blank"':"onclick=\"printPdf('stampa_docacq.php?id_tes=" . $r["id_tes"] ."')\"")."><i class=\"glyphicon glyphicon-print\" title=\"Stampa fattura n. " . $r["numfat"] . " PDF\"></i> fatt. n. " . $r["numfat"] . "</a></td>";
 			} else {
 				echo "<td>" . $r["status"] . " &nbsp;</td>";
-			}			
-           
-			echo "<td align=\"center\"><a class=\"btn btn-xs btn-default\" style=\"cursor:pointer;\" onclick=\"printPdf('stampa_docacq.php?id_tes=" . $r["id_tes"] . "&template=DDT')\"><i class=\"glyphicon glyphicon-print\" title=\"Stampa documento PDF\"></i></a></td>";
+			}
 
-            echo '<td class="text-center">';	
+			echo "<td align=\"center\"><a class=\"btn btn-xs btn-default\" style=\"cursor:pointer;\" ".($pdf_to_modal==0?'href="stampa_docacq.php?id_tes=' . $r["id_tes"] .'&template=DDT" target="_blank"':"onclick=\"printPdf('stampa_docacq.php?id_tes=" . $r["id_tes"] ."&template=DDT')\"")."><i class=\"glyphicon glyphicon-print\" title=\"Stampa documento PDF\"></i></a></td>";
+
+            echo '<td class="text-center">';
 			if (substr($r['tipdoc'], 0, 2)=="AF" ){
 				?>
 				<button title="Questo Ddt &egrave; stato fatturato. Per eliminarlo devi prima eliminare la relativa fattura" class="btn btn-xs btn-default btn-elimina disabled"><i class="glyphicon glyphicon-remove"></i></button>
 				<?php
 			} else {
-					?>			
+					?>
 			<a class="btn btn-xs btn-default btn-elimina dialog_delete" title="Elimina questo D.d.T." ref="<?php echo $r['id_tes'];?>" catdes="<?php echo $r['ragso1']; ?>">
 				<i class="glyphicon glyphicon-remove"></i>
 			</a>
 			<?php
 			}
-			echo "</td></tr>";            
+			echo "</td></tr>";
         }
             echo '<tr><td class="FacetFieldCaptionTD" colspan="8" align="right">Querytime: ';
             print_querytime($querytime);
