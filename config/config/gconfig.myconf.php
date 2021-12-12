@@ -24,48 +24,34 @@
   --------------------------------------------------------------------------
  */
 
-
- /*
---------=======oooooooooooo!!!!!  ATTENZIONE !!!!!ooooooooooo========-------------
-QUESTO FILE DI CONFIGURAZIONE CONTIENE UNA SERIE DI SETTAGGI ADATTI AD UN AMBIENTE DI 
-SVILUPPO E POTENZIALMENTE INSICURO IN QUANTO AD ES. USA IL NOME UTENTE root SENZA 
-PASSWORD PER ACCEDERE AL DATABASE.
-PER POTER USARE GAZIE IN PRODUZIONE OCCORRE PERSONALIZZARE QUESTI PARAMETRI CAMBIANDO 
-IL NOME DEL FILE "gconfig.myconf.default.php" IN "gconfig.myconf.php".
-SUCCESSIVAMENTE "gconfig.myconf.php" LO SI DOVRA' MODIFICARE IN ACCORDO CON LE 
-IMPOSTAZIONI DEL VOSTRO SERVER. FACENDO COSI' EVITERETE DI USARE I SETTAGGI CONTENUTI 
-IN QUESTO FILE CHE SONO APPUNTO INADATTI E CHE VERREBBE SOVRASCRITTO AD OGNI AGGIORNAMENTO
-DI GAZIE, AGGIORNAMENTO CHE CONSISTE, APPUNTO, NELLA SOVRASCRITTURA DI TUTTI I FILES 
-DELLA CARTELLA "gazie" COMPRESO IL PRESENTE "gconfig.php"
-*/
- 
-
- 
- if (isset($_SERVER['SCRIPT_FILENAME']) && (str_replace('\\', '/', __FILE__) == $_SERVER['SCRIPT_FILENAME'])) {
-    exit('Accesso diretto non consentito');
-}
-//versione software
-define('GAZIE_VERSION', '7.48');
-
-$fileConfPers=dirname(__FILE__) . '/gconfig.myconf.php';
-if (file_exists($fileConfPers)) {
-	include_once($fileConfPers);
-}
-
-
 // abilita il debug delle variabili nel footer della pagina (impostare true/false)
-$debug_active = (defined('debug_active')) ? debug_active : FALSE;
+define('debug_active', FALSE);
 
 // definisco il livello di verbosità degli errori (https://www.php.net/manual/en/errorfunc.constants.php)
-$error_reporting_level = (defined('error_reporting_level')) ? error_reporting_level : 0;
+define('error_reporting_level', 0); // consigliato per ambienti di produzione
+//define('error_reporting_level', E_ALL & ~E_NOTICE); // consigliato per ambienti di sviluppo
 
 // attiva la modalità manutenzione non è consentito l'accesso e l'uso dei moduli (FALSE oppure 'email amministratore')
-$maintenance = (defined('maintenance')) ? maintenance : FALSE;
+define('maintenance', FALSE);
 
-
+/*
+--------=======oooooooooooo!!!!!  ATTENZIONE !!!!!ooooooooooo========-------------
+QUESTO FILE DI CONFIGURAZIONE IN ORIGINE DI NOME "gconfig.myconf.default.php" 
+LO SI DEVE RINOMINARE in "gconfig.myconf.php" SULLE INSTALLAZIONI PRODUTTIVE E 
+SUCCESSIVAMENTE MODIFICARE IN ACCORDO CON LE IMPOSTAZIONI DEL VOSTRO SERVER MARIADB , 
+DEL SERVER WEB APACHE, E COMUNQUE IN BASE ALLE SCELTE CHE VEDETE SOTTO.
+COSI' EVITERETE DI USARE I SETTAGGI CONTENUTI IN "gconfig.php" ADATTI AD UN AMBIENTE
+DI SVILUPPO (root senza password) E CONTEMPORANEAMENTE NON VERRA' SOVRASCRITTO 
+AD OGNI AGGIORNAMENTO DI GAZIE CHE CONSISTE, APPUNTO, NELLA SOVRASCRITTURA DI TUTTI I
+FILES, COMPRESO IL CITATO "gconfig.php"
+*/
+ 
+if (isset($_SERVER['SCRIPT_FILENAME']) && (str_replace('\\', '/', __FILE__) == $_SERVER['SCRIPT_FILENAME'])) {
+    exit('Accesso diretto non consentito');
+}
 //nome DBMS usato per la libreria specifica (MySQL=mysql.lib, SQLite=sqlite.lib, ecc)
 //per il momento disponibile solo la libreria mysql.lib
-$NomeDB = (defined('NomeDB')) ? NomeDB : 'mysqli';
+define('NomeDB', 'mysqli');
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -78,28 +64,28 @@ $NomeDB = (defined('NomeDB')) ? NomeDB : 'mysqli';
 //
 // $Host = "mysql.2freehosting.com:3306";
 //
-$Host = (defined('Host')) ? Host : 'localhost';
+define('Host', 'localhost');
 
 //
 // Nome della base di dati a cui ci si connette.
 //
-$Database = (defined('Database')) ? Database : 'gazie_prod';
+define('Database', 'gazie_prod');
 
 //
 // Utente della base di dati che ha il permesso di accedervi con tutti
 // i privilegi necessari.
 //
-$User = (defined('User')) ? User : 'gazie_prod';
+define('User', 'gazie_prod');
 
 //
 // Parola d'ordine necessaria per accedere alla base di dati
 // in qualità di utente $User.
 //
-$Password = (defined('Password')) ? Password : 'j27Kr5^u';
+define('Password', 'j27Kr5^u');
 
 //
 // Porta sulla quale è in ascolto il database (normalmente 3306 per mysql, 3307 per mariadb)
-$Port = (defined('Port')) ? Port : 3306;
+define('Port', '3306');
 
 //
 // Prefisso delle tabelle di Gazie.
@@ -110,26 +96,26 @@ $Port = (defined('Port')) ? Port : 3306;
 // minuscole e cifre numeriche. Per esempio, "gaz123" è valido, mentre "gaga1"
 // o "gaz_123" non sono validi.
 //
-$table_prefix = (defined('table_prefix')) ? table_prefix : 'gaz';
+define('table_prefix', 'gaz');
 
 //
 // Utente proposto inizialmente per l'accesso a Gazie. Se non si vuole
 // suggerire alcunché, è sufficiente assegnare la stringa vuota.
 //
-$default_user = (defined('default_user')) ? default_user : '';
+define('default_user', '');
 
 //
 // Fuso orario, per la rappresentazione corretta delle date, indipendentemente
 // dalla collocazione del server HTTP+PHP. MA NON FUNZIONA, perché MySQL aggiorna
 // in modo indipendente le date di accesso alle tabelle.
 //
-$Timezone = (defined('Timezone')) ? Timezone : 'Europe/Rome';
+define('Timezone', 'Europe/Rome');
 
 //
 // Testo da aggiungere eventualmente ai messaggi di posta elettronica, sistematicamente,
 // per qualche motivo.
 //
-define('EMAIL_FOOTER', (defined('MY_EMAIL_FOOTER')) ? MY_EMAIL_FOOTER : 'E-mail generata da GAzie ver.');
+define('MY_EMAIL_FOOTER', 'E-mail generata da GAzie ver.');
 
 //
 // GAzie utilizza la funzione PHP set_time_limit() per consentire il completamento
@@ -140,18 +126,18 @@ define('EMAIL_FOOTER', (defined('MY_EMAIL_FOOTER')) ? MY_EMAIL_FOOTER : 'E-mail 
 // l'uso della funzione set_time_limit(), sapendo però che ciò pregiudica il funzionamento
 // corretto di GAzie.
 //
-$disable_set_time_limit = (defined('disable_set_time_limit')) ? disable_set_time_limit : FALSE;
+define('disable_set_time_limit', FALSE);
 
 //
 // Se il servente HTTP-PHP non ha una configurazione locale corretta,
 // questa può essere impostata qui, espressamente.
 //
-$gazie_locale = (defined('gazie_locale')) ? gazie_locale : '';
+define('gazie_locale', '');
 
 //
 // Numero di righe per pagina sui report, determina anche quante ne saranno caricate dallo scroll-onload
 //
-define('PER_PAGE', (defined('MY_PER_PAGE')) ? MY_PER_PAGE : 30);
+define('MY_PER_PAGE', 30);
 
 //
 // Le seguenti definizioni assegnano il percorso delle directory che devono essere scrivibili
@@ -159,27 +145,28 @@ define('PER_PAGE', (defined('MY_PER_PAGE')) ? MY_PER_PAGE : 30);
 //
 // Directory usata da modules/root/retrieve.php
 //
-define('DATA_DIR', (defined('MY_DATA_DIR')) ? MY_DATA_DIR : '../../data/');
+define('MY_DATA_DIR', '../../data/');
 
 //
 // Directory usata dal modulo tcpdf
 //
-define('K_PATH_CACHE', (defined('MY_K_PATH_CACHE')) ? MY_K_PATH_CACHE : '../../library/tcpdf/cache/');
+define('MY_K_PATH_CACHE', '../../library/tcpdf/cache/');
 
 ////////////////////////////////////////////////////////////////////////
 // definisce il nome della sessione ma solo in caso di uso dei domini di livello superiore al secondo, in
 // caso di installazione su domini di secondo livello viene attribuito automaticamente
 // il nome del direttorio di installazione che normalmente e', appunto:  gazie
-define('_SESSION_NAME', (defined('MY_SESSION_NAME')) ? MY_SESSION_NAME : 'gazie');
+define('MY_SESSION_NAME', 'gazie');
 
 //url di default per l'aggiornamento di GAzie
-$update_URI_files = (defined('update_URI_files')) ? update_URI_files : 'https://sourceforge.net/projects/gazie';
+define('update_URI_files', 'https://sourceforge.net/projects/gazie');
 
 // url per comunicare (ping) il mio nuovo IP DINAMICO  all'hosting di appoggio
-define('SET_DYNAMIC_IP', (defined('MY_SET_DYNAMIC_IP')) ? MY_SET_DYNAMIC_IP : '');
+define('MY_SET_DYNAMIC_IP',''); 
 
 // permetti la modifica dei ddt fatturati, utile se bisogna modificare i prezzi degli articoli
-$modifica_fatture_ddt = (defined('modifica_fatture_ddt')) ? modifica_fatture_ddt : FALSE;
+define('modifica_fatture_ddt', FALSE);
 
-$contact_link = (defined('contact_link')) ? contact_link : 'devincentiis.it';
+// personalizzazione link al fornitore del servizio
+define('contact_link','devincentiis.it', FALSE);
 ?>
