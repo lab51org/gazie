@@ -85,10 +85,10 @@ class shopsynchronizegazSynchro {
 	function SetupStore() {
 		// aggiorno i dati comuni a tutto lo store: Anagrafica Azienda, Aliquote IVA, dati richiesti ai nuovi clienti (CF,PI,indirizzo,ecc) in custom_field e tutto ciò che necessita per evitare di digitarlo a mano su ecommerce-admin
 	}
-	function UpsertCategory($d) {
+	function UpsertCategory($d,$toDo="") {
 		// usando il token precedentemente avuto si dovranno eseguire tutte le operazioni necessarie ad aggiornare la categorie merceologica quindi:
 		// in base alle API messe a disposizione dallo specifico store (Opencart,Prestashop,Magento,ecc) si passeranno i dati in maniera opportuna...
-		if ($d['ref_ecommerce_id_category']>0){ // se la categoria è connessa all'e-commerce
+		if ($d['ref_ecommerce_id_category']>0 || $toDo=="insert"){ // se la categoria è connessa all'e-commerce
 			@session_start();
 			global $gTables,$admin_aziend;
 			$rawres=[];
@@ -133,7 +133,7 @@ class shopsynchronizegazSynchro {
 				}
 			} else {
 				// imposto la connessione al server
-				$conn_id = ftp_connect($ftp_host)or die("Could not connect to $ftp_server");
+				$conn_id = @ftp_connect($ftp_host)or die("Could not connect to $ftp_host");
 				// effettuo login con user e pass
 				$mylogin = ftp_login($conn_id, $ftp_user, $ftp_pass);
 				// controllo se la connessione è OK...
@@ -154,12 +154,13 @@ class shopsynchronizegazSynchro {
 			<GAzieDocuments AppVersion="1" Creator="Antonio Germani 2018-2021" CreatorUrl="https://www.programmisitiweb.lacasettabio.it">';
 			$xml_output .= "\n<Categories>\n";
 				$xml_output .= "\t<Category>\n";
+        $xml_output .= "\t<ToDo>".$toDo."</ToDo>\n";
 				$xml_output .= "\t<Id>".$d['ref_ecommerce_id_category']."</Id>\n";
 				$xml_output .= "\t<Code>".$d['codice']."</Code>\n";
 				$xml_output .= "\t<Name>".$d['descri']."</Name>\n";
 				$xml_output .= "\t<Description>".preg_replace('/[\x00-\x1f]/','',htmlspecialchars($d['large_descri'], ENT_QUOTES, 'UTF-8'))."</Description>\n";
 				$xml_output .= "\t<Top>".$d['top']."</Top>\n";// 1=attivo su web; 2=attivo e prestabilito; 3=attivo e pubblicato in home; 4=attivo, in home e prestabilito; 5=disattivato su web"
-				$xml_output .= "\t</category>\n";
+				$xml_output .= "\t</Category>\n";
 			$xml_output .="</Categories>\n</GAzieDocuments>";
 			$xmlFile = "category.xml";
 			$xmlHandle = fopen($xmlFile, "w");
@@ -196,17 +197,18 @@ class shopsynchronizegazSynchro {
 			}
 			$access=base64_encode($accpass);
 			// avvio il file di interfaccia presente nel sito web remoto
-			$headers = @get_headers($urlinterf.'?access='.$access);
-			if ( intval(substr($headers[0], 9, 3))==200){ // controllo se il file mi ha dato accesso regolare
-				$file = fopen ($urlinterf.'?access='.$access, "r");
-				if (!$file) {
-					$rawres['title'] = "L'interfaccia non si apre. AGGIORNARE L'E-COMMERCE MANUALMENTE!";
-					$rawres['button'] = 'Avviso eCommerce';
-					$rawres['label'] = "Aggiornare i dati della categoria: ". $d['ref_ecommerce_id_category'] ."-". $d['descri'];
-					$rawres['link'] = '../shop-synchronize/synchronize.php';
-					$rawres['style'] = 'danger';
-				}
-			} else { // Riporto il codice di errore
+			$file = fopen ($urlinterf.'?access='.$access, "r");
+			if ($file){ // controllo se il file mi ha dato accesso regolare
+				// se serve, qui posso controllare cosa ha restituito l'interfaccia tramite gli echo
+        while (!feof($file)) { // scorro il file generato dall'interfaccia durante la sua eleborazione
+            $line = fgets($file);
+            if (substr($line,0,7)=="INSERT-"){ // Se l'e-commerce ha restituito l'ID riferito ad un insert
+              $ins_id=intval(substr($line,7));// vado a modificare il riferimento id e-commerce nella categoria di GAzie
+              gaz_dbi_put_row($gTables['catmer'], "codice", $d['codice'], "ref_ecommerce_id_category", $ins_id);
+            }
+        }
+        fclose($file);
+      } else { // Riporto il codice di errore
 				$rawres['title'] = "Impossibile connettersi all'interfaccia: ".intval(substr($headers[0], 9, 3)).". AGGIORNARE L'E-COMMERCE MANUALMENTE!";
 				$rawres['button'] = 'Avviso eCommerce';
 				$rawres['label'] = "Aggiornare i dati della categoria: ". $d['ref_ecommerce_id_category'] ."-". $d['descri'];
@@ -214,10 +216,12 @@ class shopsynchronizegazSynchro {
 				$rawres['style'] = 'danger';
 			}
 		}
-		$_SESSION['menu_alerts']['shop-synchronize']=$rawres;
-		$this->rawres=$rawres;
+		if (isset($rawres)){
+      $_SESSION['menu_alerts']['shop-synchronize']=$rawres;
+      $this->rawres=$rawres;
+    }
 	}
-	function UpsertParent($p) {
+	function UpsertParent($p,$toDo="") {
 		// aggiorno i dati del genitore delle varianti
 		if ($p['web_public'] > 0){ // se pubblicato su web aggiorno l'articolo di magazzino (product)
 			@session_start();
@@ -292,7 +296,7 @@ class shopsynchronizegazSynchro {
 			} else {
 
 				// imposto la connessione al server
-				$conn_id = ftp_connect($ftp_host)or die("Could not connect to $ftp_server");;
+				$conn_id = @ftp_connect($ftp_host)or die("Could not connect to $ftp_host");
 
 				// effettuo login con user e pass
 				$mylogin = ftp_login($conn_id, $ftp_user, $ftp_pass);
@@ -300,7 +304,7 @@ class shopsynchronizegazSynchro {
 				// controllo se la connessione è OK...
 				if ((!$conn_id) or (!$mylogin)){
 					// non si connette FALSE
-					$rawres['title'] = "Problemi con le impostazioni FTP in configurazione avanzata azienda. AGGIORNARE L'E-COMMERCE MANUALMENTE!";
+					$rawres['title'] = "Problemi con le impostazioni FTP (utente e password) in impostazioni sincronizzazione. AGGIORNARE L'E-COMMERCE MANUALMENTE!";
 					$rawres['button'] = 'Avviso eCommerce';
 					$rawres['label'] = "Aggiornare i dati del gruppo: ". $p['id_artico_group'] ."-". $p['descri'];
 					$rawres['link'] = '../shop-synchronize/synchronize.php';
@@ -310,21 +314,55 @@ class shopsynchronizegazSynchro {
 					return;
 				}
 			}
+      if($toDo=="insert"){// se è insert la pubblicazione è sempre disattivata su web
+        $p['web_public']=5;
+      }
 			// creo il file xml
 			$xml_output = '<?xml version="1.0" encoding="UTF-8"?>
 			<GAzieDocuments AppVersion="1" Creator="Antonio Germani 2018-2021" CreatorUrl="https://www.programmisitiweb.lacasettabio.it">';
 			$xml_output .= "\n<Products>\n";
 				$xml_output .= "\t<Product>\n";
+        $xml_output .= "\t<ToDo>".$toDo."</ToDo>\n";
 				$xml_output .= "\t<Id>".$p['ref_ecommerce_id_main_product']."</Id>\n";
 				$xml_output .= "\t<Code>".$p['id_artico_group']."</Code>\n";
 				$xml_output .= "\t<Type>parent</Type>\n";
 				$xml_output .= "\t<ParentId>".$p['id_artico_group']."</ParentId>\n";
 				$xml_output .= "\t<Name>".$p['descri']."</Name>\n";
+        $xml_output .= "\t<Price>0</Price>\n";// un parent non può avere il prezzo
+				$xml_output .= "\t<PriceVATincl>0</PriceVATincl>\n";
 				$xml_output .= "\t<Description>".preg_replace('/[\x00-\x1f]/','',htmlspecialchars($p['large_descri'], ENT_QUOTES, 'UTF-8'))."</Description>\n";
 				$xml_output .= "\t<AvailableQty>".$totav."</AvailableQty>\n";
 				$xml_output .= "\t<WebPublish>".$p['web_public']."</WebPublish>\n";// 1=attivo su web; 2=attivo e prestabilito; 3=attivo e pubblicato in home; 4=attivo, in home e prestabilito; 5=disattivato su web"
 				$xml_output .= "\t<IdHome>".$idHome."</IdHome>\n";// id per pubblicazione home su web
 				$xml_output .= "\t</Product>\n";
+        if($toDo=="insert"){// se è un inserimento invio anche tutte le varianti
+          $vars=gaz_dbi_dyn_query("*", $gTables['artico'], "id_artico_group =". $p['id_artico_group']);
+            foreach($vars as $var){
+              $xml_output .= "\t<Product>\n";
+              $xml_output .= "\t<ToDo>".$toDo."</ToDo>\n";
+              $xml_output .= "\t<Id>".$var['ref_ecommerce_id_product']."</Id>\n";
+              $xml_output .= "\t<Code>".$var['codice']."</Code>\n";
+              $xml_output .= "\t<Type>variant</Type>\n";
+              $xml_output .= "\t<ParentId>".$p['id_artico_group']."</ParentId>\n";
+              $xml_output .= "\t<Name>".$var['descri']."</Name>\n";
+              // Calcolo il prezzo IVA compresa
+              $aliquo=gaz_dbi_get_row($gTables['aliiva'], "codice", intval($var['aliiva']))['aliquo'];
+              $web_price_vat_incl=$var['web_price']+(($var['web_price']*$aliquo)/100);
+              $web_price_vat_incl=number_format($web_price_vat_incl, $admin_aziend['decimal_price'], '.', '');
+              $xml_output .= "\t<Price>".$var['web_price']."</Price>\n";
+
+              $xml_output .= "\t<PriceVATincl>".$web_price_vat_incl."</PriceVATincl>\n";
+              $body=gaz_dbi_get_row($gTables['body_text'], 'table_name_ref', "artico_'".$var['codice']);
+              if(!$body){
+                $body['body_text']="";
+              }
+              $xml_output .= "\t<Description>".preg_replace('/[\x00-\x1f]/','',htmlspecialchars($body['body_text'], ENT_QUOTES, 'UTF-8'))."</Description>\n";
+              $xml_output .= "\t<AvailableQty>0</AvailableQty>\n";
+              $xml_output .= "\t<WebPublish>".$p['web_public']."</WebPublish>\n";// 1=attivo su web; 2=attivo e prestabilito; 3=attivo e pubblicato in home; 4=attivo, in home e prestabilito; 5=disattivato su web"
+              $xml_output .= "\t<IdHome>".$idHome."</IdHome>\n";// id per pubblicazione home su web
+              $xml_output .= "\t</Product>\n";
+          }
+        }
 			$xml_output .="</Products>\n</GAzieDocuments>";
 			$xmlFile = "prodotti.xml";
 			$xmlHandle = fopen($xmlFile, "w");
@@ -361,17 +399,24 @@ class shopsynchronizegazSynchro {
 			}
 			$access=base64_encode($accpass);
 			// avvio il file di interfaccia presente nel sito web remoto
-			$headers = @get_headers($urlinterf.'?access='.$access);
-			if ( intval(substr($headers[0], 9, 3))==200){ // controllo se il file mi ha dato accesso regolare
-				$file = fopen ($urlinterf.'?access='.$access, "r");
-				if (!$file) {
-					$rawres['title'] = "L'interfaccia non si apre. AGGIORNARE L'E-COMMERCE MANUALMENTE!";
-					$rawres['button'] = 'Avviso eCommerce';
-					$rawres['label'] = "Aggiornare i dati del gruppo: ". $p['id_artico_group'] ."-". $p['descri'];
-					$rawres['link'] = '../shop-synchronize/synchronize.php';
-					$rawres['style'] = 'danger';
-				}
-			} else { // Riporto il codice di errore
+			$file = fopen ($urlinterf.'?access='.$access, "r");
+			if ($file){ // controllo se il file mi ha dato accesso regolare
+				// se serve, qui posso controllare cosa ha restituito l'interfaccia tramite gli echo
+        $nl=0;
+        while (!feof($file)) { // scorro il file generato dall'interfaccia durante la sua eleborazione
+            $line = fgets($file);
+            if (substr($line,0,7)=="INSERT-"){ // Se l'e-commerce ha restituito l'ID riferito ad un insert
+              $ins_id=intval(substr($line,7));// vado a modificare il riferimento id e-commerce nell'articolo di GAzie
+              if($nl==0){// è il parent
+                gaz_dbi_put_row($gTables['artico_group'], "id_artico_group", $p['id_artico_group'], "ref_ecommerce_id_main_product", $ins_id);
+              } else {// è una variante
+                gaz_dbi_put_row($gTables['artico'], "codice", $var['codice'], "ref_ecommerce_id_product", $ins_id);
+              }
+            }
+            $nl++;
+        }
+        fclose($file);
+      } else { // Riporto il codice di errore
 				$rawres['title'] = "Impossibile connettersi all'interfaccia: ".intval(substr($headers[0], 9, 3)).". AGGIORNARE L'E-COMMERCE MANUALMENTE!";
 				$rawres['button'] = 'Avviso eCommerce';
 				$rawres['label'] = "Aggiornare i dati del gruppo: ". $p['id_artico_group'] ."-". $p['descri'];
@@ -379,10 +424,12 @@ class shopsynchronizegazSynchro {
 				$rawres['style'] = 'danger';
 			}
 		}
-		$_SESSION['menu_alerts']['shop-synchronize']=$rawres;
-		$this->rawres=$rawres;
+    if (isset($rawres)){
+      $_SESSION['menu_alerts']['shop-synchronize']=$rawres;
+      $this->rawres=$rawres;
+    }
 	}
-	function UpsertProduct($d) {
+	function UpsertProduct($d,$toDo="") { // Aggiorna o inserisce articol da GAzie a e-commerce
 		if ($d['web_public'] > 0){ // se pubblicato su web aggiorno l'articolo di magazzino (product)
 			@session_start();
 			global $gTables,$admin_aziend;
@@ -462,7 +509,7 @@ class shopsynchronizegazSynchro {
 			} else {
 
 				// imposto la connessione al server
-				$conn_id = ftp_connect($ftp_host)or die("Could not connect to $ftp_server");;
+				$conn_id = @ftp_connect($ftp_host)or die("Could not connect to $ftp_host");
 
 				// effettuo login con user e pass
 				$mylogin = ftp_login($conn_id, $ftp_user, $ftp_pass);
@@ -490,6 +537,7 @@ class shopsynchronizegazSynchro {
 			<GAzieDocuments AppVersion="1" Creator="Antonio Germani 2018-2019" CreatorUrl="https://www.lacasettabio.it">';
 			$xml_output .= "\n<Products>\n";
 				$xml_output .= "\t<Product>\n";
+        $xml_output .= "\t<ToDo>".$toDo."</ToDo>\n";
 				$xml_output .= "\t<Id>".$d['ref_ecommerce_id_product']."</Id>\n";
 				if ($id['id_artico_group']>0){
 					$xml_output .= "\t<Type>variant</Type>\n";
@@ -551,27 +599,27 @@ class shopsynchronizegazSynchro {
 			}
 			$access=base64_encode($accpass);
 			// avvio il file di interfaccia presente nel sito web remoto
-			$headers = @get_headers($urlinterf.'?access='.$access);
-			if ( intval(substr($headers[0], 9, 3))==200){ // controllo se il file mi ha dato accesso regolare
-				$file = fopen ($urlinterf.'?access='.$access, "r");
-				if (!$file) {
-					$rawres['title'] = "L'interfaccia non si apre. AGGIORNARE L'E-COMMERCE MANUALMENTE!";
+			$file = fopen ($urlinterf.'?access='.$access, "r");
+			if ( $file){ // controllo se il file mi ha dato accesso regolare
+        while (!feof($file)) { // scorro il file generato dall'interfaccia durante la sua eleborazione
+            $line = fgets($file);
+            if (substr($line,0,7)=="INSERT-"){ // Se l'e-commerce ha restituito l'ID riferito ad un insert
+            $ins_id=intval(substr($line,7));// vado a modificare il riferimenot id e-commerce nell'articolo di GAzie
+              gaz_dbi_put_row($gTables['artico'], "codice", $d['codice'], "ref_ecommerce_id_product", $ins_id);
+            }
+        }
+        fclose($file);
+			} else { // ERRORE di connessione
+				$rawres['title'] = "L'interfaccia non si connette. AGGIORNARE L'E-COMMERCE MANUALMENTE!";
 					$rawres['button'] = 'Avviso eCommerce';
 					$rawres['label'] = "Aggiornare i dati dell'articolo: ". $d['codice'];
 					$rawres['link'] = '../shop-synchronize/synchronize.php';
 					$rawres['style'] = 'danger';
-				}
-			} else { // Riporto il codice di errore
-				$rawres['title'] = "Impossibile connettersi all'interfaccia: ".intval(substr($headers[0], 9, 3)).". AGGIORNARE L'E-COMMERCE MANUALMENTE!";
-				$rawres['button'] = 'Avviso eCommerce';
-				$rawres['label'] = "Aggiornare i dati dell'articolo: ". $d['codice'];
-				$rawres['link'] = '../shop-synchronize/synchronize.php';
-				$rawres['style'] = 'danger';
 			}
 		}
 		if (isset($rawres)){
-		$_SESSION['menu_alerts']['shop-synchronize']=$rawres;
-		$this->rawres=$rawres;
+      $_SESSION['menu_alerts']['shop-synchronize']=$rawres;
+      $this->rawres=$rawres;
 		}
 
 	}
@@ -730,17 +778,11 @@ class shopsynchronizegazSynchro {
 			}
 			$access=base64_encode($accpass);
 			// avvio il file di interfaccia presente nel sito web remoto
-			$headers = @get_headers($urlinterf.'?access='.$access);
-			if ( intval(substr($headers[0], 9, 3))==200){ // controllo se il file mi ha dato accesso regolare
-				$file = fopen ($urlinterf.'?access='.$access, "r");
-				if (!$file) {
-					$rawres['title'] = "L'interfaccia non si apre. AGGIORNARE L'E-COMMERCE MANUALMENTE!";
-					$rawres['button'] = 'Avviso eCommerce';
-					$rawres['label'] = "Aggiornare la quantità dell'articolo: ". $d;
-					$rawres['link'] = '../shop-synchronize/synchronize.php';
-					$rawres['style'] = 'danger';
-				}
-			} else { // Riporto il codice di errore
+			$file = fopen ($urlinterf.'?access='.$access, "r");
+			if ($file){ // controllo se il file mi ha dato accesso regolare
+				// se serve, qui posso controllare cosa ha restituito l'interfaccia tramite gli echo
+        fclose($file);
+      } else { // Riporto il codice di errore
 				$rawres['title'] = "Impossibile connettersi all'interfaccia: ".intval(substr($headers[0], 9, 3)).". AGGIORNARE L'E-COMMERCE MANUALMENTE!";
 				$rawres['button'] = 'Avviso eCommerce';
 				$rawres['label'] = "Aggiornare la quantità dell'articolo: ". $d;
@@ -748,8 +790,10 @@ class shopsynchronizegazSynchro {
 				$rawres['style'] = 'danger';
 			}
 		}
-		$_SESSION['menu_alerts']['shop-synchronize']=$rawres;
-		$this->rawres=$rawres;
+		if (isset($rawres)){
+      $_SESSION['menu_alerts']['shop-synchronize']=$rawres;
+      $this->rawres=$rawres;
+    }
 	}
 	function get_sync_status($last_id) {
 		// prendo gli eventuali ordini arrivati assieme ai dati del cliente, se nuovo lo importo (order+customer),
@@ -1002,7 +1046,9 @@ class shopsynchronizegazSynchro {
             $rawres['link'] = '../vendit/report_broven.php?auxil=VOW';
             $rawres['style'] = 'warning';
 		}
-		$_SESSION['menu_alerts']['shop-synchronize']=$rawres;
-		$this->rawres=$rawres;
+		if (isset($rawres)){
+      $_SESSION['menu_alerts']['shop-synchronize']=$rawres;
+      $this->rawres=$rawres;
+    }
 	}
 }
