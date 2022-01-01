@@ -25,7 +25,7 @@
  */
 
 // abilita il debug delle variabili nel footer della pagina (impostare true/false)
-define('debug_active', FALSE);
+define('debug_active', TRUE);
 
 // definisco il livello di verbosità degli errori (https://www.php.net/manual/en/errorfunc.constants.php)
 //define('error_reporting_level', 0); // consigliato per ambienti di produzione
@@ -70,19 +70,20 @@ define('Host', 'localhost');
 //
 // Nome della base di dati a cui ci si connette.
 //
-define('Database', 'gazie_prod');
+define('Database', 'gazie_stg');
 
 //
 // Utente della base di dati che ha il permesso di accedervi con tutti
 // i privilegi necessari.
 //
-define('User', 'gazie_prod');
+define('User', 'gazie_stg');
 
 //
 // Parola d'ordine necessaria per accedere alla base di dati
 // in qualità di utente $User.
 //
-define('Password', 'j27Kr5^u');
+define('Password', 'b^i3g35X');
+//define('Password', '^3Jp9n2i');
 
 //
 // Porta sulla quale è in ascolto il database (normalmente 3306 per mysql, 3307 per mariadb)
