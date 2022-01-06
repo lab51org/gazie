@@ -45,7 +45,7 @@ DELLA CARTELLA "gazie" COMPRESO IL PRESENTE "gconfig.php"
     exit('Accesso diretto non consentito');
 }
 //versione software
-define('GAZIE_VERSION', '8.02');
+define('GAZIE_VERSION', '8.01');
 
 $fileConfPers=dirname(__FILE__) . '/gconfig.myconf.php';
 if (file_exists($fileConfPers)) {
@@ -83,19 +83,19 @@ $Host = (defined('Host')) ? Host : 'localhost';
 //
 // Nome della base di dati a cui ci si connette.
 //
-$Database = (defined('Database')) ? Database : 'gazie_prod';
+$Database = (defined('Database')) ? Database : 'gazie_stg';
 
 //
 // Utente della base di dati che ha il permesso di accedervi con tutti
 // i privilegi necessari.
 //
-$User = (defined('User')) ? User : 'gazie_prod';
+$User = (defined('User')) ? User : 'gazie_stg';
 
 //
 // Parola d'ordine necessaria per accedere alla base di dati
 // in qualità di utente $User.
 //
-$Password = (defined('Password')) ? Password : 'j27Kr5^u';
+$Password = (defined('Password')) ? Password : 'b^i3g35X';
 
 //
 // Porta sulla quale è in ascolto il database (normalmente 3306 per mysql, 3307 per mariadb)
