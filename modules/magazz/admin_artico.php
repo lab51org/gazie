@@ -2,7 +2,7 @@
 /*
   --------------------------------------------------------------------------
   GAzie - Gestione Azienda
-  Copyright (C) 2004-2021 - Antonio De Vincentiis Montesilvano (PE)
+  Copyright (C) 2004-2022 - Antonio De Vincentiis Montesilvano (PE)
   (http://www.devincentiis.it)
   <http://gazie.sourceforge.net>
   --------------------------------------------------------------------------
@@ -53,6 +53,7 @@ require("../../library/include/datlib.inc.php");
 // m1 fine Modificato a mano
 
 $admin_aziend = checkAdmin();
+
 $msg = array('err' => array(), 'war' => array());
 $modal_ok_insert = false;
 $today=	strtotime(date("Y-m-d H:i:s",time()));
@@ -96,6 +97,7 @@ if (isset($_POST['Insert']) || isset($_POST['Update'])) {   //se non e' il primo
   $form = gaz_dbi_parse_post('artico');
   $form['codice'] = trim($form['codice']);
   $form['ritorno'] = $_POST['ritorno'];
+  $form['hidden_req'] = $_POST['hidden_req'];
   $form['web_public_init'] = $_POST['web_public_init'];
   $form['var_id'] = (isset($_POST['var_id']))?$_POST['var_id']:'';
   $form['var_name'] = (isset($_POST['var_name']))?$_POST['var_name']:'';
@@ -348,13 +350,14 @@ if (isset($_POST['Insert']) || isset($_POST['Update'])) {   //se non e' il primo
       exit;
   }
 } elseif (!isset($_POST['Update']) && isset($_GET['Update'])) { //se e' il primo accesso per UPDATE
-    $form = gaz_dbi_get_row($gTables['artico'], 'codice', substr($_GET['codice'], 0, 15));
+    $form = gaz_dbi_get_row($gTables['artico'], 'codice', substr($_GET['codice'],0,32));
     /** ENRICO FEDELE */
     if ($modal === false) {
         $form['ritorno'] = $_SERVER['HTTP_REFERER'];
     } else {
         $form['ritorno'] = 'admin_artico.php';
     }
+  $form['hidden_req'] = '';
 	$form['web_public_init']=$form['web_public'];
 	if (json_decode($form['ecomm_option_attribute']) != null){ // se esiste un json per attributo della variante dell'e-commerce
 		$opt_att=json_decode($form['ecomm_option_attribute']);
@@ -408,6 +411,7 @@ if (isset($_POST['Insert']) || isset($_POST['Update'])) {   //se non e' il primo
     } else {
         $form['ritorno'] = 'admin_artico.php';
     }
+  $form['hidden_req'] = '';
 	$form['web_public_init'] = 0;
     /** ENRICO FEDELE */
     $form['ref_code'] = '';
@@ -625,8 +629,11 @@ if ($modal === true) {
           <input type="hidden" name="mode-act" value="submit" />';
 } elseif (isset($_GET['tab'])) {
   echo '<input type="hidden" id="tabpill" value="' . substr($_GET['tab'],0,10) . '" />';
+} elseif ($form['hidden_req']=='change' || $form['hidden_req']=='id_anagra'){
+  echo '<input type="hidden" id="tabpill" value="magazz" />';
 }
 echo '<input type="hidden" name="ritorno" value="' . $form['ritorno'] . '" />';
+echo '<input type="hidden" name="hidden_req" value="' . $form['hidden_req'] . '" />';
 echo '<input type="hidden" name="ref_code" value="' . $form['ref_code'] . '" />';
 
 if ($modal_ok_insert === true) {
@@ -686,7 +693,7 @@ if ($modal_ok_insert === true) {
                     <div class="col-md-12">
                         <div class="form-group">
                             <label for="codice" class="col-sm-4 control-label"><?php echo $script_transl['codice']; ?></label>
-                            <input class="col-sm-4" type="text" value="<?php echo ((isset($_POST['cod']))? serchCOD():$form["codice"]); ?>" name="codice" id="suggest_new_codart" maxlength="15" tabindex="1" /><input class="btn btn-xs" type="submit" value="" />
+                            <input class="col-sm-4" type="text" value="<?php echo ((isset($_POST['cod']))? serchCOD():$form["codice"]); ?>" name="codice" id="suggest_new_codart" maxlength="32" tabindex="1" /><input class="btn btn-xs" type="submit" value="" />
 							&nbsp;<input type="submit" name="cod" value="Genera codice" <?php  echo ($toDo == 'update')?'disabled':'';?>></td> <!-- M1 modificato a mano -->
                         </div>
                     </div>

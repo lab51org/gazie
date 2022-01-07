@@ -2,7 +2,7 @@
 /*
   --------------------------------------------------------------------------
   GAzie - Gestione Azienda
-  Copyright (C) 2004-2021 - Antonio De Vincentiis Montesilvano (PE)
+  Copyright (C) 2004-2022 - Antonio De Vincentiis Montesilvano (PE)
   (http://www.devincentiis.it)
   <http://gazie.sourceforge.net>
   --------------------------------------------------------------------------
@@ -757,7 +757,7 @@ $ric_mastro = substr($form['artico'], 0, 3);
 
 $select_artico = new selectartico("artico");
 				$select_artico->addSelected($form['artico']);			
-				$select_artico->output(substr($form['cosear'], 0, 20));
+				$select_artico->output(substr($form['cosear'], 0,32));
 
     // Antonio Germani > Inizio LOTTO in uscita o in entrata o creazione nuovo
 if ($form['artico'] != "" && intval( $item_artico['lot_or_serial'] && $form['caumag']<>99) == 1) { // se l'articolo prevede il lotto e non è un inventario, apro la gestione lotti nel form 
