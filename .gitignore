@@ -2,9 +2,7 @@
 ._.DS_Store
 .DS_Store
 .DS_Store/
-favicon.ico
-fonts/
-img/
-library/tcpdf/cache/
-style.css
 data/
+library/tcpdf/cache/
+config/config/gconfig.myconf.php
+config/config/gconfig.php

@@ -22,7 +22,7 @@
   Fifth Floor Boston, MA 02110-1335 USA Stati Uniti.
   --------------------------------------------------------------------------
  */
-require("../../library/include/datlib.inc.php");
+//require("../../library/include/datlib.inc.php");
 // include the config
 require_once('./config_login.php');
 

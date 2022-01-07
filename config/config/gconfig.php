@@ -27,20 +27,20 @@
 
  /*
 --------=======oooooooooooo!!!!!  ATTENZIONE !!!!!ooooooooooo========-------------
-QUESTO FILE DI CONFIGURAZIONE CONTIENE UNA SERIE DI SETTAGGI ADATTI AD UN AMBIENTE DI 
-SVILUPPO E POTENZIALMENTE INSICURO IN QUANTO AD ES. USA IL NOME UTENTE root SENZA 
+QUESTO FILE DI CONFIGURAZIONE CONTIENE UNA SERIE DI SETTAGGI ADATTI AD UN AMBIENTE DI
+SVILUPPO E POTENZIALMENTE INSICURO IN QUANTO AD ES. USA IL NOME UTENTE root SENZA
 PASSWORD PER ACCEDERE AL DATABASE.
-PER POTER USARE GAZIE IN PRODUZIONE OCCORRE PERSONALIZZARE QUESTI PARAMETRI CAMBIANDO 
+PER POTER USARE GAZIE IN PRODUZIONE OCCORRE PERSONALIZZARE QUESTI PARAMETRI CAMBIANDO
 IL NOME DEL FILE "gconfig.myconf.default.php" IN "gconfig.myconf.php".
-SUCCESSIVAMENTE "gconfig.myconf.php" LO SI DOVRA' MODIFICARE IN ACCORDO CON LE 
-IMPOSTAZIONI DEL VOSTRO SERVER. FACENDO COSI' EVITERETE DI USARE I SETTAGGI CONTENUTI 
+SUCCESSIVAMENTE "gconfig.myconf.php" LO SI DOVRA' MODIFICARE IN ACCORDO CON LE
+IMPOSTAZIONI DEL VOSTRO SERVER. FACENDO COSI' EVITERETE DI USARE I SETTAGGI CONTENUTI
 IN QUESTO FILE CHE SONO APPUNTO INADATTI E CHE VERREBBE SOVRASCRITTO AD OGNI AGGIORNAMENTO
-DI GAZIE, AGGIORNAMENTO CHE CONSISTE, APPUNTO, NELLA SOVRASCRITTURA DI TUTTI I FILES 
+DI GAZIE, AGGIORNAMENTO CHE CONSISTE, APPUNTO, NELLA SOVRASCRITTURA DI TUTTI I FILES
 DELLA CARTELLA "gazie" COMPRESO IL PRESENTE "gconfig.php"
 */
- 
 
- 
+
+
  if (isset($_SERVER['SCRIPT_FILENAME']) && (str_replace('\\', '/', __FILE__) == $_SERVER['SCRIPT_FILENAME'])) {
     exit('Accesso diretto non consentito');
 }
@@ -54,10 +54,10 @@ if (file_exists($fileConfPers)) {
 
 
 // abilita il debug delle variabili nel footer della pagina (impostare true/false)
-$debug_active = (defined('debug_active')) ? debug_active : FALSE;
+$debug_active = (defined('debug_active')) ? debug_active : TRUE;
 
 // definisco il livello di verbosità degli errori (https://www.php.net/manual/en/errorfunc.constants.php)
-$error_reporting_level = (defined('error_reporting_level')) ? error_reporting_level : 0;
+$error_reporting_level = (defined('error_reporting_level')) ? error_reporting_level : 32767;
 
 // attiva la modalità manutenzione non è consentito l'accesso e l'uso dei moduli (FALSE oppure 'email amministratore')
 $maintenance = (defined('maintenance')) ? maintenance : FALSE;
@@ -78,24 +78,24 @@ $NomeDB = (defined('NomeDB')) ? NomeDB : 'mysqli';
 //
 // $Host = "mysql.2freehosting.com:3306";
 //
-$Host = (defined('Host')) ? Host : 'localhost';
+$Host = (defined('Host')) ? Host : '172.22.0.2';
 
 //
 // Nome della base di dati a cui ci si connette.
 //
-$Database = (defined('Database')) ? Database : 'gazie_prod';
+$Database = (defined('Database')) ? Database : 'gazie_dev';
 
 //
 // Utente della base di dati che ha il permesso di accedervi con tutti
 // i privilegi necessari.
 //
-$User = (defined('User')) ? User : 'gazie_prod';
+$User = (defined('User')) ? User : 'root';
 
 //
 // Parola d'ordine necessaria per accedere alla base di dati
 // in qualità di utente $User.
 //
-$Password = (defined('Password')) ? Password : 'j27Kr5^u';
+$Password = (defined('Password')) ? Password : 'tiger';
 
 //
 // Porta sulla quale è in ascolto il database (normalmente 3306 per mysql, 3307 per mariadb)
