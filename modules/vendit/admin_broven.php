@@ -2,7 +2,7 @@
 /*
   --------------------------------------------------------------------------
   GAzie - Gestione Azienda
-  Copyright (C) 2004-2021 - Antonio De Vincentiis Montesilvano (PE)
+  Copyright (C) 2004-2022 - Antonio De Vincentiis Montesilvano (PE)
   (http://www.devincentiis.it)
   <http://gazie.sourceforge.net>
   --------------------------------------------------------------------------
@@ -26,6 +26,7 @@ require("../../library/include/datlib.inc.php");
 require("../../modules/magazz/lib.function.php");
 $admin_aziend = checkAdmin();
 $pdf_to_modal = gaz_dbi_get_row($gTables['company_config'], 'var', 'pdf_reports_send_to_modal')['val'];
+$scorrimento = gaz_dbi_get_row($gTables['company_config'], 'var', 'autoscroll_to_last_row')['val'];
 $after_newdoc_back_to_doclist=gaz_dbi_get_row($gTables['company_config'], 'var', 'after_newdoc_back_to_doclist')['val'];
 $msgtoast = "";
 $msg = "";
@@ -219,7 +220,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
             $form['rows'][$next_row]['descri'] = substr($v['descri'], 0, 100);
             $form['rows'][$next_row]['tiprig'] = intval($v['tiprig']);
             $form['rows'][$next_row]['id_doc'] = intval($v['id_doc']);
-            $form['rows'][$next_row]['codart'] = substr($v['codart'], 0, 15);
+            $form['rows'][$next_row]['codart'] = substr($v['codart'], 0, 32);
 			$form['rows'][$next_row]['good_or_service'] = intval($v['good_or_service']);
             $form['rows'][$next_row]['pervat'] = preg_replace("/\,/", '.', $v['pervat']);
             $form['rows'][$next_row]['tipiva'] = strtoupper(substr($v['tipiva'], 0, 1));
@@ -1440,7 +1441,7 @@ if ($form['id_tes'] > 0) {
     $title = ucfirst($script_transl[$toDo] . $script_transl[0][$form['tipdoc']]);
 }
 echo '<script type="text/javascript">';
-if (empty($msg) && !isset($_POST['ins'])) { // se ho un errore non scrollo
+if ( empty($msg) && !isset($_POST['ins']) && $scorrimento == '1' ) { // se ho un errore non scrollo
 	if (!empty($_POST['last_focus'])){
 		$idlf='#'.$_POST['last_focus'];
 		$_POST['last_focus']='';

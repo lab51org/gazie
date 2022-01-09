@@ -2,7 +2,7 @@
 /*
   --------------------------------------------------------------------------
   GAzie - Gestione Azienda
-  Copyright (C) 2004-2021 - Antonio De Vincentiis Montesilvano (PE)
+  Copyright (C) 2004-2022 - Antonio De Vincentiis Montesilvano (PE)
   (http://www.devincentiis.it)
   <http://gazie.sourceforge.net>
   --------------------------------------------------------------------------
@@ -44,11 +44,12 @@ foreach($syncmod as $k=>$v){
 	$gSync = new $classname();
 	if($gSync->api_token){
 	  $datares=[];
-      $gSync->get_sync_status($id);
+      $gSync->get_sync_status(0);
 	}
 	$datares[$v]=$gSync->rawres;
     $_SESSION['menu_alerts'][$v]=$datares[$v];
   }
+  
 }
 echo json_encode($datares);
 ?>

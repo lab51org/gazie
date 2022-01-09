@@ -2,7 +2,7 @@
 /*
   --------------------------------------------------------------------------
   GAzie - Gestione Azienda
-  Copyright (C) 2004-2021 - Antonio De Vincentiis Montesilvano (PE)
+  Copyright (C) 2004-2022 - Antonio De Vincentiis Montesilvano (PE)
   (http://www.devincentiis.it)
   <http://gazie.sourceforge.net>
   --------------------------------------------------------------------------
@@ -28,6 +28,7 @@ require("../../modules/vendit/lib.function.php");
 require("../../modules/camp/lib.function.php");
 $admin_aziend = checkAdmin();
 $pdf_to_modal = gaz_dbi_get_row($gTables['company_config'], 'var', 'pdf_reports_send_to_modal')['val'];
+$scorrimento = gaz_dbi_get_row($gTables['company_config'], 'var', 'autoscroll_to_last_row')['val'];
 $after_newdoc_back = gaz_dbi_get_row($gTables['company_config'], 'var', 'after_newdoc_back_to_doclist')['val'];
 $msg = array('err' => array(), 'war' => array());
 $anagrafica = new Anagrafica();
@@ -139,7 +140,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
 					while ($row = gaz_dbi_fetch_array($rigdoc)) {
 						$_POST['rows'][$i]['descri'] = substr($row['descri'], 0, 100);
 						$_POST['rows'][$i]['tiprig'] = intval($row['tiprig']);
-						$_POST['rows'][$i]['codart'] = substr($row['codart'], 0, 15);
+						$_POST['rows'][$i]['codart'] = substr($row['codart'], 0,32);
 						$_POST['rows'][$i]['codice_fornitore'] = substr($row['codice_fornitore'], 0, 50);	// Aggiunto a Mano
 						$_POST['rows'][$i]['pervat'] = preg_replace("/\,/", '.', $row['pervat']);
 						$_POST['rows'][$i]['ritenuta'] = floatval(preg_replace("/\,/", '.', $row['ritenuta']));
@@ -155,7 +156,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
 						$_POST['rows'][$i]['id_order'] = intval($row['id_order']);
 						$_POST['rows'][$i]['id_orderman'] = intval($row['id_orderman']);
 						$_POST['rows'][$i]['id_rig'] = intval($row['id_rig']);
-						$value = gaz_dbi_get_row($gTables['artico'], "codice", substr($row['codart'], 0, 15));
+						$value = gaz_dbi_get_row($gTables['artico'], "codice", substr($row['codart'], 0,32));
 						$_POST['rows'][$i]['quality'] = strval($value['quality']);
 						$_POST['rows'][$i]['annota'] = substr($value['annota'], 0, 50);
 						$_POST['rows'][$i]['pesosp'] = floatval($value['peso_specifico']);
@@ -280,7 +281,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
             }
             $form['rows'][$i]['descri'] = substr($value['descri'], 0, 100);
             $form['rows'][$i]['tiprig'] = intval($value['tiprig']);
-            $form['rows'][$i]['codart'] = substr($value['codart'], 0, 15);
+            $form['rows'][$i]['codart'] = substr($value['codart'], 0,32);
             $form['rows'][$i]['codice_fornitore'] = substr($value['codice_fornitore'], 0, 50);	// Aggiunto a Mano
             $form['rows'][$i]['pervat'] = preg_replace("/\,/", '.', $value['pervat']);
             $form['rows'][$i]['ritenuta'] = floatval(preg_replace("/\,/", '.', $value['ritenuta']));
@@ -1981,7 +1982,7 @@ $(function () {
         this.value = this.value.replace(/[^\d]/g, '');
     });
     <?php
-    if ( count($msg['err'])<=0 && count($msg['war'])<=0 && $form['clfoco']>=100000000 && !isset($_POST['ins']) ) { // scrollo solo e se ho selezionato il cliente e non ci sono errori
+    if ( count($msg['err'])<=0 && count($msg['war'])<=0 && $form['clfoco']>=100000000 && !isset($_POST['ins']) && $scorrimento=='1') { // scrollo solo se voluto, ho selezionato il cliente e non ci sono errori
         ?>
         $("html, body").delay(100).animate({scrollTop: $('#search_cosear').offset().top-100}, 1000);
         <?php
@@ -2761,7 +2762,7 @@ echo '<input type="hidden" value="' . $strArrayDest . '" name="rs_destinazioni">
 									<?php
 									$select_artico = new selectartico("in_codart");
 									$select_artico->addSelected($form['in_codart']);
-									$select_artico->output(substr($form['cosear'], 0, 20), 'C', "");
+									$select_artico->output(substr($form['cosear'], 0, 32), 'C', "");
 									?>
 									</div>
 							</div>

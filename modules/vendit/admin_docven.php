@@ -2,7 +2,7 @@
 /*
   --------------------------------------------------------------------------
   GAzie - Gestione Azienda
-  Copyright (C) 2004-2021 - Antonio De Vincentiis Montesilvano (PE)
+  Copyright (C) 2004-2022 - Antonio De Vincentiis Montesilvano (PE)
   (http://www.devincentiis.it)
   <http://gazie.sourceforge.net>
   --------------------------------------------------------------------------
@@ -27,6 +27,7 @@ require("../../modules/magazz/lib.function.php");
 
 $admin_aziend = checkAdmin();
 $backDocList = gaz_dbi_get_row($gTables['company_config'], 'var', 'after_newdoc_back_to_doclist')['val'];
+$scorrimento = gaz_dbi_get_row($gTables['company_config'], 'var', 'autoscroll_to_last_row')['val'];
 $msgtoast = "";
 $msg = ['err'=>[],'war'=>[]];
 $calc = new Compute;
@@ -292,7 +293,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
             }
             $form['rows'][$next_row]['descri'] = substr($v['descri'], 0, 100);
             $form['rows'][$next_row]['tiprig'] = intval($v['tiprig']);
-            $form['rows'][$next_row]['codart'] = substr($v['codart'], 0, 15);
+            $form['rows'][$next_row]['codart'] = substr($v['codart'], 0, 32);
             if ($_POST['hidden_req']=="fae_tipo_cassa".$next_row && $v['tiprig']==4) {
 				// se provengo da un cambiamento di un rigo cassa previdenziale aggiorno la descrizione
 	            $xml = simplexml_load_file('../../library/include/fae_tipo_cassa.xml');
@@ -1712,7 +1713,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
 					|| $form['in_tiprig'] == 13 || $form['in_tiprig'] == 14
 					|| $form['in_tiprig'] == 15 || $form['in_tiprig'] == 16
 					|| $form['in_tiprig'] == 21 || $form['in_tiprig'] == 25
-					|| $form['in_tiprig'] == 31) { //per  fattura elettronica riferibili ad altri righi o a tutto il documento
+					|| $form['in_tiprig'] == 26 || $form['in_tiprig'] == 31) { //per  fattura elettronica riferibili ad altri righi o a tutto il documento
                 $form['rows'][$next_row]['codart'] = "";
                 $form['rows'][$next_row]['annota'] = "";
                 $form['rows'][$next_row]['pesosp'] = "";
@@ -2254,7 +2255,7 @@ $script_transl = HeadMain(0, array(/* 'tiny_mce/tiny_mce', */
         $("#initra").datepicker({showButtonPanel: true, showOtherMonths: true, selectOtherMonths: true});
         $("#datemi").datepicker({showButtonPanel: true, showOtherMonths: true, selectOtherMonths: true});
 <?php
-if ( count($msg['err'])<=0 && count($msg['war'])<=0 && $form['clfoco']>=100000000 ) { // scrollo solo e se ho selezionato il cliente e non ci sono errori
+if ( count($msg['err'])<=0 && count($msg['war'])<=0 && $form['clfoco']>=100000000  && $scorrimento == '1' ) { // scrollo solo se voluto, ho selezionato il cliente e non ci sono errori
     ?>
             $("html, body").delay(100).animate({scrollTop: $('#search_cosear').offset().top-100}, 1000);
     <?php
@@ -3090,6 +3091,32 @@ echo '<td>
 					';
             $last_row[] = array_unshift($last_row, $script_transl['typerow'][$v['tiprig']]);
             break;
+        case "26": // INTENTO dichiarazione d'intento (FaE 2.2.1.16)
+                echo "	<td>
+                        <button type=\"image\" name=\"upper_row[" . $k . "]\" class=\"btn btn-default btn-xs\" title=\"" . $script_transl['3'] . "!\">
+                                    <i class=\"glyphicon glyphicon-arrow-up\">" . ($k+1) . "</i>
+                                </button>
+                </td>
+                <td title=\"" . $script_transl['update'] . $script_transl['thisrow'] . "!\">
+						<input class=\"btn btn-xs btn-secondary btn-block\" type=\"submit\" name=\"upd_row[$k]\" value=\"" . $script_transl['typerow'][$v['tiprig']] . "\" /></td>
+                <td colspan=\"8\">
+                    &nbsp;Riferimento testo&nbsp;
+                    <input type=\"text\" name=\"rows[$k][descri]\" value=\"$descrizione\" size=\"27\" />
+                    &nbsp;data emissione
+                    <input type=\"date\" name=\"rows[$k][codart]\" value=\"".$v['codart']."\" size=\"10\" />
+                </td>
+                <td><input type=\"hidden\" name=\"rows[$k][unimis]\" value=\"\" />
+                <input type=\"hidden\" name=\"rows[$k][quanti]\" value=\"\" />
+                <input type=\"hidden\" name=\"rows[$k][prelis]\" value=\"\" />
+                <input type=\"hidden\" name=\"rows[$k][sconto]\" value=\"\" />
+                <input type=\"hidden\" name=\"rows[$k][provvigione]\" value=\"\" />
+                </td>\n";
+                echo '<input type="hidden" value="" name="rows[' . $k . '][cod_operazione]" />
+                        <input type="hidden" value="" name="rows[' . $k . '][recip_stocc]" />
+                        <input type="hidden" value="" name="rows[' . $k . '][recip_stocc_destin]" />
+                        ';
+                $last_row[] = array_unshift($last_row, $script_transl['typerow'][$v['tiprig']]);
+                break;
         case "31": // Dati veicolo 2.3 fattura elettronica
             echo "	<td>
                             <button type=\"image\" name=\"upper_row[" . $k . "]\" class=\"btn btn-default btn-xs\" title=\"" . $script_transl['3'] . "!\">
@@ -3255,7 +3282,7 @@ $gForm->selTypeRow('in_tiprig', $form['in_tiprig']);
 <?php
 $select_artico = new selectartico("in_codart");
 $select_artico->addSelected($form['in_codart']);
-$select_artico->output(substr($form['cosear'], 0, 20));
+$select_artico->output(substr($form['cosear'], 0, 32));
 // Antonio Germani - input ricerca con pistola lettore codice a barre
 if ($toDo == "insert"){
 	$class_btn_confirm='btn-success';
