@@ -175,6 +175,11 @@ function confirFae(link){
     var zipref = $("#doc1_"+tes_id).attr("zip_ref");
     sdiflux = (sdiflux)?"&sdiflux="+sdiflux:"";
     switch (flux_status) {
+        case "PA":
+            $("#dialog_fae_content_PA").addClass("bg-default");
+            $("#dialog_fae_content_PA").show();
+            console.log(flux_status);
+        break;
         case "DI":
             $("#dialog_fae_content_DI").addClass("bg-default");
             $("#dialog_fae_content_DI span").html("<p class=\'text-center\'><a href=\'"+link.href+"&invia"+sdiflux+"\' class=\'btn btn-default\'><b><i class=\'glyphicon glyphicon-send\'></i> Invia solo " + $("#doc1_"+tes_id).attr("dialog_fae_filename")+ "</i> </b></a></p><p><a href=\'"+zipref+"\' class=\'btn btn-warning\'><b><i class=\'glyphicon glyphicon-compressed\'> </i> Impacchetta con eventuali altri precedenti</b></a></p>");
@@ -182,7 +187,7 @@ function confirFae(link){
             console.log(flux_status);
         break;
         case "ZI":
-            $("#dialog_fae_content_ ZI").addClass("bg-default");
+            $("#dialog_fae_content_ZI").addClass("bg-default");
             $("#dialog_fae_content_ZI span").html("<p class=\'text-center\'><a href=\'"+link.href+"&invia"+sdiflux+"\' class=\'btn btn-warning\'><b><i class=\'glyphicon glyphicon-send\'></i> Invia il pacchetto " + $("#doc1_"+tes_id).attr("dialog_fae_filename")+ "</i> </b></a></p><p></p>");
             $("#dialog_fae_content_ZI").show();
             console.log(flux_status);
@@ -317,7 +322,7 @@ function printPdf(urlPrintDoc){
         <div style="display:none;" id="dialog_fae_title" title="<?php echo $script_transl['dialog_fae_title']; ?>"></div>
         <p class="ui-state-highlight" id="dialog_fae_filename"><?php echo $script_transl['dialog_fae_filename']; ?><span></span></p>
         <?php
-        $statuskeys=array('DI','RE','IN','RC','MC','NS','ZI');
+        $statuskeys=array('PA','DI','RE','IN','RC','MC','NS','ZI');
         foreach ( $statuskeys as $v ) {
             echo '<p style="display:none;" class="dialog_fae_content" id="dialog_fae_content_'.$v.'">'.$script_transl['dialog_fae_content_'.$v]."<span></span></p>";
         }
@@ -619,11 +624,17 @@ if ( is_bool($paymov_status) || $paymov_status['style'] == $flt_info || $flt_inf
                                 $last_flux_status = explode(',',$r['refs_flux_status'])[0];
                                 $sdihilight = ( !empty($r['refs_flux_status']) ) ? $script_transl['flux_status_val'][$last_flux_status][1] : 'default';
                                 $sdilabel = ( !empty($r['refs_flux_status']) ) ? $script_transl['flux_status_val'][$last_flux_status][0] : 'da inviare';
-                                if ( $last_flux_status == '' ) { $last_flux_status = 'DI'; }
-                                if ( strlen($r['fattura_elettronica_zip_package'])>10 && $last_flux_status = 'DI') { // il documento è impacchettato e da inviare
+                                if ( $last_flux_status == '' ) {
+									if ( strlen(trim($r['fe_cod_univoco']))==6 ) {
+										$last_flux_status = 'PA';
+									} else {
+										$last_flux_status = 'DI';
+									}
+								}
+                                if ( strlen($r['fattura_elettronica_zip_package'])>10 && ($last_flux_status=='DI' || $last_flux_status=='##' || $last_flux_status=='PA')) { // il documento è impacchettato e da inviare
                                     $r['fae_attuale']=$r['fattura_elettronica_zip_package'];
                                     $sdihilight = ( !empty($r['refs_flux_status']) ) ? $script_transl['flux_status_val'][$last_flux_status][1] : 'default';
-                                    $sdilabel = ( !empty($r['refs_flux_status']) ) ? $script_transl['flux_status_val'][$last_flux_status][0] : 'ZIP da inviare';
+                                    $sdilabel = ( !empty($r['refs_flux_status']) ) ? $script_transl['flux_status_val'][$last_flux_status][0] : ($r['fattura_elettronica_zip_package']!='FAE_ZIP_NOGENERATED') ? 'ZIP da inviare' : '';
                                     $last_flux_status = 'ZI';
                                 }
                             } else { //// installazione senza gestore dei flussi con il SdI
@@ -633,6 +644,10 @@ if ( is_bool($paymov_status) || $paymov_status['style'] == $flt_info || $flt_inf
                                 $sdilabel = 'xml';
                             }
                             switch ($last_flux_status) {
+                                case "##":
+                                case "PA":
+                                $sdititle = 'Scarica il file '.$r['fae_attuale'].' per firmarlo';
+                                break;
                                 case "DI":
                                 $sdititle = 'Invia il file '.$r['fae_attuale'].' o pacchetto';
                                 break;
@@ -649,7 +664,16 @@ if ( is_bool($paymov_status) || $paymov_status['style'] == $flt_info || $flt_inf
                                 $sdititle = 'Il file '.$r['fae_attuale'].' è stato inviato e consegnato al cliente ';
                                 break;
                                 case "MC":
-                                $sdititle = 'Il file '.$r['fae_attuale'].' è stato inviato e ma non consegnato al cliente ';
+                                $sdititle = 'Il file '.$r['fae_attuale'].' è stato inviato ma non consegnato al cliente che potrà recuperarlo dal suo cassetto fiscale ';
+                                break;
+                                case "DT":
+                                $sdititle = 'Il file '.$r['fae_attuale'].' è stato accettato dalla PA cliente per decorrenza termini ';
+                                break;
+                                case "NEEC01":
+                                $sdititle = 'Il file '.$r['fae_attuale'].' è stato accettato dalla PA cliente ';
+                                break;
+                                case "NEEC02":
+                                $sdititle = 'Il file '.$r['fae_attuale'].' è stato rifiutato dalla PA cliente ';
                                 break;
                                 case "NS":
                                 $sdititle = 'Il file '.$r['fae_attuale'].' è stato Scartato, correggi prima di fare il reinviio ';
@@ -658,7 +682,7 @@ if ( is_bool($paymov_status) || $paymov_status['style'] == $flt_info || $flt_inf
                                 $sdititle = 'genera il file '.$r['fae_attuale'].' o fai il '.intval($r['fattura_elettronica_reinvii']+1).'° reinvio ';
                                 break;
                             }
-                            echo '<a class="btn btn-xs btn-'.$sdihilight.' btn-xml" onclick="confirFae(this);return false;" id="doc1_'.$r['id_tes'].'" dialog_fae_reinvio="'.$r['fae_reinvio'].'" dialog_flux_descri="'.$r['flux_descri'].'" dialog_fae_sdiflux="'.$sdi_flux.'" dialog_fae_filename="'.$r['fae_attuale'].'" dialog_fae_numrei="'.$r['fattura_elettronica_reinvii'].'" dialog_fae_numfat="'. $r['tipdoc'].' '. $r['numfat'].'/'. $r['seziva'].'" dialog_flux_status="'. $last_flux_status.'" target="_blank" href="'.$modulo_fae.'" zip_ref="'.$zip_ref.'" title="'.$sdititle.'"> '.strtoupper($sdilabel).' </a><a class="btn btn-xs btn-default" title="Visualizza in stile" href="electronic_invoice.php?id_tes='.$r['id_tes'].'&viewxml" target="_blank"><i class="glyphicon glyphicon-eye-open"></i> </a>';
+                            echo (empty($sdilabel)?'':'<a class="btn btn-xs btn-'.$sdihilight.' btn-xml" onclick="confirFae(this);return false;" id="doc1_'.$r['id_tes'].'" dialog_fae_reinvio="'.$r['fae_reinvio'].'" dialog_flux_descri="'.htmlentities($r['flux_descri']).'" dialog_fae_sdiflux="'.$sdi_flux.'" dialog_fae_filename="'.$r['fae_attuale'].'" dialog_fae_numrei="'.$r['fattura_elettronica_reinvii'].'" dialog_fae_numfat="'. $r['tipdoc'].' '. $r['numfat'].'/'. $r['seziva'].'" dialog_flux_status="'. $last_flux_status.'" target="_blank" href="'.$modulo_fae.'" zip_ref="'.$zip_ref.'" title="'.$sdititle.'"> '.strtoupper($sdilabel).' </a>').'<a class="btn btn-xs btn-default" title="Visualizza in stile" href="electronic_invoice.php?id_tes='.$r['id_tes'].'&viewxml" target="_blank"><i class="glyphicon glyphicon-eye-open"></i> </a>';
                             if ($r['fattura_elettronica_reinvii'] > 0) {
                                 echo '<br/><small>' . $r['fattura_elettronica_reinvii'] . ($r['fattura_elettronica_reinvii']==1 ? ' reinvio' : ' reinvii') . '</small><br/>';
                             }
