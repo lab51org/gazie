@@ -34,6 +34,7 @@ if ((isset($_POST['type'])&&isset($_POST['ref'])) OR (isset($_POST['type']) && i
 	require("../../modules/magazz/lib.function.php");
 	$upd_mm = new magazzForm;
 	$admin_aziend = checkAdmin();
+  $send_fae_zip_package = gaz_dbi_get_row($gTables['company_config'], 'var', 'send_fae_zip_package');
 	switch ($_POST['type']) {
     case "broacq":
       $i=intval($_POST['id_tes']);
@@ -48,11 +49,11 @@ if ((isset($_POST['type'])&&isset($_POST['ref'])) OR (isset($_POST['type']) && i
 		case "docacq":
 			$i=intval($_POST['id_tes']);
 			$data = gaz_dbi_get_row($gTables['tesdoc'], "id_tes", $i);
-			
-			$sync_mods=array();
+
+			$sync_mods=[];
 			$sync_mods=explode(",",$admin_aziend['gazSynchro']);
-			if (in_array('sdipec',$sync_mods)){// se c'è il modulo sdipec tolgo l'acquisizione al file della pec
-				$where = array();
+			if (in_array($send_fae_zip_package['val'],$sync_mods)){ // se c'è il modulo di sincronizzazione fatture elettroniche tolgo l'acquisizione al file
+				$where = [];
 				$where[]="title";
 				$where[]=$data['fattura_elettronica_original_name'];
 				$set['custom_field']="";
