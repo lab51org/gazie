@@ -4,5 +4,7 @@
 .DS_Store/
 data/
 library/tcpdf/cache/
-config/config/gconfig.myconf.php
-config/config/gconfig.php
+.env
+.env.prd
+.env.stg
+.env.dev
