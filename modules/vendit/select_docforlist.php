@@ -46,30 +46,37 @@ function getLastDocument($tipo, $sezione, $anno) {
    switch ($tipo) {
       case 0:  // tutti
          $where = "tipdoc LIKE 'F__' AND YEAR(datfat) = $anno";
+         $orderby= "datfat DESC, protoc DESC";
          break;
       case 1:  //fattura differita
          $where = "tipdoc = 'FAD' AND YEAR(datfat) = $anno";
+         $orderby= "datfat DESC, protoc DESC";
          break;
       case 2:  //fattura immediata
          $where = "(tipdoc = 'FAI' OR tipdoc = 'FAA' ) AND YEAR(datfat) = $anno";
+         $orderby= "datfat DESC, protoc DESC";
          break;
       case 3: //nota di credito
          $where = "tipdoc = 'FNC' AND YEAR(datfat) = $anno";
+         $orderby= "datfat DESC, protoc DESC";
          break;
       case 4: //nota di debito
          $where = "tipdoc = 'FND' AND YEAR(datfat) = $anno";
+         $orderby= "datfat DESC, protoc DESC";
          break;
       case 5: //parcella
          $where = "tipdoc = 'FAP' AND YEAR(datfat) = $anno";
+         $orderby= "datfat DESC, protoc DESC";
          break;
       case 6: //ddt
          $where = "tipdoc LIKE 'DD_' AND YEAR(datemi) = $anno";
+         $orderby= "datemi DESC, numdoc DESC";
          break;
       case 7: //corrispettivo
          $where = "tipdoc LIKE 'VCO' AND YEAR(datemi) = $anno";
+         $orderby= "datemi DESC, numdoc DESC";
          break;
    }
-   $orderby=($tipo==6)?'datemi DESC, numdoc DESC':'datfat DESC, numfat DESC';
    $rs_lastdoc = gaz_dbi_dyn_query("*", $gTables['tesdoc'], $where . " AND seziva = $sezione", $orderby, 0, 1);
    $last = gaz_dbi_fetch_array($rs_lastdoc);
    if ($last) {
@@ -81,7 +88,6 @@ function getLastDocument($tipo, $sezione, $anno) {
       $last['numero'] = 1;
       $last['data_fine'] = date("Y-m-d");
    }
-//   return array('protoc' => intval($last['protoc']), 'numero' => intval($last['numero']), 'template' => $last['template'], 'datfin' => $last['data_fine']);
    return array('protoc' => $last['protoc'], 'numero' => $last['numero'], 'datfin' => $last['data_fine']);
 }
 
@@ -245,7 +251,7 @@ for ($counter = 1; $counter <= 9; $counter++) {
 }
 echo "</select>\n";
 echo "</div>";
-echo "<table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" class=\"FacetFormTABLE\" align=\"center\">";
+echo "<table class=\"Tmiddle table-striped\" align=\"center\">";
 if (!empty($msg)) {
    $message = "";
    $rsmsg = array_slice(explode('+', chop($msg)), 0, -1);
@@ -318,12 +324,12 @@ for ($counter = 1; $counter <= 31; $counter++) {
 echo "\t </select>\n";
 // select del mese
 echo "\t <select name=\"mesini\" class=\"FacetSelect\">\n";
+$gazTimeFormatter->setPattern('MMMM');
 for ($counter = 1; $counter <= 12; $counter++) {
-   $selected = "";
-   if ($counter == $form['mesini'])
-      $selected = "selected";
-   $nome_mese = ucwords(strftime("%B", mktime(0, 0, 0, $counter, 1, 0)));
-   echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
+  $selected = "";
+  if ($counter == $form['mesini']) $selected = "selected";
+  $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
+  echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
 }
 echo "\t </select>\n";
 // select del anno
@@ -351,11 +357,10 @@ echo "\t </select>\n";
 // select del mese
 echo "\t <select name=\"mesfin\" class=\"FacetSelect\">\n";
 for ($counter = 1; $counter <= 12; $counter++) {
-   $selected = "";
-   if ($counter == $form['mesfin'])
-      $selected = "selected";
-   $nome_mese = ucwords(strftime("%B", mktime(0, 0, 0, $counter, 1, 0)));
-   echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
+  $selected = "";
+  if ($counter == $form['mesfin']) $selected = "selected";
+  $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
+  echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
 }
 echo "\t </select>\n";
 // select del anno
@@ -398,8 +403,7 @@ $select_agente->output();
 echo "</td></tr>\n";
 
 echo "<tr>\n
-     <td class=\"FacetFieldCaptionTD\"><input type=\"submit\" name=\"Return\" value=\"" . ucfirst($script_transl['return']) . "\"></td>\n
-     <td align=\"right\" class=\"FacetFooterTD\"><input type=\"submit\" name=\"Print\" value=\"" . ucfirst($script_transl['print']) . "\"></td>\n
+     <td class=\"FacetFooterTD text-center\" colspan=2><input type=\"submit\" class=\"btn btn-warning\" name=\"Print\" value=\"" . ucfirst($script_transl['print']) . "\"></td>\n
      </tr>\n";
 ?>
 </table>

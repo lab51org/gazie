@@ -179,7 +179,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
             $form['rows'][$next_row]['spessore'] = floatval($v['spessore']);
             $form['rows'][$next_row]['peso_specifico'] = floatval($v['peso_specifico']);
             $form['rows'][$next_row]['pezzi'] = floatval($v['pezzi']);
-            $form['rows'][$next_row]['extdoc'] = filter_var($_POST['rows'][$next_row]['extdoc'], FILTER_SANITIZE_STRING);
+            $form['rows'][$next_row]['extdoc'] = filter_var($_POST['rows'][$next_row]['extdoc'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
             if (!empty($_FILES['docfile_' . $next_row]['name'])) {
                 $move = false;
                 $mt = substr($_FILES['docfile_' . $next_row]['name'], -3);
@@ -214,8 +214,8 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
                     $form['in_quality'] = $form['rows'][$k_row]['quality'];
                     $form['in_id_mag'] = $form['rows'][$k_row]['id_mag'];
                     $form['in_extdoc'] = $form['rows'][$k_row]['extdoc'];
-					$orderman = gaz_dbi_get_row($gTables['orderman'], "id", $form['rows'][$k_row]['id_orderman']);
-                    $form['coseprod'] = $orderman['description'];
+                    $orderman = gaz_dbi_get_row($gTables['orderman'], "id", $form['rows'][$k_row]['id_orderman']);
+                    $form['coseprod'] =$orderman?$orderman['description']:'';
                     $form['in_id_orderman'] = $form['rows'][$k_row]['id_orderman'];
                     $form['in_annota'] = $form['rows'][$k_row]['annota'];
                     $form['in_larghezza'] = $form['rows'][$k_row]['larghezza'];
@@ -1035,7 +1035,7 @@ echo "<div align=\"center\" class=\"FacetFormHeaderFont\">$title ";
 $select_fornitore = new selectPartner("clfoco");
 $select_fornitore->selectDocPartner('clfoco', $form['clfoco'], $form['search']['clfoco'], 'clfoco', $script_transl['mesg'], $admin_aziend['masfor']);
 echo "</div>\n";
-echo "<div class=\" table-responsive\"><table class=\"Tlarge table table-striped table-bordered table-condensed\">\n";
+echo "<div class=\"table-responsive\"><table class=\"Tlarge table table-striped table-bordered table-condensed\">\n";
 echo "<tr><td class=\"FacetFieldCaptionTD\">$script_transl[4]</td><td class=\"FacetDataTD\">\n";
 echo "<select name=\"seziva\" class=\"FacetSelect\">\n";
 for ($counter = 1; $counter <= 9; $counter++) {
@@ -1076,9 +1076,10 @@ echo "\t </select>\n";
 echo "\t <select name=\"mesemi\" class=\"FacetSelect\" >\n";
 for ($counter = 1; $counter <= 12; $counter++) {
     $selected = "";
+    $gazTimeFormatter->setPattern('MMMM');
     if ($counter == $form['mesemi'])
         $selected = "selected";
-    $nome_mese = ucwords(strftime("%B", mktime(0, 0, 0, $counter, 1, 0)));
+        $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
     echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
 }
 echo "\t </select>\n";
@@ -1128,9 +1129,7 @@ $quatot = 0;
 $totimpmer = 0.00;
 $totivafat = 0.00;
 $totimpfat = 0.00;
-/** ENRICO FEDELE */
-/* Cominciamo la transizione verso le tabelle bootstrap */
-echo '<div class=" table-responsive">
+echo '<div class="table-responsive">
 	  <table class="Tlarge table table-striped table-bordered table-condensed">
 		  <thead>
 			<tr>
@@ -1399,15 +1398,13 @@ foreach ($form['rows'] as $k => $v) {
             $last_row[] = array_unshift($last_row, $script_transl['typerow'][$v['tiprig']]);
             break;
     }
-    echo '  <td class="FacetColumnTD" align="right">
+    echo '  <td align="right">
 			  <button type="submit" class="btn btn-default btn-sm" name="del[' . $k . ']" title="' . $script_transl['delete'] . $script_transl['thisrow'] . '"><i class="glyphicon glyphicon-remove"></i></button>
 			</td>
 		  </tr>';
 	$ctrl_orderman=$v['id_orderman'];
 }
 
-/** ENRICO FEDELE */
-/* Nuovo alert per scontistica, da visualizzare rigorosamente dopo l'ultima riga inserita */
 if (count($form['rows']) > 0) {
 
     require("../../modules/magazz/lib.function.php");
@@ -1428,8 +1425,19 @@ if (count($form['rows']) > 0) {
 echo '	</tbody>
 	  </table></div>';
 // *** INIZIO RIGO DI INPUT
-echo "<div class=\"FacetSeparatorTD\" align=\"center\">$script_transl[1]</div>\n";
-echo "<div class=\" table-responsive\"><table class=\"Tlarge table table-striped table-bordered table-condensed\">\n";
+		$class_conf_row='btn-success';
+    $descributton = $script_transl['insert'];
+    $nurig = count($form['rows'])+1;
+    $expsts = explode('_',$form['in_status']);
+    if (isset($expsts[1])){
+      $nurig = (int)$expsts[1]+1;
+      $class_conf_row = 'btn-warning';
+      $descributton = $script_transl['update'];
+    }
+    $descributton .= ' il rigo '.$nurig;
+
+echo "<div class=\"FacetSeparatorTD\" align=\"center\"><b>$script_transl[1]</b></div>\n";
+echo "<div class=\"table-responsive\"><table class=\"table input-area\">\n";
 echo "<input type=\"hidden\" value=\"{$form['in_codice_fornitore']}\" name=\"in_codice_fornitore\" />\n";
 echo "<input type=\"hidden\" value=\"{$form['in_quality']}\" name=\"in_quality\" id=\"in_quality\" />\n";
 echo "<input type=\"hidden\" value=\"{$form['in_descri']}\" name=\"in_descri\" />\n";
@@ -1446,42 +1454,36 @@ echo "<input type=\"hidden\" value=\"{$form['in_spessore']}\" name=\"in_spessore
 echo "<input type=\"hidden\" value=\"{$form['in_peso_specifico']}\" name=\"in_peso_specifico\" />\n";
 echo "<input type=\"hidden\" value=\"{$form['in_pezzi']}\" name=\"in_pezzi\" />\n";
 echo "<input type=\"hidden\" value=\"{$form['in_status']}\" name=\"in_status\" />\n";
-echo '<tr><td class="FacetColumnTD">'.$script_transl[17].": ";
+echo '<tbody><tr><td>'.$script_transl[17].": ";
 $gForm->selTypeRow('in_tiprig', $form['in_tiprig']);
 echo $script_transl[15].': ';
 $select_artico = new selectartico("in_codart");
 $select_artico->addSelected($form['in_codart']);
 $select_artico->output($form['cosear']);
 echo '&nbsp;<a href="#" id="addmodal" href="#myModal" data-toggle="modal" data-target="#edit-modal" class="btn btn-xs btn-default"><i class="glyphicon glyphicon-export"></i> ' . $script_transl['add_article'] . '</a>';
-/** ENRICO FEDELE */
-echo "</td><td class=\"FacetColumnTD\">$script_transl[16]: <input type=\"text\" value=\"{$form['in_quanti']}\" maxlength=\"11\" name=\"in_quanti\" tabindex=\"5\" accesskey=\"q\">\n";
-/*
-  echo "</td><td class=\"FacetColumnTD\" align=\"right\"><input type=\"image\" name=\"in_submit\" src=\"../../library/images/vbut.gif\" tabindex=\"6\" title=\"".$script_transl['submit'].$script_transl['thisrow']."!\">\n"; */
-/** ENRICO FEDELE */
-/* glyph-icon */
+echo "</td><td>$script_transl[16]: <input type=\"text\" value=\"{$form['in_quanti']}\" maxlength=\"11\" name=\"in_quanti\" tabindex=\"5\" accesskey=\"q\">\n";
 echo '  </td>
-		<td class="FacetColumnTD" align="right">
-			<button type="submit" class="btn btn-default btn-sm" name="in_submit" title="' . $script_transl['submit'] . $script_transl['thisrow'] . '" tabindex="6"><i class="glyphicon glyphicon-ok"></i></button>
+		<td align="right">
+			<button type="submit" class="btn '.$class_conf_row.'" name="in_submit" tabindex="6">'.$descributton.'<i class="glyphicon glyphicon-ok"></i></button>
 		</td>
 	   </tr>';
-/** ENRICO FEDELE */
 echo "</td></tr>\n";
-echo '<tr><td class="FacetColumnTD">';
+echo '<tr><td>';
 echo $script_transl[18].": ";
 $select_codric = new selectconven("in_codric");
 $select_codric->addSelected($form['in_codric']);
 $select_codric->output(substr($form['in_codric'], 0, 1));
 echo " %$script_transl[24]: <input type=\"text\" value=\"{$form['in_sconto']}\" maxlength=\"4\" name=\"in_sconto\">";
 
-echo "</td><td class=\"FacetColumnTD\"> $script_transl[19]: ";
+echo "</td><td> $script_transl[19]: ";
 $select_in_codvat = new selectaliiva("in_codvat");
 $select_in_codvat->addSelected($form["in_codvat"]);
 $select_in_codvat->output();
-echo "</td><td class=\"FacetColumnTD\"></td></tr></table></div>\n";
+echo "</td><td></td></tr></tbody></table></div>\n";
 // *** FINE RIGO DI INPUT
 
 // *** INIZIO FOOTER
-echo "<div class=\"FacetSeparatorTD\" align=\"center\">$script_transl[2]</div>
+echo "<div class=\"FacetSeparatorTD\" align=\"center\"><b>$script_transl[2]</b></div>
 		<div class=\"table-responsive\">
 		<table class=\"Tlarge table table-striped table-bordered table-condensed\">
 			<input type=\"hidden\" value=\"{$form['speban']}\" name=\"speban\" />
@@ -1523,8 +1525,8 @@ echo "	</td>
                                 <input type=\"hidden\" name=\"destin\" value=\"" . $form['destin'] . "\" />
 						</td>\n";
     } else {
-        echo "			<td class=\"FacetDataTD\">";
-        echo "				<textarea rows=\"1\" cols=\"30\" name=\"destin\" class=\"FacetInput\">" . $form["destin"] . "</textarea>
+        echo '<td class="FacetDataTD text-center" colspan=2>';
+        echo "<textarea rows=\"1\" cols=\"40\" name=\"destin\" class=\"FacetInput\">" . $form["destin"] . "</textarea>
 						</td>
 						<input type=\"hidden\" name=\"id_des_same_company\" value=\"" . $form['id_des_same_company'] . "\">
 						<input type=\"hidden\" name=\"id_des\" value=\"" . $form['id_des'] . "\">
@@ -1560,35 +1562,27 @@ foreach ($castel as $k => $v) {
 }
 
 if ($next_row > 0) {
-    echo '	<tr>
-					<td colspan="2"></td>
-					<td class="text-right">' . number_format($totimpmer, 2, '.', '') . '</td>
-					<td class="text-right">' . gaz_format_number(($totimpfat - $totimpmer - $form['traspo'] - $form['spevar']), 2, '.', '') . '</td>
-					<td class="text-right">' . number_format($totimpfat, 2, '.', '') . '</td>
-					<td class="text-right">' . number_format($totivafat, 2, '.', '') . '</td>
-					<td class="text-right">' . $quatot . '</td>
-					<td class="text-right">' . number_format(($totimpfat + $totivafat), 2, '.', '') . '</td>
-				  </tr>';
-
-    if ($toDo == 'update') {
-        echo '<tr>
-		   			<td colspan="8" class="text-right alert alert-success">
-		   				<input type="submit" accesskey="m" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="Modifica" />
-					</td>
-				 </tr>';
-    } else {
-        echo '<tr>
-		   			<td colspan="8" class="text-right alert alert-success">
-		   				<input type="submit" accesskey="i" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="Inserisci" />
-					</td>
-				</tr>';
-    }
+  echo '<tr>
+				<td colspan="2"></td>
+				<td class="text-right">' . number_format($totimpmer, 2, '.', '') . '</td>
+				<td class="text-right">' . gaz_format_number(($totimpfat - $totimpmer - $form['traspo'] - $form['spevar']), 2, '.', '') . '</td>
+				<td class="text-right">' . number_format($totimpfat, 2, '.', '') . '</td>
+				<td class="text-right">' . number_format($totivafat, 2, '.', '') . '</td>
+				<td class="text-right">' . $quatot . '</td>
+				<td class="text-right">' . number_format(($totimpfat + $totivafat), 2, '.', '') . '</td>
+			  </tr></table>';
+  echo '<div class="col-xs-12 FacetFooterTD text-center">';
+  if ($toDo == 'update') {
+    echo '<input type="submit" class="btn btn-warning" accesskey="m" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="Modifica" />';
+  } else {
+    echo '<input type="submit" class="btn btn-warning" accesskey="i" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="Inserisci" />';
+  }
+  echo '</div>';
+} else {
+  echo '</table>';
 }
-
-echo '	</table></div>';
 // *** FINE FOOTER
-?>
-</form>
+?></div></form>
 <!-- ENRICO FEDELE - INIZIO FINESTRA MODALE -->
 <div id="edit-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-sm">

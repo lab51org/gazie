@@ -24,11 +24,15 @@
  */
 $config = new UserConfig;
 
-$pdb=gaz_dbi_get_row($gTables['company_config'], 'var', 'menu_alerts_check')['val'];
-$period=($pdb==0)?60:$pdb;
-if ( isset( $maintenance ) && $maintenance != FALSE ) header("Location: ../../modules/root/maintenance.php");
+$pdb = gaz_dbi_get_row($gTables['company_config'], 'var', 'menu_alerts_check')['val'];
+$period = ($pdb == 0)? 60 : $pdb;
 
 require("../../library/theme/lte/function.php");
+
+if ( isset( $maintenance ) && $maintenance!=FALSE && $maintenance!=$_SESSION['user_email'] ) {
+	header("Location: ../../modules/root/maintenance.php");
+	exit();
+}
 
 if (!strstr($_SERVER["REQUEST_URI"], "login_admin") == "login_admin.php") {
     $_SESSION['lastpage'] = $_SERVER["REQUEST_URI"];
@@ -91,7 +95,7 @@ if (isset( $scriptname) && $scriptname != $prev_script && $scriptname != 'admin.
     <link rel="stylesheet" href="../../library/theme/lte/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="../../library/theme/lte/ionicons/css/ionicons.min.css">
     <link rel="stylesheet" href="../../library/theme/lte/adminlte/dist/css/AdminLTE.css">
-    <link rel="stylesheet" href="../../library/theme/lte/adminlte/dist/css/skins/skin-gazie.css"> <!-- _all-skins.min.css">-->
+    <!-- <link rel="stylesheet" href="../../library/theme/lte/adminlte/dist/css/skins/skin-gazie.css">  _all-skins.min.css">-->
     <link href="../../js/jquery.ui/jquery-ui.css" rel="stylesheet">
 		<script src="../../js/jquery/jquery.js"></script>
 
@@ -107,36 +111,29 @@ if (isset( $scriptname) && $scriptname != $prev_script && $scriptname != 'admin.
         <link href="../../library/theme/lte/scheletons/<?php echo $style; ?>" rel="stylesheet" type="text/css" />
         <link href="../../library/theme/lte/skins/<?php echo $skin; ?>" rel="stylesheet" type="text/css" />
         <style>
-            .company-color, .company-color-bright, li.user-header {
-              background-color: #<?php echo $admin_aziend['colore']; ?>;
-              filter: brightness(120%);
-              color: black;
-            }
-            .company-color-logo {
+            .company-color, .company-color-bright, li.user-header, .company-color-logo, .dropdown-menu > li > a:hover, .dropdown-menu > li.user-body:hover, .navbar-default .navbar-nav > li > a:hover
+            {
               background-color: #<?php echo $admin_aziend['colore']; ?>;
               color: black;
             }
             .company-color-logo:hover {
               filter: brightness(80%);
             }
-            .dropdown-menu > li > a:hover {
-                background-color: #<?php echo $admin_aziend['colore']; ?>;
+            li.blink{
+              animation:blink 700ms infinite alternate;
+              padding-top:10px;
             }
-            .navbar-default .navbar-nav > li > a:hover {
-                background-color: #<?php echo $admin_aziend['colore']; ?>;
+            li.blink>a.btn{
+              padding:5px;
             }
-			li.blink{
-			  animation:blink 700ms infinite alternate;
-			  padding-top:10px;
-			}
-			li.blink>a.btn{
-			  padding:5px;
-			}
-			@keyframes blink {
-				from { opacity:1; } to { opacity:0; }
-			}
+            @keyframes blink {
+              from { opacity:1; } to { opacity:0; }
+            }
             .ui-dialog-buttonset>button.btn.btn-confirm:first-child {
                 background-color: #f9b54d;
+            }
+            .dropdown-menu > li.user-body > a {
+              white-space: normal;
             }
         </style>
 <script>
@@ -327,13 +324,13 @@ setInterval(menu_check_from_modules,<?php echo intval((int)$period*60000);?>);
                             if ($row_access_mod && $row_access_mod['access'] == 3 ) {
                                 //visualizzo la documentazione standard
 								require '../' . $module . '/menu.' . $admin_aziend['lang'] . '.php';
-                                echo '<li><a id="docmodal" href="#myModal" data-toggle="modal" data-target="#doc_modal" title="Documentazione modulo '. $transl[$module]['name'] .'" module="'. $module .'"><i class="fa fa-info-circle"></i><span class="hidden-xs">'.$transl[$module]['name']."</span></a></li>";
+                                echo '<li><a id="docmodal" href="#myModal" data-toggle="modal" data-target="#doc_modal" title="Documentazione modulo '. $transl[$module]['name'] .'" module="'. $module .'"><img src="../'.$module.'/'.$module.'.png" height="32"><span class="hidden-xs">'.$transl[$module]['name']."</span></a></li>";
                             }
                             ?>
                             <!-- Messages: style can be found in dropdown.less-->
                             <li class="dropdown messages-menu">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    <i class="fa fa-star" style="color: yellow"></i>
+                                    <i class="fa fa-star" style="color: yellow; text-shadow: 0 0 10px #000;"></i>
                                     <!--<span class="label label-success">4</span>-->
                                 </a>
                                 <ul class="dropdown-menu">
@@ -399,7 +396,7 @@ setInterval(menu_check_from_modules,<?php echo intval((int)$period*60000);?>);
                             <!-- Sezione link più usati -->
                             <li class="dropdown messages-menu">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    <i class="fa fa-clock-o"></i>
+                                    <i class="fa fa-clock-o" style="color: #a200fb; text-shadow: 0 0 10px #db00fb;"></i>
                                     <!--<span class="label label-success">4</span>-->
                                 </a>
                                 <ul class="dropdown-menu">
@@ -471,15 +468,14 @@ setInterval(menu_check_from_modules,<?php echo intval((int)$period*60000);?>);
                             <!-- User Account: style can be found in dropdown.less -->
                             <li class="dropdown user user-menu">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    <img src="<?php echo '../root/view.php?table=admin&field=user_name&value=' . $admin_aziend["user_name"]; ?>" class="user-image" alt="User Image">
+                                    <img src="<?php echo '../root/view.php?table=admin&field=user_name&value=' . $admin_aziend["user_name"]; ?>" class="user-image" alt="User Image" style="box-shadow: 0 0 10px #000;">
                                     <span class="hidden-xs"><?php echo $admin_aziend['user_firstname'] . ' ' . $admin_aziend['user_lastname']; ?></span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     <!-- User image -->
-                                    <li class="user-header">
-                                        <img src="<?php echo '../root/view.php?table=admin&field=user_name&value=' . $admin_aziend["user_name"]; ?>" class="img-circle" alt="User Image">
-                                        <p>
-<?php echo $admin_aziend['user_firstname'] . ' ' . $admin_aziend['user_lastname']; ?>
+                                    <li class="user-header"><a href="../config/admin_utente.php?user_name=<?php echo $admin_aziend["user_name"]; ?>&Update">
+                                        <img src="<?php echo '../root/view.php?table=admin&field=user_name&value=' . $admin_aziend["user_name"]; ?>" class="img-circle" alt="User" height=80></a>
+                                        <p><?php echo $admin_aziend['user_firstname'] . ' ' . $admin_aziend['user_lastname']; ?>
                                             <small>
                                                 Questo è il tuo <b><?php echo $admin_aziend['Access']; ?>°</b> accesso<br/>
                                                 La tua password risale al <b><?php echo gaz_format_date($admin_aziend['datpas']); ?></b><br>
@@ -488,26 +484,21 @@ setInterval(menu_check_from_modules,<?php echo intval((int)$period*60000);?>);
                                     </li>
                                     <!-- Menu Body -->
                                     <li class="user-body">
-                                        <div class="col-xs-4 text-center">
-                                            <a href="../config/admin_aziend.php">
-                                                <img class="img-circle" src="../../modules/root/view.php?table=aziend&value=<?php echo $admin_aziend['company_id']; ?>" width="90" alt="Logo" border="0" >
-                                            </a>
+                                      <a href="../config/admin_aziend.php">
+                                        <div class="col-xs-12 text-center">
+                                          <img class="img-circle dit-picture" src="../../modules/root/view.php?table=aziend&value=<?php echo $admin_aziend['company_id']; ?>" height=100 alt="Logo" border="0" >
                                         </div>
-                                        <div class="col-xs-8 text-center" align="center">
-                                            <a href="../../modules/root/admin.php"><?php echo $admin_aziend['ragso1'] . "<br>" . $admin_aziend['ragso2']; ?></a>
-<?php //selectCompany('company_id', $form['company_id'], $form['search']['company_id'], $form['hidden_req'], $script_transl['mesg_co']);  ?>
+                                        <div class="col-xs-12">
+                                          <?php echo $admin_aziend['ragso1'] . " " . $admin_aziend['ragso2']; ?>
                                         </div>
-                                        <!--<div class="col-xs-4 text-center">
-                                          <a href="#">Friends</a>
-                                        </div>-->
+                                      </a>
                                     </li>
                                     <!-- Menu Footer-->
                                     <li class="user-footer">
-                                        <div class="pull-left">
-                                            <a href="../../modules/config/admin_utente.php?user_name=<?php echo $admin_aziend["user_name"]; ?>&Update" class="btn btn-default btn-flat">Profilo</a>
-                                        </div>
-                                        <div class="pull-right">
-                                            <input name="logout" type="submit" value=" Logout " class="btn btn-default btn-flat">
+                                        <div class="text-center">
+                                            <button name="logout" type="submit" value=" Logout" class="btn btn-default">Logout
+                                            <i class="glyphicon glyphicon-log-out"></i>
+                                            </button>
                                         </div>
                                     </li>
                                 </ul>

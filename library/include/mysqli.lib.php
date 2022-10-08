@@ -45,16 +45,22 @@ function gaz_dbi_query($query, $ar = false) {
 }
 
 function connectToDB() {
-   global $link, $Host, $Database, $User, $Password;
-   $link = @mysqli_connect($Host, $User, $Password, $Database, $Port) or die("Was not found, << $Database >>  database! <br />
+  global $link, $Host, $Database, $User, $Password;
+  mysqli_report(MYSQLI_REPORT_OFF);
+  $link = @mysqli_connect($Host, $User, $Password, $Database);
+  if(!$link) {
+    print "Was not found, << $Database >>  database! <br />
              Could not be installed, try to do so by <a href=\"../../setup/install/install.php\"> clicking HERE! </a><br />
              <br />Non &egrave; stata trovata la base dati di nome << $Database >>! <br />
              Potrebbe non essere stato installata, prova a farlo <a href=\"../../setup/install/install.php\"> cliccando QUI! </a> <br />
              <br />No se ha encontrado, la base de datos << $Database >>  ! <br />
-			No pudo ser instalado, trate de hacerlo haciendo <a href=\"../../setup/install/install.php\">  clic AQU&Iacute;! </a>");
-   gaz_dbi_query("/*!50701 SET SESSION sql_mode='' */");
-   gaz_dbi_query("/*M!100204 SET SESSION sql_mode='' */");
-   mysqli_set_charset($link, 'utf8');
+			No pudo ser instalado, trate de hacerlo haciendo <a href=\"../../setup/install/install.php\">  clic AQU&Iacute;! </a>";
+  } else {
+    gaz_dbi_query("/*!50701 SET SESSION sql_mode='' */");
+    gaz_dbi_query("/*M!100204 SET SESSION sql_mode='' */");
+    mysqli_set_charset($link, 'utf8');
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+  }
 }
 
 function createDatabase($Database) {
@@ -62,19 +68,15 @@ function createDatabase($Database) {
 }
 
 function databaseIsOk() {
-   global $link, $Database;
-   $result = True;
-   mysqli_select_db($link, $Database) or ( $result = False); // In $result l'esito della selezione
-   // Verifico che il database non sia vuoto (condizione che può invece verificarsi nel caso in cui un amministratore di sistema fornisca db e user senza grant CREATE)
-   if ($tablesResult = gaz_dbi_query("SELECT COUNT(*) AS numTables FROM information_schema.tables WHERE table_schema = '$Database';")) {
-      $numTables = mysqli_fetch_row($tablesResult);
-      if ($numTables[0] == 0) {
-         $result = False;
-      }
-   } else {
-      $result = False;
-   }
-   return $result;
+  global $link, $Host, $Database, $User, $Password;
+  mysqli_report(MYSQLI_REPORT_OFF);
+  $result = false;
+  $link = @mysqli_connect($Host, $User, $Password, $Database);
+  if($link) {
+    $result = true;
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+  }
+  return $result;
 }
 
 function gaz_dbi_fetch_array($resource, $mode='') {
@@ -178,7 +180,7 @@ function gaz_dbi_get_row($table, $fnm, $fval, $other="", $cell="*") {
    $query = "SELECT $cell FROM $table WHERE $fnm = '$fval' $other";
    $result = gaz_dbi_query($query);
    if (!$result) gaz_die ( $query, "168", __FUNCTION__ );
-   if ($cell != "*") {
+   if (strpos($cell, "*") === FALSE) {
       $row = gaz_dbi_fetch_array($result);
       if ($row) {
          return $row[$cell];
@@ -360,7 +362,7 @@ function gaz_dbi_get_anagra($table, $fnm, $fval) {
    foreach ($fields_anagra as $field_anagra) {
       if ($field_anagra == 'fatt_email') { // gestione ambiguità fatt_email
          $fields .= (empty($fields) ? '' : ', ') . $gTables['anagra'] . "." . gaz_aes_field_anagra($field_anagra) . " AS $field_anagra";
-      } elseif ($field_anagra == 'custom_field') { // gestione ambiguità custom_field 
+      } elseif ($field_anagra == 'custom_field') { // gestione ambiguità custom_field
          $fields .= (empty($fields) ? '' : ', ') . $gTables['anagra'] . "." . gaz_aes_field_anagra($field_anagra) . " AS $field_anagra";
       } else {
          $fields .= (empty($fields) ? '' : ', ') . gaz_aes_field_anagra($field_anagra) . " AS $field_anagra";
@@ -546,7 +548,7 @@ function gaz_dbi_table_insert($table, $value) {
    }
    $query = "INSERT INTO " . $gTables[$table] . " ( " . $colName . " ) VALUES ( " . $colValue . ");";
    $result = gaz_dbi_query($query);
-   if (!$result) { 
+   if (!$result) {
 	  gaz_die ( $query, "532", __FUNCTION__ );
    } else {
 	  return mysqli_insert_id($link);
@@ -783,11 +785,11 @@ function tableUpdate($table, $columns, $codice, $newValue) {
    $first = True;
    $query = "UPDATE " . $gTables[$table] . ' SET';
    foreach ($columns AS $key => $field) {
-	 if (isset($newValue[$field])){ // la colonna la aggiorno solo se passo un nuovo valore 
+	 if (isset($newValue[$field])){ // la colonna la aggiorno solo se passo un nuovo valore
 	  $query .= ($first ? " $field = '" : ", $field = '");
       $first = False;
       $query .= addslashes($newValue[$field])."'";
-	 } 
+	 }
    }
    //   se in $codice c'è un array uso il nome del campo presente all'index [0],
    //   eventualmente anche l'index [2] per il nuovo valore del codice che quindi verrà modificato
@@ -839,14 +841,14 @@ function paymovUpdate($id, $newValue) {
 
 function rigbroInsert($newValue) {
    $table = 'rigbro';
-   $columns = array('id_tes', 'tiprig', 'codart', 'codice_fornitore', 'descri', 'quality','id_body_text', 'unimis', 'lunghezza', 'larghezza', 'spessore', 'peso_specifico', 'pezzi', 'quanti', 'prelis', 'sconto', 'codvat', 'pervat', 'codric', 'provvigione', 'ritenuta', 'delivery_date', 'id_doc', 'id_mag', 'id_orderman', 'status');
+   $columns = array('id_tes', 'tiprig', 'codart', 'codice_fornitore', 'descri', 'quality','id_body_text', 'unimis', 'lunghezza', 'larghezza', 'spessore', 'peso_specifico', 'pezzi', 'quanti', 'prelis', 'sconto', 'codvat', 'pervat', 'codric', 'provvigione', 'ritenuta', 'delivery_date', 'id_doc', 'id_mag', 'id_rigmoc', 'id_orderman', 'status');
    $last_id=tableInsert($table, $columns, $newValue);
    return $last_id;
 }
 
 function rigbroUpdate($codice, $newValue) {
    $table = 'rigbro';
-   $columns = array('id_tes', 'tiprig', 'codart', 'codice_fornitore', 'descri', 'quality', 'id_body_text', 'unimis', 'lunghezza', 'larghezza', 'spessore', 'peso_specifico', 'pezzi', 'quanti','prelis', 'sconto', 'codvat', 'pervat', 'codric', 'provvigione', 'ritenuta', 'delivery_date', 'id_doc', 'id_mag', 'id_orderman', 'status');
+   $columns = array('id_tes', 'tiprig', 'codart', 'codice_fornitore', 'descri', 'quality', 'id_body_text', 'unimis', 'lunghezza', 'larghezza', 'spessore', 'peso_specifico', 'pezzi', 'quanti','prelis', 'sconto', 'codvat', 'pervat', 'codric', 'provvigione', 'ritenuta', 'delivery_date', 'id_doc', 'id_mag', 'id_rigmoc', 'id_orderman', 'status');
    tableUpdate($table, $columns, $codice, $newValue);
 }
 
@@ -877,7 +879,7 @@ function rigdocUpdate($codice, $newValue) {
 
 function tesbroInsert($newValue) {
    $table = 'tesbro';
-   $columns = array('seziva', 'tipdoc','ref_ecommerce_id_order', 'template', 'email', 'print_total', 'delivery_time', 'day_of_validity', 'datemi', 'protoc', 'numdoc', 'numfat', 'datfat', 'clfoco', 'pagame', 'banapp', 'vettor', 'weekday_repeat', 'listin', 'destin', 'id_des', 'id_des_same_company', 'spediz', 'portos', 'imball', 'traspo', 'speban', 'spevar', 'round_stamp', 'cauven', 'caucon', 'caumag', 'id_agente', 'id_parent_doc', 'sconto', 'expense_vat', 'stamp', 'net_weight', 'gross_weight', 'taxstamp', 'virtual_taxstamp', 'units', 'volume', 'initra', 'geneff', 'id_contract', 'id_con', 'id_orderman', 'status', 'adminid');
+   $columns = array('seziva', 'tipdoc','ref_ecommerce_id_order', 'template', 'email', 'print_total', 'delivery_time', 'day_of_validity', 'datemi', 'protoc', 'numdoc', 'numfat', 'datfat', 'clfoco', 'pagame', 'banapp', 'vettor', 'weekday_repeat', 'listin', 'destin', 'id_des', 'id_des_same_company', 'spediz', 'portos', 'imball', 'traspo', 'speban', 'spevar', 'round_stamp', 'cauven', 'caucon', 'caumag', 'id_agente', 'id_parent_doc', 'sconto', 'expense_vat', 'stamp', 'net_weight', 'gross_weight', 'taxstamp', 'virtual_taxstamp', 'units', 'volume', 'initra', 'geneff', 'id_contract', 'id_con', 'id_orderman', 'status', 'custom_field', 'adminid');
    $newValue['adminid'] = $_SESSION["user_name"];
    $last_id=tableInsert($table, $columns, $newValue);
    return $last_id;
@@ -1008,78 +1010,81 @@ function updateAccessRights($adminid, $moduleid, $access, $company_id = 1) {
 }
 
 function getAccessRights($userid = '', $company_id = 1) {
-   global $gTables;
-   $query_co = " AND am.company_id='" . $company_id . "'";
-   $ck_co = gaz_dbi_fields('admin_module');
-   if (!array_key_exists('company_id', $ck_co)) {
-      $query_co = '';
-   };
-   if ($userid == '') {
-      $query = 'SELECT  module.name,
-	  					module.link,
-						module.id AS m1_id,
-						module.access,
-						module.weight 
-				FROM  ' . $gTables['module'] . ' AS module 
-				ORDER BY weight';
-   } else {
-      /* LA: 17-02-2008  */
-      $query = 'SELECT am.adminid, 
-	  				   am.access, 
-					   m1.id AS m1_id, 
-					   m1.name,
-					   m1.link, 
-					   m1.icon, 
-                                           m1.access as m1_ackey,
-					   m1.class, 
-					   m1.weight,
-					   m2.id AS m2_id,
-					   m2.link AS m2_link,
-					   m2.icon AS m2_icon,
-					   m2.class AS m2_class,
-					   m2.translate_key AS m2_trkey,
-					   m2.accesskey AS m2_ackey,
-					   m2.weight AS m2_weight,
-					   m3.id AS m3_id,
-					   m3.link AS m3_link,
-					   m3.icon AS m3_icon,
-					   m3.class AS m3_class,
-					   m3.translate_key AS m3_trkey,
-					   m3.accesskey AS m3_ackey,
-					   m3.weight AS m3_weight 
-				FROM ' . $gTables['menu_module'] . '       AS m2 
-				LEFT JOIN ' . $gTables['module'] . '       AS m1 ON m1.id      = m2.id_module 
-				LEFT JOIN ' . $gTables['admin_module'] . ' AS am ON am.moduleid= m1.id 
-				LEFT JOIN ' . $gTables['menu_script'] . '  AS m3 ON m3.id_menu = m2.id 
-				WHERE am.adminid=\'' . $userid . '\' ' . $query_co . ' 
-				ORDER BY m1.weight,
-						 m1_id,
-						 m2.weight,
-						 m2_id,
-						 m3.weight';
-   }
-   $result = gaz_dbi_query($query) or gaz_die ( $query, "1014", __FUNCTION__ );
-   return $result;
+  global $gTables;
+  $query_co = " AND am.company_id='" . $company_id . "'";
+  $ck_co = gaz_dbi_fields('admin_module');
+  if (!array_key_exists('company_id', $ck_co)) {
+     $query_co = '';
+  };
+  if ($userid == '') {
+    $query = 'SELECT module.name,
+		module.link,
+		module.id AS m1_id,
+		module.access,
+		module.weight
+    FROM  ' . $gTables['module'] . ' AS module
+		ORDER BY weight';
+  } else {
+    $query = 'SELECT am.adminid,
+	 	am.access, am.custom_field,
+		m1.id AS m1_id,
+		m1.name,
+		m1.link,
+		m1.icon,
+    m1.access as m1_ackey,
+		m1.class,
+		m1.weight,
+		m2.id AS m2_id,
+		m2.link AS m2_link,
+		m2.icon AS m2_icon,
+		m2.class AS m2_class,
+		m2.translate_key AS m2_trkey,
+		m2.accesskey AS m2_ackey,
+		m2.weight AS m2_weight,
+		m3.id AS m3_id,
+		m3.link AS m3_link,
+		m3.icon AS m3_icon,
+		m3.class AS m3_class,
+		m3.translate_key AS m3_trkey,
+		m3.accesskey AS m3_ackey,
+		m3.weight AS m3_weight
+		FROM ' . $gTables['menu_module'] . '       AS m2
+		LEFT JOIN ' . $gTables['module'] . '       AS m1 ON m1.id      = m2.id_module
+		LEFT JOIN ' . $gTables['admin_module'] . ' AS am ON am.moduleid= m1.id
+		LEFT JOIN ' . $gTables['menu_script'] . '  AS m3 ON m3.id_menu = m2.id
+		WHERE am.adminid=\'' . $userid . '\' ' . $query_co . '
+		ORDER BY m1.weight,
+		m1_id,
+		m2.weight,
+		m2_id,
+		m3.weight';
+  }
+  $result = gaz_dbi_query($query) or gaz_die ( $query, "1014", __FUNCTION__ );
+  return $result;
 }
 
 function checkAccessRights($adminid, $module, $company_id = 0) {
-   global $gTables;
-   $ck_co = gaz_dbi_fields('admin_module');
-   if ($company_id == 0 || (!array_key_exists('company_id', $ck_co))) {  // vengo da una vecchia versione (<4.0.12)
-      $query = 'SELECT am.access FROM ' . $gTables['admin_module'] . ' AS am' .
-              ' LEFT JOIN ' . $gTables['module'] . ' AS module ON module.id=am.moduleid' .
-              " WHERE am.adminid='" . $adminid . "' AND module.name='" . $module . "'";
-   } else {   //nuove versione >= 4.0.12
-      $query = 'SELECT am.access FROM ' . $gTables['admin_module'] . ' AS am' .
-              ' LEFT JOIN ' . $gTables['module'] . ' AS module ON module.id=am.moduleid' .
-              " WHERE am.adminid='" . $adminid . "' AND module.name='" . $module . "' AND am.company_id = $company_id ";
-   }
-   $result = gaz_dbi_query($query) or gaz_die ( $query, "1030", __FUNCTION__ );
-   if (gaz_dbi_num_rows($result) < 1) {
-      return 0;
-   }
-   $row = gaz_dbi_fetch_array($result);
-   return $row['access'];
+  global $gTables;
+  $ck_co = gaz_dbi_fields('admin_module');
+  if ($company_id == 0 || (!array_key_exists('company_id', $ck_co))) {  // vengo da una vecchia versione (<4.0.12)
+     $query = 'SELECT am.access FROM ' . $gTables['admin_module'] . ' AS am' .
+             ' LEFT JOIN ' . $gTables['module'] . ' AS module ON module.id=am.moduleid' .
+             " WHERE am.adminid='" . $adminid . "' AND module.name='" . $module . "'";
+  } else {   //nuove versione >= 4.0.12
+     $query = 'SELECT am.access, am.custom_field FROM ' . $gTables['admin_module'] . ' AS am' .
+             ' LEFT JOIN ' . $gTables['module'] . ' AS module ON module.id=am.moduleid' .
+             " WHERE am.adminid='" . $adminid . "' AND module.name='" . $module . "' AND am.company_id = $company_id ";
+  }
+  $result = gaz_dbi_query($query) or gaz_die ( $query, "1030", __FUNCTION__ );
+  if (gaz_dbi_num_rows($result) < 1) {
+     return 0;
+  }
+  $row = gaz_dbi_fetch_array($result);
+  $chkes = is_string($row['custom_field'])? json_decode($row['custom_field']) : false;
+  if ($chkes && isset($chkes->excluded_script)) {
+    return $chkes->excluded_script;
+  }
+  return $row['access'];
 }
 
 function gaz_dbi_fetch_all($resource) {
@@ -1097,7 +1102,7 @@ function gaz_die( $query, $riga, $funzione="" ) {
         $edie .= "Query error ";
         if ( $riga!="" ) $edie .= "-r".$riga." ";
         if ( $funzione!="" ) $edie .= "funzione ".$funzione." ";
-        $edie .= " : '".$query."' ". mysqli_error($link); 
+        $edie .= " : '".$query."' ". mysqli_error($link);
     } else {
         $edie = "Query error";
     }

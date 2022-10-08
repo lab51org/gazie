@@ -174,7 +174,18 @@ $strScript = array("admin_fornit.php" =>
         " Fuori ",
         'tuttitipi' => 'Tutti i tipi',
         'tuttianni' => 'Tutti gli anni',
-        'tutticlienti' => 'Tutti i fornitori'
+        'tutticlienti' => 'Tutti i fornitori',
+        'dialog_fae_title' => 'File XML della fattura: ',
+        'dialog_fae_filename' => 'Scarica il file: ',
+        'dialog_fae_content_PA' => 'Il file per la PA è da scaricare e firmare prima di inviarlo ',
+        'dialog_fae_content_DI' => 'Il file è da inviare. Puoi scegliere di farlo singolarmente oppure impacchettandolo assieme ad eventuali altri precedenti non ancora inviati ',
+        'dialog_fae_content_ZI' => 'Il file è da inviare ma fa parte di un pacchetto ZIP, invialo assieme agli altri',
+        'dialog_fae_content_RE' => 'Solo qualora si voglia procedere ad un reinvio <b class="bg-warning">A CAUSA DI UNO SCARTO</b>, dopo aver corretto gli errori che lo hanno causato, cliccare su questo link per generare un file con nuovo nome:' ,
+        'dialog_fae_content_IN' => 'Il file è stato inviato, attenti la notifica dell\'esito del SdI ',
+        'dialog_fae_content_RC' => '<b><i class="glyphicon glyphicon-thumbs-up"></i> Il file è stato inviato e recapitato <i class="glyphicon glyphicon-ok-circle"></i></b>',
+        'dialog_fae_content_MC' => '<i class="glyphicon glyphicon-hand-right"></i> Il file è stato inviato ma non recapitato, il cliente può comunque prelevarlo dal suo cassetto fiscale. È buona norma inviargli anche il documento cartaceo e/o PDF <i class="glyphicon glyphicon-exclamation-sign"></i>',
+        'dialog_fae_content_NS' => '<i class="glyphicon glyphicon-thumbs-down"></i><b class="bg-danger"> ATTENZIONE!!! </b> <i class="glyphicon glyphicon-ban-circle"></i><br/>Il file è stato <b class="bg-danger">SCARTATO</b> si deve procedere al suo reinvio, ma <b class="bg-warning">solo dopo aver corretto l\'errore</b> sotto notificato:<br/>',
+
     ),
     "admin_docacq.php" =>
     array('title' => 'Inserimento/modifica documenti a fornitori',
@@ -409,7 +420,7 @@ $strScript = array("admin_fornit.php" =>
         'orderby_value' => array(0 => 'Scadenza crescente', 1 => 'Scadenza decrescente',
             2 => 'Fornitore crescente', 3 => 'Fornitore decrescente'
         ),
-        'header' => array('Fornitore' => '', 'ID Partita' => '', 'Status' => '', 'Mov.Cont.' => '', 'Descrizione' => '',
+        'header' => array('Fornitore' => '', 'ID Partita' => '', 'Status' => '',  'Descrizione' => '',
             'N.Doc.' => '', 'Data Doc.' => '', 'Data Reg.' => '', 'Dare' => '', 'Avere' => '',
             'Scadenza' => '',
             'Opzioni' => ''
@@ -626,7 +637,8 @@ $strScript = array("admin_fornit.php" =>
             'no_suppl' => 'Ho già questa anagrafica ma è un nuovo fornitore',
             'no_anagr' => "Di questo nuovo fornitore non ho l'anagrafica, utilizzerò questi dati per crearla",
             'no_db' => "Di questo file è stato fatto solo l'upload ma non è stata confermata la registrazione",
-			'file_exists' => 'Un file con questo nome è stato già stato acquisito'
+            'file_exists' => 'Un file con questo nome è stato già stato acquisito',
+            'shiftrow' => "Un rigo è stato spostato ",
         ),
         'err' => array(
             'filmim' => 'Il file deve essere nel formato XML o P7M',
@@ -638,13 +650,14 @@ $strScript = array("admin_fornit.php" =>
             'no_pagame' => 'Non hai selezionato la modalità di pagamento',
             'no_codric' => 'Non hai selezionato il codice conto di costo',
             'no_codvat' => 'Non hai selezionato l\'aliquota IVA',
-            'same_content' => 'Una fattura di questo fornitore, contenente lo stesso numero e data fattura, è già stato acquisito'
+            'same_content' => 'Una fattura di questo fornitore, contenente lo stesso numero e data fattura, è già stato acquisito',
+			'Not_all-ddt' => 'Non tutti i ddt sono stati inseriti. Questa FAE xml è mal formata e per poterla acquisire è necessario aver già inserito tutti i DDT. Non puoi inserirne solo alcuni. In alternativa, inserisci la FAE manualmente.'
         ),
         'head_text1' => "La fatture elettronica: ",
-		'head_text2' => " che stai per acquisire è visibile in fondo.<br/> In questo form ti proponiamo di imputare i costi secondo quanto contenuto sugli archivi, e ti invitiamo a controllare ed eventualmente apportare le modifiche opportune. Avrai comunque la possibilità di modificarla sia prima che dopo averla contabilizzata agendo attraverso le apposite interfacce. Dopo l'acquisizione verrai portato sulla lista delle fatture di acquisto già inserite",
+        'head_text2' => " che stai per acquisire è visibile in fondo.<br/> In questo form ti proponiamo di imputare i costi secondo quanto contenuto sugli archivi, e ti invitiamo a controllare ed eventualmente apportare le modifiche opportune. Avrai comunque la possibilità di modificarla sia prima che dopo averla contabilizzata agendo attraverso le apposite interfacce. Dopo l'acquisizione verrai portato sulla lista delle fatture di acquisto già inserite",
         'seziva' => 'Sezione IVA',
         'datreg' => 'Data Registrazione',
-		'pagame'=>'Modalità di pagamento',
+        'pagame'=>'Modalità di pagamento',
         'nrow' => 'Rigo',
         'codart' => 'Codice',
         'descri' => 'Descrizione',
@@ -657,7 +670,8 @@ $strScript = array("admin_fornit.php" =>
         'tax' => 'I.V.A.',
         'operation_type' => 'Tipo oper.',
         'conto' => 'Conto',
-		'new_acconcile'=>'Cambia conti sui righi con:'
+        'new_acconcile'=>'Cambia conti sui righi con:',
+        'confirm' => array('NO' =>'Seleziona per inserimento immediato','SI' => 'Confermo inserimento rigo in un ddt'),
 	),
     "admin_broacq.php" =>
     array('title' => 'Inserimento/modifica documenti a fornitori',

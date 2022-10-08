@@ -1,6 +1,10 @@
 body {
-	background-image : url("../../../../library/images/sfondo.png");
-	color:#000;
+	background-image : url("sfondo.png");
+	color: #000;
+	background-color: #f3f5f9;
+}
+mark {
+  background-color: #ff0;
 }
 .img-circle.dit-picture,.text-center>a>.img-circle{
 	border-radius: 10px;
@@ -8,15 +12,11 @@ body {
 select:focus, input:focus {
 	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px rgba(0, 0, 255, 0.6);
 }
-mark {
-    background-color: #ff0;
-    padding: 0em;
+.FacetFormTABLE,table.Tmiddle,table.Tsmall {
+	background-color: #ebf2f49e;
 }
-table.Tlarge {
-	border-color : #000000;
-}
-table.Tmiddle {
-	border-color : #000000;
+th {
+	background-color: #c4c7ca;
 }
 table.Tsmall {
 	border-color : #000000;
@@ -40,10 +40,6 @@ table.selectTable td {
 	color: #eee;
 	background-color: #000;
 }
-
-.FacetFormTABLE {
-	border-color : #000000;
-}
 .FacetFormHeaderFont {
 	color : #000000;
 }
@@ -53,9 +49,8 @@ table.selectTable td {
 	font-weight : bold;
 }
 .FacetFieldCaptionTD {
-	background-color : #AAE2A8;
-	color : #000000;
-	font-size : 90%;
+	background-color: #c4c7caab;
+	color: #000;
 }
 .FacetDataTRstart td {
 	border-top-color: white;
@@ -63,48 +58,12 @@ table.selectTable td {
 .FacetDataTRend td {
 	border-bottom-color: #FFFFFF;
 }
-.FacetDataTD {
-	background-color : #c9edc8;
-	color : #000000;
-	font-size : 100%;
-}
 .dispari {
 	background-color : #b8dcb7;
 }
-.FacetDataTDevidenziaOK {
-	background-color : #FFE13C;
-	color : #000000;
-}
-.FacetDataTDevidenziaCL {
-	background-color : #00FF3C;
-	color : #000000;
-}
-.FacetDataTDevidenziaBL {
-	background-color : #AAAAFF;
-	color : #000000;
-}
-.FacetDataTDevidenziaKO {
-	background-color : #FF8888;
-	color : #000000;
-}
-.FacetDataTDsmall {
-	background-color : #c9edc8;
-	color : #000000;
-	font-size : 90%;
-	border-bottom-color:  #fff;
-	border-right-color: #fff;
-}
-.FacetDataTDsmall a {
-	font-size : 90%;
-}
-.FacetDataTDsmallRed {
-	background-color : #c9edc8;
-	color : #FF0000;
-	font-size : 90%;
-}
 .FacetDataTDred {
-	background-color : #C9EDC8;
-	color : #FF0000;
+	background-color: #F955162E;
+	color: #FF0000;
 }
 .FacetColumnTD {
 	color : #000000;
@@ -115,10 +74,8 @@ table.selectTable td {
 	color : #000000;
 	font-size : 110%;
 }
-.FacetSeparatorTD {
-}
 .FacetFooterTD {
-	background-color : #D5F1D4;
+	background-color : #ece3dc;
 	color : #000000;
 }
 .FacetDisabledTD {
@@ -144,20 +101,12 @@ table.selectTable td {
 	background-color : #FFFFFF;
 	font-size : 100%;
 }
-.FacetSelect {
-	font-size : 90%;
-	background-color : #C9EDC8;
-}
 .FacetSmall {
 	font-size : 90%;
 	color : #FF00FF;
 }
 .FacetText {
 	font-size : 90%;
-	color : #000000;
-}
-.FacetSelectBil {
-	background-color : #AAE2A8;
 	color : #000000;
 }
 .error {
@@ -192,7 +141,7 @@ table.selectTable td {
 }
 
 .navbar-lower {
-	background-color: #dafed9;
+	background-color: #dae1da;
 }
 .vcenter {
 	font-size: 100%;
@@ -216,15 +165,6 @@ table.selectTable td {
 .panel-title {
 	vertical-align: middle;
 }
-.panel-info {
-	border-color: #88c086;
-}
-.panel-info > .panel-heading {
-	background-color: #aae2a8 !important;
-	border-color: #88c086;
-	color: #123311;
-}
-
 .form-logo {
 }
 .form-main {
@@ -233,7 +173,7 @@ table.selectTable td {
 }
 
 .panel-help {
-	background-color: #dafed9;
+	background-color: #dae1da;
 }
 /*    --------------------------------------------------
 	:: Inputs & Buttons
@@ -248,10 +188,7 @@ table.selectTable td {
 .btn-custom:hover, .btn-custom:focus {
 	color: #fff;
 }
-.btn-edit {
-	background-color: #449d44 !important;
-	color: #FFFFFF !important;
-}
+
 .btn-cont {
 	background-color: #aae2a8;
 }
@@ -279,10 +216,6 @@ table.selectTable td {
 .btn-articolo {
 
 }
-.form-inline {
-	background-color: #dafed9;
-}
-
 
 /** ENRICO FEDELE */
 /* Inizio stili custom pper jquery-ui */
@@ -303,24 +236,26 @@ table.selectTable td {
 .ui-autocomplete span.hl_results {
 	background-color: #ffff66;
 }
-
-
 .gaz-attivo {
-    background-color: #88D6FF;
+  background-color: #E3F5FF;
+  color : #2d15d2;
 }
 .gaz-passivo {
-    background-color: #D6FF88;
+  background-color: #FFF6EF;
+  color : #a65601;
 }
 .gaz-costi {
-    background-color: #D688FF;
+  background-color: #FDD;
+  color : #912626;
 }
 .gaz-ricavi {
-    background-color: #FFD688;
+  background-color: #EEFDED;
+  color : #045102;
 }
 .gaz-transitori {
-    background-color: #FF88D6;
+  background-color: #F4D5FF;
+  color : #72019b;
 }
-
 /**************************************
 **** BOOTSTRAP & SMARTMENU ************
 ***************************************/
@@ -331,31 +266,27 @@ table.selectTable td {
     color: #000;
     background-color: #fff;
 }
-
 .dropdown-menu >li >a {
     color: #000;
     background-color: #fff;
 }
-
 .form-control {
 	color: #000;
 }
-
 .btn-elimina {
     color: #ff3939;
 }
-
 .btn-edit {
-    float: right;
-    background-color: #fa50f8;
-    color: #000;
+	background-color: #449d44;
+	color: #FFFFFF;
+	box-shadow: 1px 1px 1px 1px gray;
 }
-
 .panel-default {
-    border-color: #ddd;
-    background-color: honeydew;
+  background-color: #e7ece7;
 }
-
+.input-area {
+  background-color: #b9c6db;
+}
 /**************************************
 ************** JQUERY UI **************
 ***************************************/
@@ -390,12 +321,87 @@ td.ui-datepicker-other-month>a.ui-state-default.ui-priority-secondary{
   background-color: #cccccc;
 }
 .btn-danger {
-    color: #fff !important;
+  color: #fff !important;
 	background-color: #d9534f !important;
 	border-color: #d43f3a !important;
+}
+div.ui-dialog-buttonpane.ui-widget-content div.ui-dialog-buttonset button.btn.btn-success{
+	background-color: #5cb85c !important;
 }
 .blink {
     color: #f00;
     font-weight: bold;
     animation: blink 0.5s infinite;
+}
+.Tlarge.table-bordered {
+	border: 2px solid #bbbbbb;
+  box-shadow: 1px 1px 1px rgba(1,1,1,.5);
+}
+.form-control {
+    color: #212121;
+}
+.btn-custom {
+    color: #fff;
+    background-color: #99d197;
+}
+.btn-custom:hover, .btn-custom:focus {
+    color: #fff;
+}
+.btn-cont {
+    background-color: #aae2a8;
+}
+.btn-elimina {
+    color: #ff3939;
+}
+.btn-xml {
+    color: #0000ff;
+}
+.btn.disabled {
+    pointer-events: auto;
+}
+.btn-effetti {
+    background-color: #D4CB6A;
+}
+.btn-riba {
+    background-color: #FFF7AA;
+}
+.btn-fatt {
+    background-color: #d4cb6a;
+}
+.btn-pagamento {
+  color: #66aa66;
+}
+.tab-content > .tab-pane > div.row:nth-of-type(odd),
+.gaz-table-form div.container-fluid div.row:nth-of-type(odd) {
+	background-color: #f9f9f9;
+}
+.table-striped > tbody > tr:nth-of-type(odd), .flip-image-front {
+  background-color: #e9e9e9;
+}
+.table-striped > tbody > tr:nth-of-type(even) {
+  background-color: #f9f9f9;
+}
+.nav-pills > li {
+	border-top: 1px solid #222d32;
+	border-left: 1px solid #222d32;
+	border-right: 1px solid #222d32;
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+}
+.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
+	font-size: 14px;
+	color: #0d0d0d;
+  border: 1px;
+	border-style: solid;
+}
+.ui-selectmenu-button span.ui-selectmenu-text {
+	background-color: #eee;
+}
+.ui-widget-content {
+	color: #1e1c1c;
+	background-color: #d1d5e8;
+}
+div.tooltip table th {
+	background-color: #014d63;
+  color: #fff5b2;
 }

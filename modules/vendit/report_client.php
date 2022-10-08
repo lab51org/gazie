@@ -33,34 +33,26 @@ $mascli = $clienti . "000000";
 
 // campi ammissibili per la ricerca
 $search_fields = [
-    'codice'
-    => "codice = $mascli + %d",
-
-    'nome'
-    => "CONCAT(ragso1, ragso2) LIKE '%%%s%%'",
-
-    'codmin'
-    => "codice >= $mascli + GREATEST(%d, 1)",
-
-    'codmax'
-    => "codice <= $mascli + LEAST(%d, 999999)",
-
-    'sexper' 
-    => "sexper = '%s'"
+  'codice' => "codice = $mascli + %d",
+  'nome' => "CONCAT(ragso1, ragso2) LIKE '%%%s%%'",
+  'idfisc' => "CONCAT(codfis, pariva) LIKE '%%%s%%'",
+  'codmin' => "codice >= $mascli + GREATEST(%d, 1)",
+  'codmax' => "codice <= $mascli + LEAST(%d, 999999)",
+  'sexper' => "sexper = '%s'"
 ];
 
 // creo l'array (header => campi) per l'ordinamento dei record
 $sortable_headers = array(
-    "Codice" => "codice",
-    "Ragione Sociale" => "ragso1",
-    "Tipo" => "sexper",
-    "Citt&agrave;" => "citspe",
-    "Telefono" => "telefo",
-    "P.IVA - C.F." => "",
-    "Privacy" => "",
-    "Riscuoti" => "",
-    "Visualizza <br /> e/o stampa" => "",
-    "Cancella" => ""
+  "Codice" => "codice",
+  "Ragione Sociale" => "ragso1",
+  "Tipo" => "sexper",
+  "Citt&agrave;" => "citspe",
+  "Telefono" => "telefo",
+  "P.IVA - C.F." => "",
+  "Privacy" => "",
+  "Riscuoti" => "",
+  "Visualizza <br /> e/o stampa" => "",
+  "Cancella" => ""
 );
 
 require("../../library/include/header.php");
@@ -85,7 +77,7 @@ $(function() {
 	$('.dialog_delete').click(function() {
 		$("p#idcodice").html($(this).attr("ref"));
 		$("p#iddescri").html($(this).attr("ragso"));
-		var id = $(this).attr('ref');		
+		var id = $(this).attr('ref');
 		$( "#dialog_delete" ).dialog({
 			minHeight: 1,
 			width: "auto",
@@ -93,9 +85,16 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
-				delete:{ 
-					text:'Elimina', 
-					'class':'btn btn-danger delete-button',
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
+				delete:{
+					text:'Elimina',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'client',ref:id},
@@ -106,13 +105,10 @@ $(function() {
 							window.location.replace("./report_client.php");
 						}
 					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+				}}
 			}
 		});
-		$("#dialog_delete" ).dialog( "open" );  
+		$("#dialog_delete" ).dialog( "open" );
 	});
 });
 </script>
@@ -145,15 +141,13 @@ $(function() {
                 &nbsp;
             </td>
             <td class="FacetFieldCaptionTD">
+                <?php gaz_flt_disp_int("idfisc", "C.F. o P.I."); ?>
+            </td>
+            <td class="FacetFieldCaptionTD">
                 &nbsp;
             </td>
             <td class="FacetFieldCaptionTD">
                 &nbsp;
-                <?php // gaz_flt_disp_int("codmin", "Min"); ?>
-            </td>
-            <td class="FacetFieldCaptionTD">
-                &nbsp;
-                <?php // gaz_flt_disp_int("codmax", "Max"); ?>
             </td>
             <td class="FacetFieldCaptionTD">
                 <input type="submit" class="btn btn-sm btn-default" name="search" value="Cerca" tabindex="1" >
@@ -179,7 +173,7 @@ $(function() {
 			$check_bro = gaz_dbi_num_rows($rs_check_bro);
 			echo "<tr class=\"FacetDataTD\">";
             // Colonna codice cliente
-            echo "<td align=\"center\"><a class=\"btn btn-xs btn-default\" href=\"admin_client.php?codice=" . substr($a_row["codice"], 3) . "&Update\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" .intval(substr($a_row["codice"],3)) . "</a> &nbsp</td>";
+            echo "<td align=\"center\"><a class=\"btn btn-xs btn-edit\" href=\"admin_client.php?codice=" . substr($a_row["codice"], 3) . "&Update\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" .intval(substr($a_row["codice"],3)) . "</a> &nbsp</td>";
             // Colonna ragione sociale
             echo "<td title=\"" . $a_row["ragso2"] . "\">" . $a_row["ragso1"] . " &nbsp;</td>";
             // colonna sesso
@@ -239,7 +233,7 @@ $(function() {
 				?>
 				<button title="Impossibile cancellare perch� ci sono dei movimenti associati" class="btn btn-xs btn-default btn-elimina disabled"><i class="glyphicon glyphicon-remove"></i></button>
 				<?php
-				
+
 			} else {
 				?>
 				<a class="btn btn-xs btn-default btn-elimina dialog_delete" title="Cancella il cliente" ref="<?php echo $a_row['codice'];?>" ragso="<?php echo $a_row['ragso2']," ",$a_row['ragso1'];?>">
@@ -259,20 +253,20 @@ $(function() {
  $(document).ready(function(){
      var selects = $("select");
      // la funzione gaz_flt_dsp_select usa "All", qui usiamo invece valori vuoti
-     // (in questo modo i campi non usati possono essere esclusi)        
+     // (in questo modo i campi non usati possono essere esclusi)
      $("option", selects).filter(function(){ return this.value == "All"; }).val("");
-     
-     // la stessa funzione imposta onchange="this.form.submit()" sulle select: 
+
+     // la stessa funzione imposta onchange="this.form.submit()" sulle select:
      // l'azione non lancia un evento "submit" e non pu� essere intercettata.
      // per non andare a modificare la funzione rimpiazziamo l'attributo onchange:
      selects.attr('onchange', null).change(function() { $(this.form).submit(); });
-     
+
      // cos� ora possiamo intercettare tutti i submit e pulire la GET dal superfluo
      $("form").submit(function() {
          $(this).find(":input").filter(function(){ return !this.value; }).attr("disabled", "disabled");
          return true; // ensure form still submits
      });
-     
+
      // Un-disable form fields when page loads, in case they click back after submission
      $( "form" ).find( ":input" ).prop( "disabled", false );
  });

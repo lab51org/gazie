@@ -28,14 +28,15 @@ class OrdineWeb extends Template
 {
     function setTesDoc()
     {
-        $this->tesdoc = $this->docVars->tesdoc;
-        $this->giorno = substr($this->tesdoc['datemi'],8,2);
-        $this->mese = substr($this->tesdoc['datemi'],5,2);
-        $this->anno = substr($this->tesdoc['datemi'],0,4);
-        $this->nomemese = ucwords(strftime("%B", mktime (0,0,0,substr($this->tesdoc['datemi'],5,2),1,0)));
-        $this->sconto = $this->tesdoc['sconto'];
-        $this->trasporto = $this->tesdoc['traspo'];
-        $this->tipdoc = 'Ordine dal sito WEB n.'.$this->tesdoc['numdoc'].' del '.$this->giorno.'.'.$this->mese.'.'.$this->anno;
+      $this->tesdoc = $this->docVars->tesdoc;
+      $this->giorno = substr($this->tesdoc['datemi'],8,2);
+      $this->mese = substr($this->tesdoc['datemi'],5,2);
+      $this->anno = substr($this->tesdoc['datemi'],0,4);
+      $this->docVars->gazTimeFormatter->setPattern('MMMM');
+      $this->nomemese = ucwords($this->docVars->gazTimeFormatter->format(new DateTime($this->tesdoc['datemi'])));
+      $this->sconto = $this->tesdoc['sconto'];
+      $this->trasporto = $this->tesdoc['traspo'];
+      $this->tipdoc = 'Ordine dal sito WEB n.'.$this->tesdoc['numdoc'].' del '.$this->giorno.'.'.$this->mese.'.'.$this->anno;
     }
     function newPage() {
         $this->AddPage();
@@ -128,7 +129,7 @@ class OrdineWeb extends Template
         $this->Cell(68,6, 'Castelletto I.V.A.',1,0,'C',1);
         $this->Cell(56,6, 'T O T A L E',1,1,'C',1);
         $this->SetFont('helvetica', '', 8);
-        $this->Cell(62,6, $this->pagame['descri'],1,0,'C');
+        $this->Cell(62,6, ((isset($this->pagame['descri']))?$this->pagame['descri']:''),1,0,'C');
         $this->Cell(25,4, 'Imponibile',1,0,'C',1);
         $this->Cell(18,4, 'Aliquota',1,0,'C',1);
         $this->Cell(25,4, 'Imposta',1,1,'C',1);

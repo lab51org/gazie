@@ -209,7 +209,7 @@ $script_transl = HeadMain();
 ?>
 <form method="POST">
     <div align="center" class="FacetFormHeaderFont">Contabilizzazione Effetti</div>
-    <table border="0" cellpadding="3" cellspacing="1" class="FacetFormTABLE" align="center">
+    <table class="Tmiddle table-striped">
         <!-- BEGIN Error -->
         <tr>
             <td colspan="2" class="FacetDataTD"  style="color: red;">
@@ -236,13 +236,13 @@ $script_transl = HeadMain();
                 echo "\t </select>\n";
                 // select del mese
                 echo "\t <select name=\"mesexe\" class=\"FacetSelect\" onchange=\"this.form.submit()\">\n";
-
+                $gazTimeFormatter->setPattern('MMMM');
                 for ($counter = 1; $counter <= 12; $counter++) {
-                    $selected = "";
-                    if ($counter == $_POST['mesexe'])
-                        $selected = "selected";
-                    $nome_mese = ucwords(strftime("%B", mktime(0, 0, 0, $counter, 1, 0)));
-                    echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
+                  $selected = "";
+                  if ($counter == $_POST['mesexe'])
+                       $selected = "selected";
+                  $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
+                  echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
                 }
                 echo "\t </select>\n";
                 // select del anno
@@ -331,10 +331,9 @@ $script_transl = HeadMain();
             <td class="FacetFieldCaptionTD">Progressivo finale &nbsp;</td>
             <td class="FacetDataTD"><input title="Numero dell'ultimo effetto che si intende contabilizzare" type="text" name="profin" value="<?php echo $_POST["profin"] ?>" maxlength="5" class="FacetInput">&nbsp;</td>
         <tr>
-            <td class="FacetFieldCaptionTD"> &nbsp;</td>
-            <td colspan="2" align="right" nowrap class="FacetFooterTD">
-                <input type="submit" name="Return" value="Indietro">&nbsp;
-                <input type="submit" name="anteprima" value="Visualizza l'anteprima">&nbsp;
+            <td class="FacetFooterTD"></td>
+            <td colspan="2" align="right"  class="FacetFooterTD">
+                <input type="submit" name="anteprima" class="btn btn-info" value="Visualizza l'anteprima">&nbsp;
             </td>
         </tr>
     </table>
@@ -359,8 +358,8 @@ $script_transl = HeadMain();
             $totEffetti+=$effett['impeff'];
         }
         $strTotEffetti = gaz_format_number($totEffetti);
-        echo "<tr><td colspan=\"5\" align=\"right\" class=\"FacetFieldCaptionTD\">Totale</td><td align=\"right\" class=\"FacetFieldCaptionTD\">$strTotEffetti</td></tr>";
-        echo "<tr><td colspan=\"9\" align=\"right\"><input type=\"submit\" name=\"genera\" value=\"CONFERMA LA CONTABILIZZAZIONE DEGLI EFFETTI SOPRAELENCATI !\"></td></tr>";
+        echo "<tr><td class=\"text-right bg-info\" colspan=\"5\"><b>Totale:</b></td><td align=\"right\" class=\"bg-info\"><b>$strTotEffetti</b></td></tr>";
+        echo "<tr><td colspan=\"9\" class=\"FacetFooterTD text-center\"><input type=\"submit\" class=\"btn btn-warning\" name=\"genera\" value=\"CONFERMA LA CONTABILIZZAZIONE DEGLI EFFETTI SOPRAELENCATI !\"></td></tr>";
         echo '</table>';
     }
     ?>

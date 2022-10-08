@@ -70,7 +70,7 @@ if (!is_writable(DATA_DIR.'files/')) { //questa per archiviare i documenti
 }
 if (!is_writable(K_PATH_CACHE)) { //questa per permettere a TCPDF di inserire le immagini
     echo K_PATH_CACHE.' --> '.$usrwww['name'].' permission = '.substr(sprintf('%o', fileperms(K_PATH_CACHE)),-3).'<br/>';
-    $err[] = 'no_tcpdf_cache_writable'; 
+    $err[] = 'no_tcpdf_cache_writable';
 }
 //
 // fine controllo directory scrivibili
@@ -95,19 +95,21 @@ if (!isset($_POST['hidden_req'])){           // al primo accesso allo script
     $form['lang'] = substr($_POST['lang'],0,16);
     $form['install_upgrade'] = substr($_POST['install_upgrade'],0,16);
     if (isset($_POST['upgrade'])) {          // AGGIORNO
-		if (databaseIsAlign()) {             // la base dati e' aggiornata!
-			$err[] = 'is_align';
-			if (strlen($form['hidden_req'])>10 && substr($form['hidden_req'], 0, 10)=='update_to_' && substr($form['hidden_req'], -4)=='.php') {
-				// il db è allineato ma ho trovato da eseguire uno script php  correlato
-				include($form['hidden_req']);
-			}
-		} else { 
-			connectToDB();
-			$exe_script = executeQueryFileUpgrade($table_prefix);
-			if ($exe_script) {
-				include($exe_script);
-			}
-		}
+      if (databaseIsAlign()) {             // la base dati e' aggiornata!
+        $err[] = 'is_align';
+        if (strlen($form['hidden_req'])>10 && substr($form['hidden_req'], 0, 10)=='update_to_' && substr($form['hidden_req'], -4)=='.php') {
+          // il db è allineato ma ho trovato da eseguire uno script php  correlato
+          include($form['hidden_req']);
+        }
+      } else {
+        connectToDB();
+        executeModulesUpdate();// Antonio Germani - prima di eseguire la modifica del numero versione archivi controllo l'aggiornamento dei moduli extra GAzie
+        $exe_script = executeQueryFileUpgrade($table_prefix);
+        if ($exe_script) {
+          include($exe_script);
+        }
+
+      }
     }
     if (isset($_POST['install'])) {          //INSTALLO
         // recupero il file sql d'installazione nella directory setup/install/
@@ -317,7 +319,7 @@ function executeQueryFileUpgrade($table_prefix) // funzione dedicata alla gestio
         }
     }
 	// trovo un eventuale file per  script php correlato alle query di aggiornamento
-	$exe_script=executeScriptFileUpgrade($sqlFile); 
+	$exe_script=executeScriptFileUpgrade($sqlFile);
 	return $exe_script;
 }
 
@@ -410,15 +412,56 @@ if ($handle = opendir($relativePath)) {
 return $structArray;
 }
 
-function executeScriptFileUpgrade($name_sql) // se ho un file php da eseguire dopo la query sql
-{
-	$filename = pathinfo($name_sql, PATHINFO_FILENAME).'.php';		
+function executeScriptFileUpgrade($name_sql){ // se ho un file php da eseguire dopo la query sql
+	$filename = pathinfo($name_sql, PATHINFO_FILENAME).'.php';
 	if (file_exists($filename)) {
 		// ho un file da eseguire alla fine delle query
 		return $filename;
 	} else {
 		return false;
 	}
+}
+
+function executeModulesUpdate(){// Antonio Germani 12/07/2022 - funzione per eseguire gli eventuali upgrade inviati dai moduli tramite il file upgrade_db.php
+  global $table_prefix;
+  $companies=getCompanyNumbers();
+  $query = "SELECT name FROM `".$table_prefix."_module`";// prendo tutti i nomi dei moduli attivi
+  $result = gaz_dbi_query ($query);
+
+  while($module=gaz_dbi_fetch_array($result)){ // in ogni modulo attivo
+
+    if (file_exists("../../modules/". $module['name'] ."/upgrade_db.php")){ // cerco se c'è il file di aggiornamento
+
+      include("../../modules/". $module['name'] ."/upgrade_db.php"); // carico l'array
+      if (isset($upgrade_db)){ //se c'è
+        // prendo l'ultima versione archivio
+        $version = gaz_dbi_get_row($table_prefix.'_config', 'variable', 'archive')['cvalue'];
+        foreach ($upgrade_db as $k => $v){ //ciclo le istruzioni in base alla chiave
+          if ($k > $version){ // se la chiave è maggiore della versione attuale archivio
+            foreach ($upgrade_db[$k] as $instruction){ //ciclo le istruzioni e le eseguo per ogni azienda
+              if (preg_match("/XXX/",$instruction)) { // query ricorsive sulle tabelle di tutte le aziende
+                foreach ($companies as $i) {
+                  $sql = preg_replace("/XXX/", sprintf('%03d',$i), $instruction);
+                  if (!gaz_dbi_query($sql)) { //se non è stata eseguita l'istruzione lo segnalo
+                    echo "Query Fallita";
+                    echo "$sql <br/>";
+                    exit;
+                  }
+                }
+              } else { // query singola sulla tabella comune alle aziende
+                if (!gaz_dbi_query($instruction)) { //se non è stata eseguita l'istruzione lo segnalo
+                  echo "Query Fallita";
+                  echo "$sql <br/>";
+                  exit;
+                }
+              }
+            }
+          }
+        }
+
+      }
+    }
+  }
 }
 ?>
 <!DOCTYPE html>

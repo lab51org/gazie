@@ -50,7 +50,7 @@ if (isset($_POST['Insert']) || isset($_POST['Update'])) {   //se non e' il primo
     $form['ceedar'] = substr($_POST['ceedar'],0,8);
     $form['ceeave'] = substr($_POST['ceeave'],0,8);
     $form['paymov'] = substr($_POST['paymov'],0,1);
-    $form['annota'] = filter_var($_POST['annota'],FILTER_SANITIZE_STRING);
+    $form['annota'] = filter_var($_POST['annota'],FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     if (isset($_POST['Submit'])) { // conferma tutto
        //eseguo i controlli formali
        $code_exist = gaz_dbi_dyn_query('codice',$gTables['clfoco'],"codice = ".$form['codice'],'codice DESC',0,1);
@@ -108,7 +108,7 @@ if ($toDo == 'insert') {
    echo "<input type=\"hidden\" value=\"".intval($form['codice']/1000000)."\" name=\"mas\" />\n";
    echo "<input type=\"hidden\" value=\"".($form['codice']-intval($form['codice']/1000000)*1000000)."\" name=\"sub\" />\n";
 }
-echo "<table class=\"Tmiddle\">\n";
+echo "<table class=\"Tmiddle table-striped\">\n";
 if (!empty($msg)) {
     echo '<tr><td colspan="3" class="FacetDataTDred">'.$gForm->outputErrors($msg,$script_transl['errors'])."</td></tr>\n";
 }
@@ -163,13 +163,10 @@ echo "\t<td class=\"FacetDataTD\" colspan=\"2\">
       <textarea name=\"annota\" cols=50 rows=10 maxlength=\"100\" >".$form['annota']."</textarea></td>\n";
 echo "</tr>\n";
 echo "<tr>\n";
-echo "\t<td class=\"FacetFieldCaptionTD\">".$script_transl['sqn']."</td>";
+echo "\t<td class=\"FacetFooterTD\">".$script_transl['sqn']."</td>";
 echo "\t </td>\n";
-echo "\t<td  class=\"FacetDataTD\">\n";
-echo '<input name="Return" type="submit" value="'.$script_transl['return'].'">';
-echo "\t </td>\n";
-echo "\t<td  class=\"FacetDataTD\" align=\"right\">\n";
-echo '<input name="Submit" type="submit" value="'.ucfirst($script_transl[$toDo]).'">';
+echo "<td  class=\"FacetFooterTD text-center\">";
+echo '<input name="Submit" class="btn btn-warning" type="submit" value="'.ucfirst($script_transl[$toDo]).'">';
 echo "\t </td>\n";
 echo "</tr>\n";
 ?>

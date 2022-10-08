@@ -33,6 +33,7 @@ $stato_lavorazione = array(0 => "aperto", 1 => "in attesa", 2 => "in lavorazione
 $search_fields = [
     'asset' => "id = %d",
     'descri' => "description LIKE '%%%s%%'",
+    'ainfo' => "add_info LIKE '%%%s%%'",
     'camp' => "campo_impianto = %d",
 ];
 
@@ -56,8 +57,8 @@ $sortable_headers = array("Codice ID"      => "id",
 $tablejoin = $gTables['orderman'];
 
 $ts = new TableSorter(
-    $tablejoin, 
-    $passo, 
+    $tablejoin,
+    $passo,
     ['id'=>'desc']);
 ?>
 <script>
@@ -75,9 +76,16 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
-				delete:{ 
-					text:'Elimina', 
-					'class':'btn btn-danger delete-button',
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
+				delete:{
+					text:'Elimina',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'orderman',ref:id,ref2:id2},
@@ -88,13 +96,10 @@ $(function() {
 							window.location.replace("./orderman_report.php");
 						}
 					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+				}}
 			}
 		});
-		$("#dialog_delete" ).dialog( "open" );  
+		$("#dialog_delete" ).dialog( "open" );
 	});
 
 	$("#dialog_stato_lavorazione").dialog({ autoOpen: false });
@@ -107,7 +112,7 @@ $(function() {
         $('#sel_stato_lavorazione').on('change', function () {
             //ways to retrieve selected option and text outside handler
             new_stato_lavorazione = this.value;
-        });        
+        });
 		$( "#dialog_stato_lavorazione" ).dialog({
 			minHeight: 1,
 			width: "auto",
@@ -115,9 +120,9 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
-				delete:{ 
-					text:'Modifica', 
-					'class':'btn btn-danger delete-button',
+				delete:{
+					text:'Modifica',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'set_new_stato_lavorazione','ref':refsta,'new_status':new_stato_lavorazione},
@@ -135,19 +140,22 @@ $(function() {
 				}
 			}
 		});
-		$("#dialog_stato_lavorazione" ).dialog( "open" );  
+		$("#dialog_stato_lavorazione" ).dialog( "open" );
 	});
-    
+
 });
 function printPdf(urlPrintDoc){
-	$(function(){			
+	$(function(){
 		$('#framePdf').attr('src',urlPrintDoc);
 		$('#framePdf').css({'height': '100%'});
 		$('.framePdf').css({'display': 'block','width': '90%', 'height': '80%', 'z-index':'2000'});
+    $("html, body").delay(100).animate({scrollTop: $('#framePdf').offset().top},'slow', function() {
+        $("#framePdf").focus();
+    });
 		$('#closePdf').on( "click", function() {
 			$('.framePdf').css({'display': 'none'});
-		});	
-	});	
+		});
+	});
 };
 </script>
 <div align="center" class="FacetFormHeaderFont">Elenco produzioni</div>
@@ -190,14 +198,19 @@ $ts->output_navbar();
 	<div class="table-responsive">
     <table class="Tlarge table table-striped table-bordered table-condensed ">
 	<tr>
-	<tr>
-		<td class="FacetFieldCaptionTD">
+	<tr class="FacetFieldCaptionTD">
+		<td>
 			<input type="text" name="asset" placeholder="id" class="input-sm form-control" value="<?php echo (isset($asset))? $asset : ""; ?>" maxlength="15">
 		</td>
-		<td class="FacetFieldCaptionTD">
+		<td>
 			<input type="text" name="descri" placeholder="descrizione" class="input-sm form-control" value="<?php echo (isset($descri))? $descri : ""; ?>" maxlength="15">
-        </td>
-		<td class="FacetFieldCaptionTD" colspan="12">
+    </td>
+		<td>
+    </td>
+		<td>
+			<input type="text" name="ainfo" placeholder="add_info" class="input-sm form-control" value="<?php echo (isset($ainfo))? $ainfo : ""; ?>" maxlength="15">
+    </td>
+		<td  colspan="12">
 			<input type="submit" class="btn btn-sm btn-default" name="search" value="<?php echo $script_transl['search'];?>" onClick="javascript:document.report.all.value=1;">
 			<a class="btn btn-sm btn-default" href="?">Reset</a>
 			<?php  $ts->output_order_form(); ?>
@@ -222,8 +235,8 @@ while ($r = gaz_dbi_fetch_array($result)) {
             $stato_btn = 'btn-danger';
         }
 ?>		<tr class="FacetDataTD">
-			<td>
-				<a class="btn btn-xs btn-default btn-block" href="admin_orderman.php?Update&codice=<?php echo $r['id']; ?>">
+			<td align="center">
+				<a class="btn btn-xs btn-edit" href="admin_orderman.php?Update&codice=<?php echo $r['id']; ?>">
 					<i class="glyphicon glyphicon-edit"></i>&nbsp;<?php echo $r['id'];?>
 				</a>
 			</td>
@@ -234,9 +247,9 @@ while ($r = gaz_dbi_fetch_array($result)) {
 			<td align="center"><?php echo $r['add_info'];?></td>
 			<?php $d_row = gaz_dbi_get_row($gTables['rigbro'], "id_rig", $r['id_rigbro']);?>
 			<td align="center"><?php echo ($d_row)?$d_row['codart']:'';?></td>
-			
+
 			<!-- Colonna quantità prodotta -->
-			<?php 
+			<?php
 			$e_row = gaz_dbi_get_row($gTables['movmag'], "id_orderman", $r['id'], "AND operat = 1");
 			if ($e_row && $d_row ){
 				$f_row = gaz_dbi_get_row($gTables['lotmag'], "id_movmag", $e_row['id_mov']);
@@ -247,7 +260,7 @@ while ($r = gaz_dbi_fetch_array($result)) {
 				?><td></td><?php
 			}
 
-		
+
 			if (isset($f_row) && strlen($f_row['identifier'])>0) {
 				echo '<td align="center">'.$f_row['identifier'].' - '.gaz_format_date($f_row['expiry']).'</td>';
 			} else {
@@ -262,14 +275,14 @@ while ($r = gaz_dbi_fetch_array($result)) {
 			<!-- Antonio Germani Vado a leggere la descrizione del campo connesso alla produzione -->
 			<?php $c_row = gaz_dbi_get_row($gTables['campi'], "codice", $r['campo_impianto']);?>
 			<td align="center"><?php echo $r['campo_impianto'], " ",(($c_row)?$c_row['descri']:'');?></td>
-			
+
 			<!-- Colonna stato lavorazione -->
 			<td>
 				<a class="btn btn-xs <?php echo $stato_btn; ?> dialog_stato_lavorazione" refsta="<?php echo $r['id']; ?>" prodes="<?php echo $r['description']; ?>" prosta="<?php echo $r['stato_lavorazione']; ?>">
 				<i class="glyphicon glyphicon-compressed"></i><?php echo $stato_lavorazione[$r['stato_lavorazione']]; ?>
 				</a>
 			</td>
-			
+
 			<!-- Colonna stampa distinta -->
 			<?php
 			if ($r['order_type']=="IND" or $r['order_type']=="ART"){

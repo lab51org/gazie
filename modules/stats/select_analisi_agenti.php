@@ -103,7 +103,7 @@ $script_transl = HeadMain();
 echo "<form method=\"POST\">";
 echo "<input type=\"hidden\" name=\"ritorno\" value=\"".$form['ritorno']."\">\n";
 echo "<div align=\"center\" class=\"FacetFormHeaderFont\">".$script_transl['title']."</div>";
-echo "<table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" class=\"FacetFormTABLE\" align=\"center\">";
+echo "<table class=\"Tmiddle table-striped\" align=\"center\">";
 if (!empty($msg)) {
     $message = "";
     $rsmsg = array_slice( explode('+',chop($msg)),0,-1);
@@ -175,14 +175,14 @@ for( $counter = 1; $counter <= 31; $counter++ )
 echo "\t </select>\n";
 // select del mese
 echo "\t <select name=\"mi\" class=\"FacetSelect\">\n";
+$gazTimeFormatter->setPattern('MMMM');
 for( $counter = 1; $counter <= 12; $counter++ )
-    {
-    $selected = "";
-    if($counter == $form['mi'])
-            $selected = "selected";
-    $nome_mese = ucwords(strftime("%B", mktime (0,0,0,$counter,1,0)));
-    echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
-    }
+  {
+  $selected = "";
+  if($counter == $form['mi']) $selected = "selected";
+  $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
+  echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
+  }
 echo "\t </select>\n";
 // select del anno
 echo "\t <select name=\"ai\" class=\"FacetSelect\">\n";
@@ -211,13 +211,12 @@ echo "\t </select>\n";
 // select del mese
 echo "\t <select name=\"mf\" class=\"FacetSelect\">\n";
 for( $counter = 1; $counter <= 12; $counter++ )
-    {
-    $selected = "";
-    if($counter == $form['mf'])
-            $selected = "selected";
-    $nome_mese = ucwords(strftime("%B", mktime (0,0,0,$counter,1,0)));
-    echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
-    }
+  {
+  $selected = "";
+  if($counter == $form['mf']) $selected = "selected";
+  $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
+  echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
+  }
 echo "\t </select>\n";
 // select del anno
 echo "\t <select name=\"af\" class=\"FacetSelect\">\n";

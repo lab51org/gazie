@@ -71,7 +71,7 @@ if ((isset($_POST['Insert'])) or (isset($_POST['Update']))) {   //se non e' il p
        if (empty($form['descri'])){  //descrizione vuota
              $msg .= "5+";
        }
-	   
+
        if ($msg == "") {// nessun errore
           // preparo la stringa dell'immagine
           if ($_FILES['userfile']['size'] > 0) { //se c'e' una nuova immagine nel buffer
@@ -90,7 +90,12 @@ if ((isset($_POST['Insert'])) or (isset($_POST['Update']))) {   //se non e' il p
        }
   }
 } elseif ((!isset($_POST['Update'])) and (isset($_GET['Update']))) { //se e' il primo accesso per UPDATE
-    $campi = gaz_dbi_get_row($gTables['campi'],"codice",$_GET['codice']);
+  $campi = gaz_dbi_get_row($gTables['campi'],"codice",$_GET['codice']);
+	if (is_string($campi['used_from_modules'])){
+		$form['used_from_modules']=$module;
+	}else{
+		$form['used_from_modules']=$campi['used_from_modules'];
+	}
     $form['ritorno'] = $_POST['ritorno'];
     $form['codice'] = $campi['codice'];
     $form['descri'] = $campi['descri'];
@@ -117,6 +122,7 @@ if ((isset($_POST['Insert'])) or (isset($_POST['Update']))) {   //se non e' il p
 	$form['giorno_decadimento'] ='0000-00-00 00:00:00';
 	$form['codice_prodotto_usato'] ='';
 	$form['id_mov'] ='';
+	$form['used_from_modules']=$module;
 }
 require("../../library/include/header.php");
 $script_transl = HeadMain();
@@ -128,8 +134,9 @@ if ($toDo == 'update') {
 print "<form method=\"POST\" enctype=\"multipart/form-data\">\n";
 print "<input type=\"hidden\" name=\"".ucfirst($toDo)."\" value=\"\">\n";
 print "<input type=\"hidden\" value=\"".$_POST['ritorno']."\" name=\"ritorno\">\n";
+print "<input type=\"hidden\" value=\"".$form['used_from_modules']."\" name=\"used_from_modules\">\n";
 print "<div align=\"center\" class=\"FacetFormHeaderFont\">$title</div>";
-print "<table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" class=\"FacetFormTABLE\" align=\"center\">\n";
+print "<table class=\"gaz-table-form table-striped\">\n";
 if (!empty($msg)) {
     $message = "";
     $rsmsg = array_slice( explode('+',chop($msg)),0,-1);
@@ -164,21 +171,27 @@ echo "<tr><td>";
 ?>
      <input type="hidden" value="" name="nome_colt" />
 	 <input type="hidden" value="" name="id_colture"/>
-	 </td></tr> 
+	 </td>
+</tr>
+<tr>
+	<td class="FacetFieldCaptionTD"><?php echo $script_transl[3]; ?>
+	</td>
+	<td class="FacetDataTD">
+		<input type="text" name="annota" value="<?php echo $form['annota']; ?>" maxlength="50"  >
+	</td>
+</tr>
+<tr>
+	<td class="FacetFooterTD text-center" colspan=2 >
 <?php
-
-
-print "<tr><td class=\"FacetFieldCaptionTD\">$script_transl[3]</td><td class=\"FacetDataTD\"><input type=\"text\" name=\"annota\" value=\"".$form['annota']."\" maxlength=\"50\"  />\n";
-print "</select></td></tr><tr><td class=\"FacetFieldCaptionTD\"\n";
-print "</td><td class=\"FacetDataTD\" align=\"right\">\n";
-print "<input type=\"submit\" name=\"Return\" value=\"".$script_transl['return']."\">\n";
 if ($toDo == 'update') {
-   print '<input type="submit" accesskey="m" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="'.ucfirst($script_transl['update']).'!"></td></tr><tr></tr>';
+   print '<input type="submit" accesskey="m" class="btn btn-warning" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="'.ucfirst($script_transl['update']).'!">';
 } else {
-   print '<input type="submit" accesskey="i" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="'.ucfirst($script_transl['insert']).'!"></td></tr><tr></tr>';
+   print '<input type="submit" accesskey="i" class="btn btn-warning" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="'.ucfirst($script_transl['insert']).'!">';
 }
-print "</td></tr></table>\n";
 ?>
+</td>
+</tr>
+</table>
 </form>
 <?php
 require("../../library/include/footer.php");

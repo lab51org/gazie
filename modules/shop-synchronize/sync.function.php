@@ -424,10 +424,10 @@ class shopsynchronizegazSynchro {
 				$rawres['style'] = 'danger';
 			}
 		}
-    if (isset($rawres)){
-      $_SESSION['menu_alerts']['shop-synchronize']=$rawres;
-      $this->rawres=$rawres;
-    }
+		if (isset($rawres)){
+		  $_SESSION['menu_alerts']['shop-synchronize']=$rawres;
+		  $this->rawres=$rawres;
+		}
 	}
 	function UpsertProduct($d,$toDo="") { // Aggiorna o inserisce articol da GAzie a e-commerce
 		if ($d['web_public'] > 0){ // se pubblicato su web aggiorno l'articolo di magazzino (product)
@@ -630,7 +630,7 @@ class shopsynchronizegazSynchro {
 		global $gTables,$admin_aziend;
 		$rawres=[];
 		$id = gaz_dbi_get_row($gTables['artico'],"codice",$d);
-		if ($id['web_public'] > 0){
+		if (isset($id['web_public']) && $id['web_public'] > 0){
 			$ftp_host = gaz_dbi_get_row($gTables['company_config'], "var", "server")['val'];
 			$ftp_path_upload = gaz_dbi_get_row($gTables['company_config'], "var", "ftp_path")['val'];
 			$ftp_user = gaz_dbi_get_row($gTables['company_config'], "var", "user")['val'];
@@ -877,7 +877,7 @@ class shopsynchronizegazSynchro {
 							} else {
 								$sexper="G";
 							}
-							gaz_dbi_query("INSERT INTO " . $gTables['anagra'] . "(ragso1,ragso2,sexper,indspe,capspe,citspe,prospe,country,id_currency,id_language,telefo,codfis,pariva,fe_cod_univoco,e_mail,pec_email) VALUES ('" . addslashes($order->CustomerSurname)." ". addslashes($order->CustomerName) . "', '" . addslashes($order->BusinessName) . "', '". $sexper. "', '".addslashes($order->CustomerAddress) ."', '".$order->CustomerPostCode."', '". addslashes($order->CustomerCity) ."', '". $order->CustomerProvince ."', '" . $order->CustomerCountry. "', '1', '".$lang."', '". $order->CustomerTel ."', '". $order->CustomerFiscalCode ."', '" . $order->CustomerVatCode . "', '" . $order->CustomerCodeFattEl . "', '". $order->CustomerEmail . "', '". $order->CustomerPecEmail . "')");
+							gaz_dbi_query("INSERT INTO " . $gTables['anagra'] . "(ragso1,ragso2,sexper,indspe,capspe,citspe,prospe,country,id_currency,id_language,telefo,codfis,pariva,fe_cod_univoco,e_mail,pec_email) VALUES ('" . addslashes($order->CustomerSurname)." ". addslashes($order->CustomerName) . "', '" . addslashes($order->BusinessName) . "', '". $sexper. "', '".addslashes($order->CustomerAddress) ."', '".$order->CustomerPostCode."', '". addslashes($order->CustomerCity) ."', '". $order->CustomerProvince ."', '" . $order->CustomerCountry. "', '1', '".$lang."', '". $order->CustomerTel ."', '". strtoupper($order->CustomerFiscalCode) ."', '" . $order->CustomerVatCode . "', '" . $order->CustomerCodeFattEl . "', '". $order->CustomerEmail . "', '". $order->CustomerPecEmail . "')");
 
 							gaz_dbi_query("INSERT INTO " . $gTables['clfoco'] . "(ref_ecommerce_id_customer,codice,id_anagra,listin,descri,destin,speban,stapre,codpag) VALUES ('". $order->CustomerCode ."', '". $clfoco . "', '" . $id_anagra . "', '". intval($order->PriceListNum) ."' ,'" .addslashes($order->CustomerName)." ".addslashes($order->CustomerSurname) . "', '". $order->CustomerShippingDestin ."', 'S', 'T', '".$order->PaymentName."')");
 						}

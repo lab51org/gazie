@@ -66,14 +66,14 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))) {   //se non e' il p
 	$form["style"] = substr($_POST['style'], 0, 30);
 	$form["skin"] = substr($_POST['skin'], 0, 30);
 	$form["Abilit"] = intval($_POST['Abilit']);
-    $form['hidden_req'] = $_POST['hidden_req'];
+  $form['hidden_req'] = $_POST['hidden_req'];
 	$form['company_id'] = intval($_POST['company_id']);
 	$form['search']['company_id'] = $_POST['search']['company_id'];
 	$form["Access"] = intval($_POST['Access']);
 	$form["user_name"] = preg_replace("/[^A-Za-z0-9]i/", '',substr($_POST["user_name"], 0, 15));
-	$form["user_password_old"] = substr($_POST['user_password_old'], 0, 40);
-	$form["user_password_new"] = substr($_POST['user_password_new'], 0, 40);
-	$form["user_password_ver"] = substr($_POST['user_password_ver'], 0, 40);
+	$form["user_password_old"] = substr($_POST['user_password_old'], 0, 65);
+	$form["user_password_new"] = substr($_POST['user_password_new'], 0, 65);
+	$form["user_password_ver"] = substr($_POST['user_password_ver'], 0, 65);
 	$form["user_active"] = intval($_POST['user_active']);
 	$form['body_text'] = filter_input(INPUT_POST, 'body_text');
 	if ($toDo == 'insert') {
@@ -94,9 +94,10 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))) {   //se non e' il p
 	$form = gaz_dbi_get_row($gTables['admin'], "user_name", preg_replace("/[^A-Za-z0-9]/", '',substr($_GET["user_name"], 0, 15)));
 	// dal custom field di admin_module relativo al magazzino trovo il magazzino di default
 	$magmodule = gaz_dbi_get_row($gTables['module'], "name",'magazz');
-	$magadmin_module = gaz_dbi_get_row($gTables['admin_module'], "moduleid",$magmodule['id']," AND adminid='{$form['user_name']}' AND company_id=" . $admin_aziend['company_id']);
-	$magcustom_field=json_decode($magadmin_module['custom_field']);
-	$form["id_warehouse"] = (isset($magcustom_field->user_id_warehouse))?$magcustom_field->user_id_warehouse:0;
+	$mod_customfield = gaz_dbi_get_row($gTables['admin_module'], "moduleid",$magmodule['id']," AND adminid='{$form['user_name']}' AND company_id=" . $admin_aziend['company_id']);
+  $mod_customfield['custom_field'] = ($mod_customfield['custom_field'] === NULL) ? '' : $mod_customfield['custom_field'];
+	$customfield=json_decode($mod_customfield['custom_field']);
+	$form['id_warehouse'] = (isset($customfield->user_id_warehouse))?$customfield->user_id_warehouse:0;
 	$form['user_password_old'] = '';
 	$form['user_password_new'] = '';
 	$form['user_password_ver'] = '';
@@ -118,9 +119,9 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))) {   //se non e' il p
 	$form["id_warehouse"]=0;
 	$form["Abilit"] = 5;
 	// propongo la stessa azienda attiva sull'utente amministratore
-    $form['hidden_req'] = '';
-    $form['company_id'] = $user_data['company_id'];
-    $form['search']['company_id'] = '';
+  $form['hidden_req'] = '';
+  $form['company_id'] = $user_data['company_id'];
+  $form['search']['company_id'] = '';
 	$form["Access"] = 0;
 	$form["user_name"] = "";
 	$form['user_password_old'] = '';
@@ -145,7 +146,7 @@ if (isset($_POST['Submit'])) {
 	if (!filter_var($form['user_email'], FILTER_VALIDATE_EMAIL) && !empty($form['user_email'])) {
 		$msg['err'][] = 'email'; // non coincide, segnalo l'errore
 	}
-	if ($toDo == 'update' && !empty($form["user_password_old"])) {
+	if ($toDo == 'update' && $form["user_password_old"] != 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855') {
 		if (password_verify( $form["user_password_old"]  , $old_data["user_password_hash"] )) {
 			// voglio reimpostare la password ed è giusta
 		} else {
@@ -253,8 +254,30 @@ if (isset($_POST['Submit'])) {
 						menu.creatione_data.php  e mettere in essa tutte le query al database necessarie per il funzionamento del nuovo
 						modulo
 						*/
+						global $table_prefix;
+            $query = "SELECT codice FROM `".$table_prefix."_aziend`";
+            $result = gaz_dbi_query ($query);
+            $companies = array();
+            while($r=gaz_dbi_fetch_array($result)){
+              $companies[]=$r['codice'];
+            }
 						foreach ($update_db as $vq) {
-							gaz_dbi_query($vq);
+              if (preg_match("/XXX/",$vq)) { // query ricorsive sulle tabelle di tutte le aziende
+                foreach ($companies as $i) {
+                  $sql = preg_replace("/XXX/", sprintf('%03d',$i), $vq);
+                  if (!gaz_dbi_query($sql)) { //se non è stata eseguita l'istruzione lo segnalo
+                    echo "Query Fallita";
+                    echo "$sql <br/>";
+                    exit;
+                  }
+                }
+              } else { // query singola sulla tabella comune alle aziende
+                if (!gaz_dbi_query($vq)) { //se non è stata eseguita l'istruzione lo segnalo
+                  echo "Query Fallita";
+                  echo "$sql <br/>";
+                  exit;
+                }
+              }
 						}
 					}
 				  }
@@ -269,6 +292,9 @@ if (isset($_POST['Submit'])) {
 			require_once('../../modules/root/config_login.php');
 			$hash_cost_factor = (defined('HASH_COST_FACTOR') ? HASH_COST_FACTOR : null);
 			$form["user_password_hash"] = password_hash($form["user_password_new"] , PASSWORD_DEFAULT, array('cost' => $hash_cost_factor));
+      // ripreparo la chiave per criptare la chiave contenuta in $_SESSION con la nuova password e metterla aes_key di gaz_admin
+      $prepared_key = openssl_pbkdf2($form["user_password_new"].$form["user_name"], AES_KEY_SALT, 16, 1000, "sha256");
+      $form["aes_key"] = base64_encode(openssl_encrypt($_SESSION['aes_key'],"AES-128-CBC",$prepared_key,OPENSSL_RAW_DATA, AES_KEY_IV));
 
 			// Antonio Germani - Creo anche una nuova anagrafica nelle anagrafiche comuni
 			$form['ragso1']=$form['user_lastname'];
@@ -298,13 +324,16 @@ if (isset($_POST['Submit'])) {
 			}
 
 		} elseif ($toDo == 'update') {
-			if (!empty($form["user_password_old"])) {
+			if ($form["user_password_old"] != 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855') {
 				if (password_verify( $form["user_password_old"]  , $old_data["user_password_hash"] )) {
 					$form["datpas"] = date("YmdHis"); //cambio la data di modifica password
 					// faccio l'hash della password prima di scrivere sul db
 					require_once('../../modules/root/config_login.php');
 					$hash_cost_factor = (defined('HASH_COST_FACTOR') ? HASH_COST_FACTOR : null);
-					$form["user_password_hash"] = password_hash($form["user_password_new"] , PASSWORD_DEFAULT, array('cost' => $hash_cost_factor));
+					$form["user_password_hash"] = password_hash($form["user_password_new"] , PASSWORD_DEFAULT, ['cost' => $hash_cost_factor]);
+          // ripreparo la chiave per criptare la chiave contenuta in $_SESSION con la nuova password e metterla aes_key di gaz_admin
+          $prepared_key = openssl_pbkdf2($form["user_password_new"].$form["user_name"], AES_KEY_SALT, 16, 1000, "sha256");
+          $form["aes_key"] = base64_encode(openssl_encrypt($_SESSION['aes_key'],"AES-128-CBC",$prepared_key,OPENSSL_RAW_DATA, AES_KEY_IV));
 				}
 			}
 			gaz_dbi_table_update('admin', array("user_name", $form["user_name"]), $form);
@@ -346,57 +375,160 @@ if (isset($_POST['Submit'])) {
 	}
 }
 require("../../library/include/header.php");
-$script_transl = HeadMain(0, array('capslockstate/src/jquery.capslockstate'));
+$script_transl = HeadMain(0,['appendgrid/AppendGrid','capslockstate/src/jquery.capslockstate']);
 ?>
-<script type="text/javascript">
-$(document).ready(function () {
-	/* Bind to capslockstate events and update display based on state  */
-	/*
-	$(window).bind("capsOn", function (event) {
-		if ($("#login-password:focus").length > 0) {
-			$("tr td #capsWarning").show();
-		}
-	});
-	$(window).bind("capsOff capsUnknown", function (event) {
-		$("tr td #capsWarning").hide();
-	});
-	$("#login-password").bind("focusout", function (event) {
-		$("tr td #capsWarning").hide();
-	});
-	$("#login-password").bind("focusin", function (event) {
-		if ($(window).capslockstate("state") === true) {
-			$("tr td #capsWarning").show();
-		}
-	});
-	*/
-	/*
-	 * Initialize the capslockstate plugin.
-	 * Monitoring is happening at the window level.
-	 */
-	//$(window).capslockstate();
+<script src='../../js/sha256/forge-sha256.min.js'></script>
+<script>
+$(function(){
+	$("#dialog_module_card").dialog({ autoOpen: false });
+	$('.dialog_module_card').click(function() {
+		var mod = $(this).attr('module');
+		var username = $(this).attr('adminid');
+		var jsondatastr = null;
+		var deleted_rows = [];
+		$("p#iddescri").html('<img src="../'+mod+'/'+mod+'.png" height="32"> '+$(this).attr("transl_name")+'</b>');
+		$.ajax({ // prendo tutti i files php del modulo filtrati di quelli che so non essere di interesse
+			'async': false,
+			url:"./search.php",
+			type: "POST",
+			dataType: 'text',
+			data: { term: mod, opt: 'module', adminid: username },
+			success:function(jsonstr) {
+				//alert(jsonstr);
+				jsondatastr = jsonstr;
+			}
+		});
 
+		var myAppendGrid = new AppendGrid({ // creo la tabella vuota
+		  element: "tblAppendGrid",
+		  uiFramework: "bootstrap4",
+		  iconFramework: "default",
+		  initRows: 1,
+		  columns: [
+        {
+          name: "script_name",
+          display: "Script",
+          type: "text",
+          ctrlAttr: { 'readonly': 'readonly' },
+          ctrlCss: {'font-size': '12px'}
+        },
+        {
+          name: "chk_script",
+          display: "Nega accesso",
+          type: "checkbox",
+          cellCss: {'text-align': 'center'},
+          cellCss: {'width': '20px'}
+        },
+		  ],
+      hideButtons: {
+        // Remove all buttons at the end of rows
+        insert: true,
+        remove: true,
+        moveUp: true,
+        moveDown: true,
+        append: true,
+        removeLast: true
+      },
+      hideRowNumColumn: true
+		});
+
+		if (jsondatastr){
+      // popolo la tabella
+      var jsondata = $.parseJSON(jsondatastr);
+      myAppendGrid.load( jsondata );
+		}
+
+		$( "#dialog_module_card" ).dialog({
+			minHeight: 1,
+			width: 370,
+      position: { my: "top+100", at: "top+100", of: "div.container-fluid,div.wrapper div.content-wrapper",collision:" none" },
+      modal: "true",
+			show: "blind",
+			hide: "explode",
+			buttons: {
+				delete:{
+					text:'Annulla',
+					'class':'btn btn-default',
+					click:function (event, ui) {
+						$(this).dialog("close");
+					}
+				},
+				confirm :{
+				  text:'CONFERMA',
+				  'class':'btn btn-warning',
+				  click:function() {
+					var msg = null;
+					$.ajax({ // registro con i nuovi dati il cartellino presenze
+						'async': false,
+						data: {del_script: myAppendGrid.getAllValue(), type: 'module', ref: mod, adminid: username },
+						type: 'POST',
+						url: './delete.php',
+						success: function(output){
+							msg = output;
+							console.log(msg);
+						}
+					});
+					if (msg) {
+						alert(msg);
+					} else {
+						window.location.replace("./admin_utente.php?user_name=<?php echo $admin_aziend['user_name']; ?>&Update");
+					}
+				  }
+				}
+			}
+		});
+		$("#dialog_module_card" ).dialog( "open" );
+	});
+  $('#login-password, #user_password_new, #user_password_ver').keypress(function(e) {
+    var s = String.fromCharCode( e.which );
+    var pfield = $(this).position();
+    if ((s.toUpperCase() === s && s.toLowerCase() !== s && !e.shiftKey) || (s.toUpperCase() !== s && s.toLowerCase() === s && e.shiftKey)){
+      if ($(this).parent().find('#capsalert').length < 1) {
+        $('#capsalert').remove();
+        $(this).after('<b id="capsalert" onclick="$(this).remove();">Lettere maiuscole attivo, Caps-Lock on!</b>');
+        $('#capsalert')
+          .css('position', 'absolute')
+          .css('top', (pfield.top + $(this).outerHeight() + 1) + 'px')
+          .css('left', (pfield.left) + 'px')
+          .css('border-radius', '5px')
+          .css('padding', '5px')
+          .css('cursor', 'pointer')
+          .css('background-color', '#ffe599')
+          .css('border', '1px solid #e6ab00');
+        setTimeout(function(){
+          $('#capsalert').remove();
+        },'5000');
+      }
+    } else {
+      $('#capsalert').remove();
+    }
+  });
 });
 </script>
-<form method="POST" enctype="multipart/form-data"  autocomplete="off">
+<form method="POST" enctype="multipart/form-data"
+onsubmit="document.getElementById('login-password').value=forge_sha256(document.getElementById('login-password').value);
+document.getElementById('user_password_new').value=forge_sha256(document.getElementById('user_password_new').value);
+document.getElementById('user_password_ver').value=forge_sha256(document.getElementById('user_password_ver').value);" id="logform" autocomplete="off">
 <input type="hidden" name="ritorno" value="<?php print $_POST['ritorno']; ?>">
 <input type="hidden" name="hidden_req" value="<?php if (isset($_POST['hidden_req'])){ print $_POST['hidden_req']; } ?>">
 <?php
 if ($toDo == 'insert') {
-	echo "<div align=\"center\" class=\"FacetFormHeaderFont\">" . $script_transl['ins_this'] . "</div>\n";
+	echo "<div class=\"text-center\"><h3>" . $script_transl['ins_this'] . "</h3></div>\n";
 } else {
-	echo "<div align=\"center\" class=\"FacetFormHeaderFont\">" . $script_transl['upd_this'] . " '" . $form["user_name"] . "'</div>\n";
+	echo "<div class=\"text-center\"><h3>" . $script_transl['upd_this'] . " '" . $form["user_name"] . "'</h3></div>\n";
 	echo "<input type=\"hidden\" value=\"" . $form["user_name"] . "\" name=\"user_name\" />\n";
 }
 $gForm = new configForm();
 if (count($msg['err']) > 0) { // ho un errore
 	$gForm->gazHeadMessage($msg['err'], $script_transl['err'], 'err');
+  // svuoto le password
+	$form['user_password_old'] = '';
+	$form['user_password_new'] = '';
+	$form['user_password_ver'] = '';
 }
 echo '<input type="hidden" name="' . ucfirst($toDo) . '" value="">';
 ?>
-
-<div class="panel panel-default  table-responsive gaz-table-form">
-<div class="container-fluid">
-<table class="table table-striped">
+<table class="Tmiddle table-striped">
 <tr>
 <td class="FacetFieldCaptionTD"><?php echo $script_transl['user_lastname']; ?>* </td>
 <td colspan="2" class="FacetDataTD"><input title="Cognome" type="text" name="user_lastname" value="<?php print $form["user_lastname"] ?>" maxlength="30"  class="FacetInput">&nbsp;</td>
@@ -531,11 +663,6 @@ if ($toDo == 'insert') {
 <td colspan="2" class="FacetDataTD"><input title="Vecchia password" type="password" id="login-password" name="user_password_old" value="<?php echo $form["user_password_old"]; ?>" maxlength="40" class="FacetInput" id="ppass" /><div class="FacetDataTDred" id="pmsg"></div>&nbsp;</td>
 </tr>
 <tr>
-<td class="FacetFieldCaptionTD" colspan="3">
-<div id="capsWarning" class="alert alert-warning col-sm-12" style="display:none;">Blocco maiuscole attivato! Caps lock on! Bloqueo de mayusculas!</div>
-</td>
-</tr>
-<tr>
 <td class="FacetFieldCaptionTD"><?php echo $script_transl['user_password_new']; ?> </td>
 <td colspan="2" class="FacetDataTD"><input title="Conferma Password" type="password" id="user_password_new" name="user_password_new" value="<?php print $form["user_password_new"]; ?>" maxlength="40" class="FacetInput" id="cpass" /><div class="FacetDataTDred" id="cmsg"></div>&nbsp;</td>
 </tr>
@@ -560,25 +687,30 @@ if ($toDo == 'insert') {
 
 <?php
 if ($user_data["Abilit"] == 9) {
-
 	function getModule($login, $company_id) {
 		global $gTables, $admin_aziend;
 		//trovo i moduli installati
-		$mod_found = array();
+		$mod_found = [];
 		$relativePath = '../../modules';
 		if ($handle = opendir($relativePath)) {
 			while ($exist_mod = readdir($handle)) {
 				if ($exist_mod == "." || $exist_mod == ".." || $exist_mod == ".svn" || $exist_mod == "root" || !file_exists("../../modules/$exist_mod/menu." . $admin_aziend['lang'] . ".php"))
 				continue;
-				$rs_mod = gaz_dbi_dyn_query(" am.access ,am.moduleid, module.name", $gTables['admin_module'] . ' AS am LEFT JOIN ' . $gTables['module'] .
+				$rs_mod = gaz_dbi_dyn_query("am.access,am.moduleid, am.custom_field, module.name ", $gTables['admin_module'] . ' AS am LEFT JOIN ' . $gTables['module'] .
 				' AS module ON module.id=am.moduleid ', " am.adminid = '" . $login . "' AND module.name = '$exist_mod' AND am.company_id = '$company_id'", "am.adminid", 0, 1);
 				require("../../modules/$exist_mod/menu." . $admin_aziend['lang'] . ".php");
 				$row = gaz_dbi_fetch_array($rs_mod);
+				$row['excluded_script'] = [];
 				if (!isset($row['moduleid'])) {
 					$row['name'] = $exist_mod;
 					$row['moduleid'] = 0;
 					$row['access'] = 0;
+          $row['custom_field'] = '';
 				}
+        $chkes = is_string($row['custom_field'])?json_decode($row['custom_field']):false;
+        if ($chkes && isset($chkes->excluded_script)) {
+ 					$row['excluded_script'] = $chkes->excluded_script;
+        }
 				$row['transl_name'] = $transl[$exist_mod]['name'];
 				$mod_found[$exist_mod] = $row;
 			}
@@ -593,39 +725,39 @@ if ($user_data["Abilit"] == 9) {
 	$co_rs = gaz_dbi_dyn_query($what, $table, 1, "ragsoc ASC");
 	while ($co = gaz_dbi_fetch_array($co_rs)) {
 		$co_id = sprintf('%03d', $co['id']);
-		echo "<tr><td align=\"center\" colspan=\"3\">" . $co['ragsoc'] . '  - ' . $co['set_co'] . "</tr>\n";
-		echo "<tr><td class=\"FacetDataTD\">" .'<input type=hidden name="' . $co_id . 'nusr_root" value="3">'. $script_transl['mod_perm'] . ":</td>\n";
-		echo "<td>" . $script_transl['all'] . "</td>\n";
-		echo "<td>" . $script_transl['none'] . "</td></tr>\n";
+		echo '</table><br/><div class="text-center"><h3><img src="../../modules/root/view.php?table=aziend&value='.$co['id'].'" alt="Logo" height="30"> ' . $co['ragsoc'] . '  - ID:' . $co['id'] . '</h3></div><table class="Tmiddle table-striped"><tbody>';
+		echo "<tr><td class=\"FacetDataTD\">" .'<input type=hidden name="' . $co_id . 'nusr_root" value="3"><b>'. $script_transl['mod_perm'] . ":</b></td>\n";
+		echo "<td><b>" . $script_transl['all'] . "</b></td>\n";
+		echo '<td align="center"><b> Script esclusi</b></td>';
+		echo "<td><b>" . $script_transl['none'] . "</b></td></tr>\n";
 		$mod_found = getModule($form["user_name"], $co['id']);
 		$mod_admin = getModule($user_data["user_name"], $co['id']);
 		foreach ($mod_found as $mod) {
 			echo "<tr>\n";
-			echo '<td class="FacetFieldCaptionTD">
+			echo '<td>
 								<img height="16" src="../' . $mod['name'] . '/' . $mod['name'] . '.png" /> ' . $mod['transl_name'] . ' (' . $mod['name'] . ")</td>\n";
 			if ($mod['moduleid'] == 0) { // il modulo non è stato mai attivato
 				if ($form["user_name"] <> $user_data["user_name"]) { // sono un amministratore che sta operando sul profilo di altro utente
-                    if ($mod_admin[$mod['name']]['access']==3){ // il modulo è attivo sull'amministratore
-                        // per evitare conflitti nemmeno l'amministratore può attivare un modulo se questo non lo è ancora sul suo
-                        echo "  <td><input type=radio name=\"" . $co_id . "nusr_" . $mod['name'] . "\" value=\"3\"></td>";
-                        echo "  <td><input type=radio checked name=\"" . $co_id . "nusr_" . $mod['name'] . "\" value=\"0\"></td>";
-                    } else { // modulo non attivo sull'amministratore
-                        echo '  <td>Non attivato</td>';
-                        echo '  <td><input type="hidden"  name="' . $co_id . "nusr_" . $mod['name'] . '" value="0"></td>';
-
-                    }
+          if ($mod_admin[$mod['name']]['access']==3){ // il modulo è attivo sull'amministratore
+              // per evitare conflitti nemmeno l'amministratore può attivare un modulo se questo non lo è ancora sul suo
+              echo "  <td colspan=2 ><input type=radio name=\"" . $co_id . "nusr_" . $mod['name'] . "\" value=\"3\"></td>";
+              echo "  <td><input type=radio checked name=\"" . $co_id . "nusr_" . $mod['name'] . "\" value=\"0\"></td>";
+          } else { // modulo non attivo sull'amministratore
+              echo '  <td colspan=2 >Non attivato</td>';
+              echo '  <td><input type="hidden"  name="' . $co_id . "nusr_" . $mod['name'] . '" value="0"></td>';
+          }
 				} elseif ($co['set_co'] == 0) { // il modulo mai attivato
-					echo "  <td><input type=radio name=\"" . $co_id . "nusr_" . $mod['name'] . "\" value=\"3\"></td>";
+					echo "  <td colspan=2><input type=radio name=\"" . $co_id . "nusr_" . $mod['name'] . "\" value=\"3\"></td>";
 					echo "  <td><input type=radio checked name=\"" . $co_id . "nusr_" . $mod['name'] . "\" value=\"0\"></td>";
 				} else { // se l'amministratore che sta operando sul proprio profilo può attivare un nuovo modulo e creare il relativo menù
-					echo "  <td class=\"FacetDataTDred\"><input class=\"btn btn-warning\" type=radio name=\"" . $co_id . "new_" . $mod['name'] . "\" value=\"3\">Modulo attivabile</td>";
+					echo "  <td class=\"FacetDataTDred\" colspan=2><input class=\"btn btn-warning\" type=radio name=\"" . $co_id . "new_" . $mod['name'] . "\" value=\"3\">Modulo attivabile</td>";
 					echo "  <td class=\"FacetDataTDred\"><input type=radio checked name=\"" . $co_id . "new_" . $mod['name'] . "\" value=\"0\"></td>";
 				}
 			} elseif ($mod['access'] == 0) { // il modulo è attivato, quindi propongo i valori precedenti
-				echo "  <td><input type=radio name=\"" . $co_id . "acc_" . $mod['moduleid'] . "\" value=\"3\"></td>";
+				echo "  <td colspan=2><input type=radio name=\"" . $co_id . "acc_" . $mod['moduleid'] . "\" value=\"3\"></td>";
 				echo "  <td><input type=radio checked name=\"" . $co_id . "acc_" . $mod['moduleid'] . "\" value=\"0\"></td>";
 			} else {
-				echo "  <td><input type=radio checked name=\"" . $co_id . "acc_" . $mod['moduleid'] . "\" value=\"3\"></td>";
+				echo '<td><input type=radio checked name="'. $co_id . 'acc_' . $mod['moduleid'] . '" value="3"> </td><td><a class="btn btn-xs dialog_module_card" module="'.$mod['name'].'" adminid="'.$form['user_name'].'" transl_name="'.$mod['transl_name'].'"><i class="glyphicon glyphicon-edit"></i>'.((count($mod['excluded_script'])>=1)?'<p class="text-left">'.implode('.php</p><p class="text-left">',$mod['excluded_script']).'.php</p>':'nessuno</p>').'</a></td>';
 				echo "  <td><input type=radio name=\"" . $co_id . "acc_" . $mod['moduleid'] . "\" value=\"0\"></td>";
 			}
 			echo "</tr>\n";
@@ -634,13 +766,26 @@ if ($user_data["Abilit"] == 9) {
 }
 
 ?>
-    </table>
-    </div>
-    <div class="col-xs-12 text-center"><input name="Submit" class="btn btn-warning" type="submit" value="<?php echo ucfirst($script_transl[$toDo]); ?>"></div>
-</div>
+</table><br/>
+<div class="FacetFooterTD text-center"><input name="Submit" class="btn btn-warning" type="submit" value="<?php echo ucfirst($script_transl[$toDo]); ?>"></div>
 </form>
+<?php
+if ($admin_aziend['Abilit']==9){
+	?>
+	<div style="display:none; padding-bottom: 30px;" id="dialog_module_card" title="Disabilitazione script">
+    <p><b>Modulo:</b></p>
+		<p class="ui-state-highlight" id="iddescri"></p>
+		<table id="tblAppendGrid"></table>
+	</div>
+	<div style="padding-top: 30px; padding-bottom: 3000px;">
+    <div class="col-sm-12 col-md-1"></div><div class="col-sm-12 col-md-11"><b>Gli amministratore possono </b> <a data-toggle="collapse" class="btn btn-sm btn-warning" href="#gconfig" aria-expanded="false" aria-controls="gconfig"> accedere ai dati globali ↕ </a></div>
+    <div class="collapse" id="gconfig">
+      <iframe src="../../modules/root/set_config_data.php?iframe=TRUE" title="Configurazione globale" width="100%" height="1330"  frameBorder="0"></iframe>
+    </div>
+	</div>
+	<?php
+}
+?>
 <?php
 require("../../library/include/footer.php");
 ?>
-
-

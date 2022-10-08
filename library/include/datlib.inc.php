@@ -52,7 +52,7 @@ if (isset($_SESSION['table_prefix'])) {
 }
 
 // tabelle comuni alle aziende della stessa gestione
-$tn = array('admin','admin_config','admin_module','anagra','aziend','bank','breadcrumb',
+$tn = array('admin','admin_config','admin_module','anagra','anagraes','aziend','bank','breadcrumb',
     'camp_avversita','camp_colture','camp_fitofarmaci','camp_uso_fitofarmaci','classroom',
     'config','country','currencies','currency_history','destina','languages', 'menu_module',
     'menu_script','menu_usage','module','municipalities','provinces','regions','staff_absence_type',
@@ -61,17 +61,17 @@ foreach ($tn as $v) {
     $gTables[$v] = $table_prefix . "_" . $v;
 }
 
-if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-    $local = gaz_dbi_get_row($gTables['config'], 'variable', 'win_locale');
-} else {
-    $local = gaz_dbi_get_row($gTables['config'], 'variable', 'lin_locale');
-}
 
 if ($gazie_locale != "") {
-    setlocale(LC_TIME, $gazie_locale);
+  setlocale(LC_TIME, $gazie_locale);
 } else {
+  if ($link) {
+    $local = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? gaz_dbi_get_row($gTables['config'], 'variable', 'win_locale'):gaz_dbi_get_row($gTables['config'], 'variable', 'lin_locale');
+    $gazie_locale = $local['cvalue'];
     setlocale(LC_TIME, $local['cvalue']);
+  }
 }
+$gazTimeFormatter = new IntlDateFormatter($gazie_locale,IntlDateFormatter::FULL,IntlDateFormatter::FULL,'Europe/Rome');
 
 $id = 1;
 if (isset($_SESSION['company_id'])) {

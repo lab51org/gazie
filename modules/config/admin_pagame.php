@@ -101,6 +101,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
     $form['numrat'] = 0;
     $form['tiprat'] = 'M';
     $form['fae_mode'] = '';
+    $form['web_payment_ref'] = '';
     $form['id_bank'] = 0;
     $form['annota'] = '';
 }
@@ -112,7 +113,7 @@ echo "<form method=\"POST\">";
 echo "<input type=\"hidden\" name=\"ritorno\" value=\"" . $_POST['ritorno'] . "\">\n";
 echo "<input type=\"hidden\" name=\"" . ucfirst($toDo) . "\" value=\"\">";
 echo "<div align=\"center\" class=\"FacetFormHeaderFont\">" . $script_transl[$toDo] . $script_transl[0] . "</div>";
-echo "<table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" class=\"FacetFormTABLE\" align=\"center\">";
+echo "<table class=\"Tmiddle table-striped\" align=\"center\">";
 if (!empty($msg)) {
     $message = "";
     $rsmsg = array_slice(explode('+', chop($msg)), 0, -1);
@@ -237,15 +238,11 @@ echo "<tr><td class=\"FacetFieldCaptionTD\">" . $script_transl[13] . "</td>
      <td class=\"FacetDataTD\">\n";
 echo "\t<input type=\"text\" name=\"annota\" value=\"" . $form['annota'] . "\" maxlength=\"50\"  class=\"FacetInput\">\n";
 echo "</td></tr>";
-echo "<tr>\n
-      <td class=\"FacetFieldCaptionTD\">
-      <input type=\"submit\" name=\"Return\" value=\"" . ucfirst($script_transl['return']) . "\">\n
-      <input type=\"reset\" name=\"Cancel\" value=\"" . ucfirst($script_transl['cancel']) . "\">\n
-      </td><td class=\"FacetDataTD\" align=\"right\">\n";
+echo "<tr><td colspan=2 class=\"FacetFooterTD text-center\">\n";
 if ($toDo == 'update') {
-    echo '<input name="Submit" title="Accetta tutto e modifica" type="submit" value="Modifica">';
+    echo '<input name="Submit" class="btn btn-warning" title="Accetta tutto e modifica" type="submit" value="Modifica">';
 } else {
-    echo '<input name="Submit" title="Accetta tutto e inserisce" type="submit" value="Inserisci">';
+    echo '<input name="Submit" class="btn btn-warning" title="Accetta tutto e inserisce" type="submit" value="Inserisci">';
 }
 ?>
 </td>

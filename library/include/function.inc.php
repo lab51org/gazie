@@ -41,6 +41,7 @@ if (strlen($radix) > 1) {
     session_name(_SESSION_NAME);
 }
 session_start();
+session_gc();
 $prev_script = '';
 if (isset($_SERVER["HTTP_REFERER"])) {
     $prev = explode("?", basename($_SERVER["HTTP_REFERER"]));
@@ -227,46 +228,40 @@ function gaz_format_number($number = 0) {
     return number_format(floatval($number), $currency['decimal_place'], $currency['decimal_symbol'], $currency['thousands_symbol']);
 }
 
-function gaz_create_date($d, $m, $yyyy) { // crea una data nel formato dd-mm-yyyy
-    $giorno = substr('00' . $d, -2); // mettiamo lo 0 davanti ai numeri di 1 cifra
-    $mese = substr('00' . $m, -2); // mettiamo lo 0 davanti ai numeri di 1 cifra
-    return $giorno . "-" . $mese . "-" . $yyyy;
-}
-
 function gaz_format_date($date, $from_form = false, $to_form = false) {
 	if (intval($date)==0){
 		return null;
 	}
-    if ($from_form) { // dal formato gg-mm-aaaa o gg/mm/aaaa (es. proveniente da form) a diversi
-        $m = intval(substr($date, 3, 2));
-        $d = intval(substr($date, 0, 2));
-        $Y = intval(substr($date, 6, 4));
-        $uts = mktime(0, 0, 0, $m, $d, $Y);
-        if ($from_form === true) { // adatto al db
-            return date("Y-m-d", $uts);
-        } elseif ($from_form === 1) { // per i campi input dei form
-            return date("d/m/Y", $uts);
-        } elseif ($from_form === 2) { // restituisce l'mktime
-            return $uts;
-        } elseif ($from_form === 3) { // il valore numerico (confrontabile)
-            return date("Ymd", $uts);
-        } elseif ($from_form === 'chk') { // restituisce true o false se la data non � stata formattata bene
-            return checkdate($m, $d, $Y);
-        } else { // altri restituisco il timestamp
-            return date("Ymd", $uts);
-        }
-    } else { // dal formato aaaa-mm-gg oppure aaaa/mm/gg (es. proveniente da db) a diversi
-        $uts = mktime(0, 0, 0, intval(substr($date, 5, 2)), intval(substr($date, 8, 2)), intval(substr($date, 0, 4)));
-        if ($to_form === false) { // adatto al db
-            return date("d-m-Y", $uts);
-        } elseif ($to_form === 2) { // restituisce l'mktime
-            return $uts;
-        } elseif ($to_form === 3) { // il valore numerico (confrontabile)
-            return date("Ymd", $uts);
-        } else { // adatto ai form input
-            return date("d/m/Y", $uts);
-        }
+  if ($from_form) { // dal formato gg-mm-aaaa o gg/mm/aaaa (es. proveniente da form) a diversi
+    $m = intval(substr($date, 3, 2));
+    $d = intval(substr($date, 0, 2));
+    $Y = intval(substr($date, 6, 4));
+    $uts = mktime(0, 0, 0, $m, $d, $Y);
+    if ($from_form === true) { // adatto al db
+        return date("Y-m-d", $uts);
+    } elseif ($from_form === 1) { // per i campi input dei form
+        return date("d/m/Y", $uts);
+    } elseif ($from_form === 2) { // restituisce l'mktime
+        return $uts;
+    } elseif ($from_form === 3) { // il valore numerico (confrontabile)
+        return date("Ymd", $uts);
+    } elseif ($from_form === 'chk') { // restituisce true o false se la data non � stata formattata bene
+        return checkdate($m, $d, $Y);
+    } else { // altri restituisco il timestamp
+        return date("Ymd", $uts);
     }
+  } else { // dal formato aaaa-mm-gg oppure aaaa/mm/gg (es. proveniente da db) a diversi
+    $uts = mktime(0, 0, 0, intval(substr($date, 5, 2)), intval(substr($date, 8, 2)), intval(substr($date, 0, 4)));
+    if ($to_form === false) { // adatto al db
+        return date("d-m-Y", $uts);
+    } elseif ($to_form === 2) { // restituisce l'mktime
+        return $uts;
+    } elseif ($to_form === 3) { // il valore numerico (confrontabile)
+        return date("Ymd", $uts);
+    } else { // adatto ai form input
+        return date("d/m/Y", $uts);
+    }
+  }
 }
 
 function gaz_format_datetime($date) {
@@ -319,21 +314,19 @@ function gaz_set_time_limit($time) {
 }
 
 function CalcolaImportoRigo($quantita, $prezzo, $sconto, $decimal = 2) {
-
-    if (is_array($sconto)) {
-        $res = 1;
-        foreach ($sconto as $val) {
-			if (!$val){$val=0.00;}
-            $res -= $res * $val / 100;
-        }
-        $res = 1 - $res;
-    } else {
-		if (!$sconto){
-			$sconto=0.00;
-		}
-        $res = $sconto / 100;
+  if (is_array($sconto)) {
+    $res = 1;
+    foreach ($sconto as $val) {
+      if (!$val) $val=0.00;
+      $res -= $res * $val / 100;
     }
-    return round($quantita * ($prezzo - $prezzo * $res), $decimal);
+    $res = 1 - $res;
+  } else {
+    if (!$sconto)	$sconto=0.00;
+    $res = $sconto / 100;
+  }
+  $prezzo=(float)$prezzo;
+  return round((float)$quantita * ($prezzo - $prezzo * (float)$res) , (int)$decimal);
 }
 
 //
@@ -344,11 +337,11 @@ function CalcolaImportoRigo($quantita, $prezzo, $sconto, $decimal = 2) {
 // a un massimo di ulteriori nove caratteri
 //
 function table_prefix_ok($table_prefix) {
-    if (preg_match("/^[g][a][z][a-z0-9]{0,9}$/", $table_prefix) == 1) {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
+  if (preg_match("/^[g][a][z][a-z0-9]{0,9}$/", $table_prefix) == 1) {
+      return TRUE;
+  } else {
+      return FALSE;
+  }
 }
 
 //
@@ -527,18 +520,18 @@ class Config {
          * In caso di inserimento � necessario passare un array in $value mentre in caso di
          * aggiornamento � sufficiente un valore */
         global $gTables;
-        $variable = filter_var(substr($variable, 0, 100), FILTER_SANITIZE_STRING);
+        $variable = filter_var(substr($variable, 0, 100), FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $result = gaz_dbi_dyn_query("*", $gTables['config'], "variable='" . $variable . "'");
         if (gaz_dbi_num_rows($result) >= 1) { // � un aggiornamento
             if (is_array($value)) {
                 $row = gaz_dbi_fetch_array($result);
-                $value['cvalue'] = filter_var(substr($value['cvalue'], 0, 100), FILTER_SANITIZE_STRING);
+                $value['cvalue'] = filter_var(substr($value['cvalue'], 0, 100), FILTER_SANITIZE_FULL_SPECIAL_CHARS);
                 $this->{$variable} = $value['cvalue'];
                 $value['variable'] = $variable;
                 ;
                 gaz_dbi_table_update('config', array('id', $row['id']), $value);
             } else {
-                $this->{$variable} = filter_var(substr($value, 0, 100), FILTER_SANITIZE_STRING);
+                $this->{$variable} = filter_var(substr($value, 0, 100), FILTER_SANITIZE_FULL_SPECIAL_CHARS);
                 gaz_dbi_put_row($gTables['config'], 'variable', $variable, 'cvalue', $value['cvalue']);
             }
         } else { // � un inserimento
@@ -569,17 +562,17 @@ class UserConfig {
          * In caso di inserimento � necessario passare un array in $value mentre in caso di
          * aggiornamento � sufficiente un valore */
         global $gTables, $form;
-        $variable = filter_var(substr($variable, 0, 100), FILTER_SANITIZE_STRING);
+        $variable = filter_var(substr($variable, 0, 100), FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $result = gaz_dbi_dyn_query("*", $gTables['admin_config'], "var_name='" . $variable . "'");
         if (gaz_dbi_num_rows($result) >= 1) { // � un aggiornamento
             if (is_array($value)) {
                 $row = gaz_dbi_fetch_array($result);
-                $value['var_value'] = filter_var(substr($value['var_value'], 0, 100), FILTER_SANITIZE_STRING);
+                $value['var_value'] = filter_var(substr($value['var_value'], 0, 100), FILTER_SANITIZE_FULL_SPECIAL_CHARS);
                 $this->{$variable} = $value['var_value'];
                 $value['var_name'] = $variable;
                 gaz_dbi_table_update('admin_config', array('id', $row['id']), $value);
             } else {
-                $this->{$variable} = filter_var(substr($value, 0, 100), FILTER_SANITIZE_STRING);
+                $this->{$variable} = filter_var(substr($value, 0, 100), FILTER_SANITIZE_FULL_SPECIAL_CHARS);
                 gaz_dbi_put_row($gTables['admin_config'], 'var_name', $variable, 'var_value', $value['var_value']);
             }
         } else { // � un inserimento
@@ -772,6 +765,7 @@ class SelectBox {
         }
         $result = gaz_dbi_query($query);
         while ($a_row = gaz_dbi_fetch_array($result)) {
+          if (isset($a_row[$index1])){
             $selected = "";
             if ($a_row[$key] == $this->selected) {
                 $selected = "selected";
@@ -784,6 +778,7 @@ class SelectBox {
                 if ( strpos( $query, 'banapp' )) echo sprintf("%'.05d\n", $a_row["codabi"])." ".sprintf("%'.05d\n", $a_row["codcab"])."  ";
                 echo substr($a_row[$index1], 0, 38) . $bridge . substr($a_row[$index2], 0, 35) . "</option>\n";
             }
+          }
         }
         echo "\t </select>\n";
     }
@@ -1389,7 +1384,7 @@ class GAzieMail {
 
     function sendMail($admin_data, $user, $content, $receiver, $mail_message = '') {
 		// su $admin_data['other_email'] ci va un eventuale indirizzo mail diverso da quello in anagrafica
- 
+
 		global $gTables, $debug_active;
 
         require_once "../../library/phpmailer/class.phpmailer.php";
@@ -1398,7 +1393,7 @@ class GAzieMail {
         //
         // Si procede con la costruzione del messaggio.
         //
-		
+
 		if (isset ($receiver['mod_fae']) && strpos($receiver['mod_fae'], 'pec')===0){// se c'è il modulo per invio fae che inizia il suo nome con 'pec' definisco il server smtp con la pec
 			$config_port = gaz_dbi_get_row($gTables['company_config'], 'var', 'pec_smtp_port');
 			$config_secure = gaz_dbi_get_row($gTables['company_config'], 'var', 'pec_smtp_secure');
@@ -1406,7 +1401,7 @@ class GAzieMail {
 			$config_pass = gaz_dbi_get_row($gTables['company_config'], 'var', 'pec_smtp_psw');
 			$config_host = gaz_dbi_get_row($gTables['company_config'], 'var', 'pec_smtp_server');
 			$admin_data['other_email'] = $admin_data['pec'];
-			$mailto = $admin_data['other_email']; //recipient-DESTINATARIO
+			$mailto = $receiver['e_mail']; //recipient-DESTINATARIO
 		} else {// altrimenti prendo la configurazione smtp semplice
 			$config_port = gaz_dbi_get_row($gTables['company_config'], 'var', 'smtp_port');
 			$config_secure = gaz_dbi_get_row($gTables['company_config'], 'var', 'smtp_secure');
@@ -1414,16 +1409,19 @@ class GAzieMail {
 			$config_pass = gaz_dbi_get_row($gTables['company_config'], 'var', 'smtp_password');
 			$config_host = gaz_dbi_get_row($gTables['company_config'], 'var', 'smtp_server');
 			$mailto = $receiver['e_mail']; //recipient-DESTINATARIO
-		}			
+		}
+
         // definisco il server SMTP e il mittente
-        $config_mailer = gaz_dbi_get_row($gTables['company_config'], 'var', 'mailer');        
-        $config_notif = gaz_dbi_get_row($gTables['company_config'], 'var', 'return_notification');        
+        $config_mailer = gaz_dbi_get_row($gTables['company_config'], 'var', 'mailer');
+        $config_notif = gaz_dbi_get_row($gTables['company_config'], 'var', 'return_notification');
         $config_replyTo = gaz_dbi_get_row($gTables['company_config'], 'var', 'reply_to');
         // attingo il contenuto del corpo della email dall'apposito campo della tabella configurazione utente
         $user_text = gaz_dbi_get_row($gTables['admin_config'], 'var_name', 'body_send_doc_email', "AND adminid = '{$user['user_name']}'");
         $company_text = gaz_dbi_get_row($gTables['company_config'], 'var', 'company_email_text');
         $admin_data['web_url'] = trim($admin_data['web_url']);
-		
+        if (!empty($admin_data['other_email']) && strlen($admin_data['other_email'])>=10){
+          $mailto = $admin_data['other_email']; //recipient
+        }
         $subject = $admin_data['ragso1'] . " " . $admin_data['ragso2'] . " - Trasmissione " . str_lreplace('.pdf', '', (isset($admin_data['doc_name']))?$admin_data['doc_name']:''); //subject
         // aggiungo al corpo  dell'email
         $body_text = "<div><b>" . ((isset($admin_data['cliente1']))?$admin_data['cliente1']:'') . "</b></div>\n";
@@ -1479,10 +1477,10 @@ class GAzieMail {
         }
 		if (isset ($receiver['mod_fae']) && strpos($receiver['mod_fae'], 'pec')===0){// se c'è il modulo per invio fae che inizia il suo nome con 'pec' cambio il mittente come da impostazioni specifiche
 			$mittente=$admin_data['pec'];
-			$config_send_fae = gaz_dbi_get_row($gTables['company_config'], 'var', 'dest_fae_zip_package')['val'];
+			$config_send_fae = gaz_dbi_get_row($gTables['company_config'], 'var', 'pecsdi_sdi_email')['val'];
 			if (strlen($config_send_fae)>0){// se c'è un indirizzo per i pacchetti zip in configurazione azienda
-				$mail->AddCC($config_send_fae, $admin_data['ragso1'] . " " . $admin_data['ragso2']);// Aggiungo secondo Destinatario per conoscenza
-			}			
+				$mail->AddAddress($config_send_fae, $admin_data['ragso1'] . " " . $admin_data['ragso2']);// Aggiungo PEC SDI come Destinatario
+			}
 		}
         // Imposto eventuale richiesta di notifica
         if ($config_notif['val'] == 'yes') {
@@ -1494,9 +1492,12 @@ class GAzieMail {
         // Imposto email del destinatario
         $mail->Hostname = $config_host;
         $mail->AddAddress($mailto);//Destinatario
-       		
-        $mail->AddCC($mittente, $admin_data['ragso1'] . " " . $admin_data['ragso2']);// Aggiungo mittente come destinatario per conoscenza, per avere una copia
-		
+        if (strlen($user['user_email'])>=10) { // quando l'utente che ha inviato la mail ha un suo indirizzo il reply avviene su di lui
+          $usermail = $user['user_email'];
+          $mail->AddCC($usermail, $admin_data['ragso1'] . " " . $admin_data['ragso2']); // Aggiungo mittente come destinatario per conoscenza, per avere una copia
+        }
+
+
         // Imposto l'oggetto dell'email
         $mail->Subject = $subject;
         // Imposto il testo HTML dell'email
@@ -1607,78 +1608,81 @@ class GAzieForm {
     }
 
     function Calendar($name, $day, $month, $year, $class = 'FacetSelect', $refresh = '') {
-        if (!empty($refresh)) {
-            $refresh = "onchange=\"this.form.hidden_req.value='$refresh'; this.form.submit();\"";
-        }
+      global $gazTimeFormatter;
+      $gazTimeFormatter->setPattern('MMMM');
+      if (!empty($refresh)) {
+          $refresh = "onchange=\"this.form.hidden_req.value='$refresh'; this.form.submit();\"";
+      }
 
-        echo "\t <select name=\"" . $name . "_D\" id=\"" . $name . "_D\" class=\"$class\" $refresh>\n";
-        for ($i = 1; $i <= 31; $i++) {
-            $selected = "";
-            if ($i == $day) {
-                $selected = "selected";
-            }
-            echo "\t\t <option value=\"$i\" $selected >$i</option>\n";
-        }
-        echo "\t </select>\n";
-        echo "\t <select name=\"" . $name . "_M\" id=\"" . $name . "_M\" class=\"$class\" $refresh>\n";
-        for ($i = 1; $i <= 12; $i++) {
-            $selected = "";
-            if ($i == $month) {
-                $selected = "selected";
-            }
-            $month_name = ucwords(strftime("%B", mktime(0, 0, 0, $i, 1, 0)));
-            echo "\t\t <option value=\"$i\"  $selected >$month_name</option>\n";
-        }
-        echo "\t </select>\n";
-        echo "\t <select name=\"" . $name . "_Y\" id=\"" . $name . "_Y\" class=\"$class\" $refresh>\n";
-        for ($i = $year - 10; $i <= $year + 10; $i++) {
-            $selected = "";
-            if ($i == $year) {
-                $selected = "selected";
-            }
-            echo "\t\t <option value=\"$i\"  $selected >$i</option>\n";
-        }
-        echo "\t </select>\n";
+      echo "\t <select name=\"" . $name . "_D\" id=\"" . $name . "_D\" class=\"$class\" $refresh>\n";
+      for ($i = 1; $i <= 31; $i++) {
+          $selected = "";
+          if ($i == $day) {
+              $selected = "selected";
+          }
+          echo "\t\t <option value=\"$i\" $selected >$i</option>\n";
+      }
+      echo "\t </select>\n";
+      echo "\t <select name=\"" . $name . "_M\" id=\"" . $name . "_M\" class=\"$class\" $refresh>\n";
+      for ($i = 1; $i <= 12; $i++) {
+          $selected = "";
+          if ($i == $month) {
+              $selected = "selected";
+          }
+          $month_name = ucwords($gazTimeFormatter->format(new DateTime("2000-".$i."-01")));
+          echo "\t\t <option value=\"$i\"  $selected >$month_name</option>\n";
+      }
+      echo "\t </select>\n";
+      echo "\t <select name=\"" . $name . "_Y\" id=\"" . $name . "_Y\" class=\"$class\" $refresh>\n";
+      for ($i = $year - 10; $i <= $year + 10; $i++) {
+          $selected = "";
+          if ($i == $year) {
+              $selected = "selected";
+          }
+          echo "\t\t <option value=\"$i\"  $selected >$i</option>\n";
+      }
+      echo "\t </select>\n";
     }
 
     function CalendarPopup($name, $day, $month, $year, $class = 'FacetSelect', $refresh = '') {
-        global $script_transl;
-        if (!empty($refresh)) {
-            $refresh = ' onchange="this.form.hidden_req.value=\'' . $refresh . '\'; this.form.submit();"';
-        }
-
-        echo '<select name="' . $name . '_D" id="' . $name . '_D" class="' . $class . '"' . $refresh . '>';
-        for ($i = 1; $i <= 31; $i++) {
-            $selected = "";
-            if ($i == $day) {
-                $selected = ' selected=""';
-            }
-            echo '		<option value="' . $i . '"' . $selected . '>' . $i . '</option>';
-        }
-        echo '	</select>
-	  			<select name="' . $name . '_M" id="' . $name . '_M" class="' . $class . '"' . $refresh . '>';
-        for ($i = 1; $i <= 12; $i++) {
-            $selected = "";
-            if ($i == $month) {
-                $selected = ' selected=""';
-            }
-            $month_name = ucwords(strftime("%B", mktime(0, 0, 0, $i, 1, 0)));
-            echo '		<option value="' . $i . '"' . $selected . '>' . $month_name . '</option>';
-        }
-        echo '</select>
-	  		<input type="text" name="' . $name . '_Y" id="' . $name . '_Y" value="' . $year . '" class="' . $class . '"  maxlength="4" size="4"' . $refresh . ' />
-	  		<a class="btn btn-default btn-sm" href="#" onClick="setDate(\'' . $name . '\'); return false;" title="' . $script_transl['changedate'] . '" name="anchor" id="anchor">
-				<i class="glyphicon glyphicon-calendar"></i>
+      global $script_transl,$gazTimeFormatter;
+      $gazTimeFormatter->setPattern('MMMM');
+      if (!empty($refresh)) {
+          $refresh = ' onchange="this.form.hidden_req.value=\'' . $refresh . '\'; this.form.submit();"';
+      }
+      echo '<select name="' . $name . '_D" id="' . $name . '_D" class="' . $class . '"' . $refresh . '>';
+      for ($i = 1; $i <= 31; $i++) {
+          $selected = "";
+          if ($i == $day) {
+              $selected = ' selected=""';
+          }
+          echo '		<option value="' . $i . '"' . $selected . '>' . $i . '</option>';
+      }
+      echo '	</select>
+	  		<select name="' . $name . '_M" id="' . $name . '_M" class="' . $class . '"' . $refresh . '>';
+      for ($i = 1; $i <= 12; $i++) {
+          $selected = "";
+          if ($i == $month) {
+              $selected = ' selected=""';
+          }
+          $month_name = ucwords($gazTimeFormatter->format(new DateTime("2000-".$i."-01")));
+          echo '		<option value="' . $i . '"' . $selected . '>' . $month_name . '</option>';
+      }
+      echo '</select>
+	  	<input type="text" name="' . $name . '_Y" id="' . $name . '_Y" value="' . $year . '" class="' . $class . '"  maxlength="4" size="4"' . $refresh . ' />
+	  	<a class="btn btn-default btn-sm" href="#" onClick="setDate(\'' . $name . '\'); return false;" title="' . $script_transl['changedate'] . '" name="anchor" id="anchor">
+			<i class="glyphicon glyphicon-calendar"></i>
 			</a>';
     }
 
-    function variousSelect($name, $transl, $sel, $class = 'FacetSelect', $bridge = true, $refresh = '', $maxlenght = false, $style = '',$empty=false) {
-        if (!empty($refresh)) {
+    function variousSelect($name, $transl, $sel, $class = 'FacetSelect', $bridge = true, $refresh = '', $maxlenght = false, $style = '',$empty=false, $echo=false) {
+        $acc="";
+		if (!empty($refresh)) {
             $refresh = "onchange=\"this.form.hidden_req.value='$refresh'; this.form.submit();\"";
         }
-        echo "<select name=\"$name\" id=\"$name\" class=\"$class\" $refresh $style>\n";
+        $acc .= "<select name=\"$name\" id=\"$name\" class=\"$class\" $refresh $style>\n";
         if ($empty) {
-            echo "\t\t <option value=\"$empty\"></option>\n";
+            $acc .= "\t\t <option value=\"$empty\"></option>\n";
         }
 
         foreach ($transl as $i => $val) {
@@ -1694,9 +1698,14 @@ class GAzieForm {
             if ($sel == $i) {
                 $selected = ' selected ';
             }
-            echo "<option value=\"$i\"$selected>$k $val</option>\n";
+            $acc .= "<option value=\"$i\"$selected>$k $val</option>\n";
         }
-        echo "</select>\n";
+        $acc .= "</select>\n";
+		 if ($echo){
+			return $acc;
+		  } else {
+			echo $acc;
+		  }
     }
 
     function selCheckbox($name, $sel, $title = '', $refresh = '', $class = 'FacetSelect') {
@@ -1710,28 +1719,37 @@ class GAzieForm {
         echo "<input type=\"checkbox\" name=\"$name\" title=\"$title\" value=\"$name\" $selected $refresh>\n";
     }
 
-    function selectNumber($name, $val, $msg = false, $min = 0, $max = 1, $class = 'FacetSelect', $val_hiddenReq = '', $style = '') {
-        global $script_transl;
-        $refresh = '';
-        if (!empty($val_hiddenReq)) {
-            $refresh = "onchange=\"this.form.hidden_req.value='$val_hiddenReq'; this.form.submit();\"";
+    function selectNumber($name, $val, $msg = false, $min = 0, $max = 1, $class = 'FacetSelect', $val_hiddenReq = '', $style = '', $echo=false, $exclude="") {
+      global $script_transl;
+      $acc="";
+      $refresh = '';
+      if (!empty($val_hiddenReq)) {
+        $refresh = "onchange=\"this.form.hidden_req.value='$val_hiddenReq'; this.form.submit();\"";
+      }
+      $acc .="<select  name=\"$name\" id=\"$name\" class=\"$class\" $refresh $style>\n";
+      for ($i = $min; $i <= $max; $i++) {
+        if ($i==$exclude){
+          continue;
         }
-        echo "<select  name=\"$name\" id=\"$name\" class=\"$class\" $refresh $style>\n";
-        for ($i = $min; $i <= $max; $i++) {
-            $selected = '';
-            $message = $i;
-            if ($val == $i) {
-                $selected = " selected ";
-            }
-            if ($msg && $i == 0) {
-                $message = $script_transl['no'];
-            }
-            if ($msg && $i == 1) {
-                $message = $script_transl['yes'];
-            }
-            echo "<option value=\"$i\"$selected>$message</option>\n";
+        $selected = '';
+        $message = $i;
+        if ($val == $i) {
+            $selected = " selected ";
         }
-        echo "</select>\n";
+        if ($msg && $i == 0) {
+            $message = $script_transl['no'];
+        }
+        if ($msg && $i == 1) {
+            $message = $script_transl['yes'];
+        }
+        $acc .= "<option value=\"$i\"$selected>$message</option>\n";
+      }
+      $acc .= "</select>\n";
+      if ($echo){
+        return $acc;
+      } else {
+        echo $acc;
+      }
     }
 
     function selectFromDB($table, $name, $key, $val, $order = false, $empty = false, $bridge = '', $key2 = '', $val_hiddenReq = '', $class = 'FacetSelect', $addOption = null, $style = '', $where = false, $echo=false) {
@@ -1782,35 +1800,41 @@ class GAzieForm {
     }
 
     // funzione per la generazione di una select box da file XML
-    function selectFromXML($nameFileXML, $name, $key, $val, $empty = false, $val_hiddenReq = '', $class = 'FacetSelect', $addOption = null, $style='') {
-        $refresh = '';
-        if (file_exists($nameFileXML)) {
-            $xml = simplexml_load_file($nameFileXML);
-        } else {
-            exit('Failed to open: ' . $nameFileXML);
-        }
-        if (!empty($val_hiddenReq)) {
-            $refresh = "onchange=\"this.form.hidden_req.value='$val_hiddenReq'; this.form.submit();\"";
-        }
-        echo "\t <select id=\"$name\" name=\"$name\" class=\"$class\" $refresh $style >\n";
-        if ($empty) {
-            echo "\t\t <option value=\"\"></option>\n";
-        }
-        foreach ($xml->record as $v) {
-            $selected = '';
-            if ($v->field[0] == $val) {
-                $selected = "selected";
-            }
-            echo "\t\t <option value=\"" . $v->field[0] . "\" $selected >&nbsp;" . $v->field[0] . " - " . $v->field[1] . "</option>\n";
-        }
-        if ($addOption) {
-            echo "\t\t <option value=\"" . $addOption['value'] . "\"";
-            if ($addOption['value'] == $val) {
-                echo " selected ";
-            }
-            echo ">" . $addOption['descri'] . "</option>\n";
-        }
-        echo "\t </select>\n";
+    function selectFromXML($nameFileXML, $name, $key, $val, $empty = false, $val_hiddenReq = '', $class = 'FacetSelect', $addOption = null, $style='', $echo=true) {
+      $acc='';
+      $refresh = '';
+      if (file_exists($nameFileXML)) {
+          $xml = simplexml_load_file($nameFileXML);
+      } else {
+          exit('Failed to open: ' . $nameFileXML);
+      }
+      if (!empty($val_hiddenReq)) {
+          $refresh = "onchange=\"this.form.hidden_req.value='$val_hiddenReq'; this.form.submit();\"";
+      }
+      $acc .= "\t <select id=\"$name\" name=\"$name\" class=\"$class\" $refresh $style >\n";
+      if ($empty) {
+          $acc .= "\t\t <option value=\"\"></option>\n";
+      }
+      foreach ($xml->record as $v) {
+          $selected = '';
+          if ($v->field[0] == $val) {
+              $selected = "selected";
+          }
+          $acc .= "\t\t <option value=\"" . $v->field[0] . "\" $selected >&nbsp;" . $v->field[0] . " - " . $v->field[1] . "</option>\n";
+      }
+      if ($addOption) {
+          $acc .= "\t\t <option value=\"" . $addOption['value'] . "\"";
+          if ($addOption['value'] == $val) {
+              $acc .= " selected ";
+          }
+          $acc .= ">" . $addOption['descri'] . "</option>\n";
+      }
+      $acc .= "\t </select>\n";
+      if ($echo){
+        echo $acc;
+      } else {
+        return $acc;
+      }
     }
 
     function selectAccount($name, $val, $type = 1, $val_hiddenReq = '', $tabidx = false, $class = 'FacetSelect', $opt = 'style="max-width: 550px;"', $mas_only = true, $echo=false) {
@@ -1875,14 +1899,14 @@ class GAzieForm {
 		}
     }
 
-    function selTypeRow($name, $val, $class = 'FacetDataTDsmall',$pers_type=false) {
+    function selTypeRow($name, $val, $class = 'FacetDataTDsmall',$pers_type=false, $bridge = true) {
         global $script_transl;
 		if ($pers_type){
 			$tr=$pers_type;
 		} else {
 			$tr=$script_transl['typerow'];
 		}
-        $this->variousSelect($name, $tr, $val, $class, true);
+        $this->variousSelect($name, $tr, $val, $class, $bridge);
     }
 
     function selSearchItem($name, $val, $class = 'FacetDataTDsmall') {
@@ -1913,47 +1937,50 @@ class GAzieForm {
         return '';
     }
 
-    function gazResponsiveTable($rows, $id = 'gaz-responsive-table',$rowshead=array()) {
-        /* in $row ci devono essere i righi con un array cos� formattato:
-         * $rows[row][col]=array('title'=>'nome_colonna','value'=>'valore','type'=>'es_input','class'=>'classe_bootstrap',table_id=>'gaz-resposive_table')
-         * eventualmente si può valorizzare $rows[row][head] per scrivere un rigo prima di quello di riferimento */
-        ?>
-        <div class="panel panel-default" >
-            <div id="<?php echo $id; ?>"  class="table-responsive" style="min-height: 160px;">
-                <table class="col-xs-12 table-striped table-condensed cf">
-                    <thead class="cf">
-                        <tr class="bg-success">
-                            <?php
-                            // attraverso il primo elemento dell'array allo scopo di scrivere il thead
-							$fk=key($rows);
-                            foreach ($rows[$fk] as $v) {
-                                echo '<th class="' . $v['class'] . '">' . $v['head'] . "</th>";
-                            }
-                            ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        foreach ($rows as $k=>$col) {
-							if (isset($rowshead[$k])){ // ho una intestazione per il rigo
-								echo '<tr>'.$rowshead[$k].'</tr>';
-							}
-                            echo '<tr>';
-                            foreach ($col as $v) {
-                                echo '<td data-title="' . $v['head'] . '" class="' . $v['class'] . '"';
-                                if (isset($v['td_content'])) { // se ho un tipo diverso dal semplice
-                                    echo $v['td_content'];
-                                }
-                                echo '>' . $v['value'] . "&nbsp;</td>\n";
-                            }
-                            echo "</tr>\n";
-                        }
-                        ?>
-                    </tbody>
-                </table>
-            </div>
+    function gazResponsiveTable($rows,$id='gaz-responsive-table',$rowshead=[],$rowsfoot=[]) {
+      // in $row ci devono essere i righi con un array cos� formattato:
+      // $rows[row][col]=array('title'=>'nome_colonna','value'=>'valore','type'=>'es_input','class'=>'classe_bootstrap',table_id=>'gaz-resposive_table')
+      // eventualmente si può valorizzare $rowshead e $rowsfoot per scrivere un rigo prima o dopo di quello di riferimento
+      ?>
+      <div class="panel panel-success" >
+        <div id="<?php echo $id; ?>"  class="table-responsive" style="min-height: 80px;">
+          <table class="col-xs-12 table-striped table-condensed cf">
+            <thead class="cf">
+              <tr class="bg-success">
+      <?php
+      // attraverso il primo elemento dell'array allo scopo di scrivere il thead
+			$fk=key($rows);
+      foreach ($rows[$fk] as $v) {
+        echo '<th class="' . $v['class'] . '">' . $v['head'] . "</th>";
+      }
+      ?>
+              </tr>
+            </thead>
+            <tbody>
+      <?php
+      foreach ($rows as $k=>$col) {
+        if (isset($rowshead[$k])){ // ho una intestazione per il rigo
+          echo '<tr>'.$rowshead[$k].'</tr>';
+				}
+        echo '<tr>';
+        foreach ($col as $v) {
+          echo '<td data-title="' . $v['head'] . '" class="' . $v['class'] . '"';
+          if (isset($v['td_content'])) { // se ho un tipo diverso dal semplice
+            echo $v['td_content'];
+          }
+          echo '>' . $v['value'] . "&nbsp;</td>\n";
+        }
+        echo "</tr>\n";
+        if (isset($rowsfoot[$k])){ // ho una intestazione per il rigo
+          echo '<tr>'.$rowsfoot[$k].'</tr>';
+				}
+      }
+      ?>
+            </tbody>
+          </table>
         </div>
-        <?php
+      </div>
+      <?php
     }
 
 }
@@ -2099,7 +2126,7 @@ class linkHeaders {
         global $flag_order, $script_transl, $auxil, $headers;
         $k = 0; // � l'indice dell'array dei nomi di campo
         foreach ($this->headers as $header => $field) {
-            $style = 'FacetFieldCaptionTD';
+            $style = 'FacetFieldCaptionTD text-center';
             $align = '';
             if ($this->align) { // ho settato i nomi dei campi del db
                 $align = ' style="text-align:' . $this->align[$k] . ';" ';
@@ -2150,7 +2177,7 @@ class TableSorter {
     # header ordinabili
     protected $arrows = ["desc" => "&#9660;", "asc" => "&#9650;", null => ""];
     protected $align = false;                   # TODO
-    protected $style = 'FacetFieldCaptionTD';   # TODO
+    protected $style = 'FacetFieldCaptionTD text-center';   # TODO
 
     # valori di default                Esempi:
     protected $default_search;         # ["caumag" => "1"]
@@ -2426,17 +2453,24 @@ function redirect($filename) {
 
 
 function checkAdmin($Livaut = 0) {
-    global $gTables, $module, $table_prefix;
+    global $gTables, $module, $table_prefix, $link;
     $_SESSION["Abilit"] = false;
-    // Se utente non � loggato lo mandiamo alla pagina di login
+    if (!$link) exit;
+    // Se utente non è loggato lo mandiamo alla pagina di login
     if (!isset($_SESSION["user_name"])) {
         redirect('../root/login_user.php?tp=' . $table_prefix);
     }
-    if (checkAccessRights($_SESSION["user_name"], $module, $_SESSION['company_id']) == 0) {
-        // Se utente non ha il diritto di accedere al modulo, lo mostriamo
-        // il messaggio di errore, ma senza obligarlo di fare un altro (inutile) login
-        redirect("../root/access_error.php?module=" . $module);
+    $rschk = checkAccessRights($_SESSION["user_name"], $module, $_SESSION['company_id']);
+    if ($rschk === 0) {
+      // Se utente non ha il diritto di accedere al modulo specifico lo invito a tornare alla home
+      redirect("../root/access_error.php?module=" . $module);
+      exit;
+    } elseif (is_array($rschk)) { // questo utente ha almeno un script da escludere su questo modulo
+      $bn = basename($_SERVER['PHP_SELF'],'.php');
+      if (in_array($bn,$rschk)){
+        redirect("../root/access_error.php?script=" . $bn);
         exit;
+      }
     }
     $test = gaz_dbi_query("SHOW COLUMNS FROM `" . $gTables['admin'] . "` LIKE 'enterprise_id'");
     $exists = (gaz_dbi_num_rows($test)) ? TRUE : FALSE;
@@ -2506,127 +2540,137 @@ function decodeFromSendingNumber($num, $b = 62) {
 }
 
 class Compute {
-
-    function payment_taxstamp($value, $percent, $cents_ceil_round = 5) {
-        if ($cents_ceil_round == 0) {
-            $cents_ceil_round = 5;
-        }
-        $cents = 100 * $value * ($percent / 100 + $percent * $percent / 10000);
-        if ($cents_ceil_round < 0) { // quando passo un arrotondamento negativo ritorno il valore di $percent
-            $this->pay_taxstamp = round($percent, 2);
+  function payment_taxstamp($value, $percent, $cents_ceil_round = 5) {
+    if ($cents_ceil_round == 0) {
+      $cents_ceil_round = 5;
+    }
+    $cents = 100 * $value * ($percent / 100 + $percent * $percent / 10000);
+    if ($cents_ceil_round < 0) { // quando passo un arrotondamento negativo ritorno il valore di $percent
+      $this->pay_taxstamp = round($percent, 2);
+    } else {
+      $this->pay_taxstamp = round(ceil($cents / $cents_ceil_round) * $cents_ceil_round / 100, 2);
+    }
+  }
+  function add_value_to_VAT_castle($vat_castle, $value = 0, $vat_rate = 0) {
+    global $gTables;
+    $new_castle = [];
+    $row = 0;
+    $this->total_imp = 0;
+    $this->total_vat = 0;
+    $this->total_exc_with_duty = 0;
+    $this->total_isp = 0; // totale degli inesigibili per split payment PA
+    // ho due metodi di calcolo del castelletto IVA:
+    // 1 - quando non ho l'aliquota IVA allora uso la ventilazione
+    // 2 - in presenza di aliquota IVA e quindi devo aggiungere al castelletto
+    $this->totroundcastle = 0;
+    if ($vat_rate == 0) {        // METODO VENTILAZIONE (per mantenere la retrocompatibilit�)
+      $total_imp = 0;
+      $decalc_imp = 0;
+      foreach ($vat_castle as $k => $v) { // attraverso dell'array per calcolare i totali
+          $total_imp += $v['impcast'];
+          $row++;
+      }
+      foreach ($vat_castle as $k => $v) {   // riattraverso l'array del castelletto
+        // per aggiungere proporzionalmente (ventilazione)
+        $vat = gaz_dbi_get_row($gTables['aliiva'], "codice", $k);
+        $new_castle[$k]['codiva'] = $vat['codice'];
+        $new_castle[$k]['periva'] = $vat['aliquo'];
+        $new_castle[$k]['tipiva'] = $vat['tipiva'];
+        $new_castle[$k]['descriz'] = $vat['descri'];
+        $new_castle[$k]['fae_natura'] = $vat['fae_natura'];
+        $row--;
+        if (abs($total_imp) >= 0.01) { // per evitare il divide by zero in caso di imponibile 0
+          if ($row == 0) { // � l'ultimo rigo del castelletto
+            // aggiungo il resto
+            $new_imp = round($total_imp - $decalc_imp + ($value * ($total_imp - $decalc_imp) / $total_imp), 2);
+          } else {
+            $new_imp = round($v['impcast'] + ($value * $v['impcast'] / $total_imp), 2);
+            $decalc_imp += $v['impcast'];
+          }
         } else {
-            $this->pay_taxstamp = round(ceil($cents / $cents_ceil_round) * $cents_ceil_round / 100, 2);
+          $new_imp = $v['impcast'];
         }
-    }
-
-    function add_value_to_VAT_castle($vat_castle, $value = 0, $vat_rate = 0) {
-        global $gTables;
-        $new_castle = array();
-        $row = 0;
-        $this->total_imp = 0;
-        $this->total_vat = 0;
-        $this->total_exc_with_duty = 0;
-        $this->total_isp = 0; // totale degli inesigibili per split payment PA
-        /* ho due metodi di calcolo del castelletto IVA:
-         * 1 - quando non ho l'aliquota IVA allora uso la ventilazione
-         * 2 - in presenza di aliquota IVA e quindi devo aggiungere al castelletto */
-
-        if ($vat_rate == 0) {        // METODO VENTILAZIONE (per mantenere la retrocompatibilit�)
-            $total_imp = 0;
-            $decalc_imp = 0;
-            foreach ($vat_castle as $k => $v) { // attraverso dell'array per calcolare i totali
-                $total_imp += $v['impcast'];
-                $row++;
-            }
-			foreach ($vat_castle as $k => $v) {   // riattraverso l'array del castelletto
-				// per aggiungere proporzionalmente (ventilazione)
-
-				$vat = gaz_dbi_get_row($gTables['aliiva'], "codice", $k);
-				$new_castle[$k]['codiva'] = $vat['codice'];
-				$new_castle[$k]['periva'] = $vat['aliquo'];
-				$new_castle[$k]['tipiva'] = $vat['tipiva'];
-				$new_castle[$k]['descriz'] = $vat['descri'];
-				$new_castle[$k]['fae_natura'] = $vat['fae_natura'];
-				$row--;
-				if (abs($total_imp) >= 0.01) { // per evitare il divide by zero in caso di imponibile 0
-					if ($row == 0) { // � l'ultimo rigo del castelletto
-						// aggiungo il resto
-						$new_imp = round($total_imp - $decalc_imp + ($value * ($total_imp - $decalc_imp) / $total_imp), 2);
-					} else {
-						$new_imp = round($v['impcast'] + ($value * $v['impcast'] / $total_imp), 2);
-						$decalc_imp += $v['impcast'];
-					}
-				} else {
-					$new_imp = $v['impcast'];
-				}
-				$new_castle[$k]['impcast'] = $new_imp;
-				$new_castle[$k]['imponi'] = $new_imp;
-				$this->total_imp += $new_imp; // aggiungo all'accumulatore del totale
-				if ($vat['aliquo'] < 0.01 && $vat['taxstamp'] > 0) { // � senza aliquota ed � soggetto a bolli
-					$this->total_exc_with_duty += $new_imp; // aggiungo all'accumulatore degli esclusi/esenti/non imponibili
-				}
-				if(isset($v['impneg'])){$new_castle[$k]['impneg']=$v['impneg'];}
-				$new_castle[$k]['ivacast'] = round(($new_imp * $vat['aliquo']) / 100, 2);
-				if ($vat['tipiva'] == 'T') { // � un'IVA non esigibile per split payment
-					$this->total_isp += $new_castle[$k]['ivacast']; // aggiungo all'accumulatore
-				}
-				$this->total_vat += $new_castle[$k]['ivacast']; // aggiungo anche l'IVA al totale
-			}
-        } else {  // METODO DELL'AGGIUNTA DIRETTA (nuovo)
-            $match = false;
-            foreach ($vat_castle as $k => $v) { // attraverso dell'array
-                $vat = gaz_dbi_get_row($gTables['aliiva'], "codice", $k);
-                $new_castle[$k]['codiva'] = $vat['codice'];
-                $new_castle[$k]['periva'] = $vat['aliquo'];
-                $new_castle[$k]['tipiva'] = $vat['tipiva'];
-                $new_castle[$k]['descriz'] = $vat['descri'];
-                $new_castle[$k]['fae_natura'] = $vat['fae_natura'];
-                if ($k == $vat_rate) { // SE � la stessa aliquota aggiungo il nuovo valore
-                    $match = true;
-                    $new_imp = $v['impcast'] + $value;
-                    $new_castle[$k]['impcast'] = $new_imp;
-                    $new_castle[$k]['imponi'] = $new_imp;
-                    $new_castle[$k]['ivacast'] = round(($new_imp * $vat['aliquo']) / 100, 2);
-                } else { // � una aliquota che non interessa il valore che devo aggiungere
-                    $new_castle[$k]['impcast'] = $v['impcast'];
-                    $new_castle[$k]['imponi'] = $v['impcast'];
-                    $new_castle[$k]['ivacast'] = round(($v['impcast'] * $vat['aliquo']) / 100, 2);
-                }
-				if (isset($v['impneg'])){
-					$new_castle[$k]['impneg']=$v['impneg'];
-					$new_castle[$k]['ivaneg']=$v['ivaneg'];
-				}
-                if ($vat['aliquo'] < 0.01 && $vat['taxstamp'] > 0) { // � senza IVA ed � soggetto a bolli
-                    $this->total_exc_with_duty += $new_castle[$k]['impcast']; // aggiungo all'accumulatore degli esclusi/esenti/non imponibili
-                }
-                if ($vat['tipiva'] == 'T') { // � un'IVA non esigibile per split payment
-                    $this->total_isp += $new_castle[$k]['ivacast']; // aggiungo all'accumulatore
-                }
-                $this->total_imp += $new_castle[$k]['impcast']; // aggiungo all'accumulatore del totale
-                $this->total_vat += $new_castle[$k]['ivacast']; // aggiungo anche l'IVA al totale
-            }
-            if (!$match && abs($value) >= 0.01) { // non ho trovato una aliquota uguale a quella del nuovo valore se > 0
-                $vat = gaz_dbi_get_row($gTables['aliiva'], "codice", $vat_rate);
-                $new_castle[$vat_rate]['codiva'] = $vat['codice'];
-                $new_castle[$vat_rate]['periva'] = $vat['aliquo'];
-                $new_castle[$vat_rate]['tipiva'] = $vat['tipiva'];
-                $new_castle[$vat_rate]['impcast'] = $value;
-                $new_castle[$vat_rate]['imponi'] = $value;
-                $new_castle[$vat_rate]['ivacast'] = round(($value * $vat['aliquo']) / 100, 2);
-                $new_castle[$vat_rate]['descriz'] = $vat['descri'];
-                $new_castle[$vat_rate]['fae_natura'] = $vat['fae_natura'];
-                if ($vat['aliquo'] < 0.01 && $vat['taxstamp'] > 0) { // � senza IVA ed � soggetto a bolli
-                    $this->total_exc_with_duty += $new_castle[$vat_rate]['impcast']; // aggiungo all'accumulatore degli esclusi/esenti/non imponibili
-                }
-                if ($vat['tipiva'] == 'T') { // � un'IVA non esigibile per split payment
-                    $this->total_isp += $new_castle[$vat_rate]['ivacast']; // aggiungo all'accumulatore
-                }
-                $this->total_imp += $new_castle[$vat_rate]['impcast']; // aggiungo all'accumulatore del totale
-                $this->total_vat += $new_castle[$vat_rate]['ivacast']; // aggiungo anche l'IVA al totale
-            }
+        $new_castle[$k]['impcast'] = $new_imp;
+        $new_castle[$k]['imponi'] = $new_imp;
+        $this->total_imp += $new_imp; // aggiungo all'accumulatore del totale
+        if ($vat['aliquo'] < 0.01 && $vat['taxstamp'] > 0) { // � senza aliquota ed � soggetto a bolli
+          $this->total_exc_with_duty += $new_imp; // aggiungo all'accumulatore degli esclusi/esenti/non imponibili
         }
-        $this->castle = $new_castle;
+        if(isset($v['impneg'])){$new_castle[$k]['impneg']=$v['impneg'];}
+        $new_castle[$k]['ivacast'] = round(($new_imp * $vat['aliquo']) / 100, 2);
+        if ($vat['tipiva'] == 'T') { // � un'IVA non esigibile per split payment
+          $this->total_isp += $new_castle[$k]['ivacast']; // aggiungo all'accumulatore
+        }
+        $this->total_vat += $new_castle[$k]['ivacast']; // aggiungo anche l'IVA al totale
+      }
+    } else {  // METODO DELL'AGGIUNTA DIRETTA (nuovo)
+      $match = false;
+      foreach ($vat_castle as $k => $v) { // attraverso dell'array
+        $vat = gaz_dbi_get_row($gTables['aliiva'], "codice", $k);
+        $new_castle[$k]['codiva'] = $vat['codice'];
+        $new_castle[$k]['periva'] = $vat['aliquo'];
+        $new_castle[$k]['tipiva'] = $vat['tipiva'];
+        $new_castle[$k]['descriz'] = $vat['descri'];
+        $new_castle[$k]['fae_natura'] = $vat['fae_natura'];
+        if ($k == $vat_rate) { // SE è la stessa aliquota aggiungo il nuovo valore
+          $match = true;
+          $new_imp = $v['impcast'] + $value;
+          $new_castle[$k]['impcast'] = $new_imp;
+          $new_castle[$k]['imponi'] = $new_imp;
+          $new_castle[$k]['ivacast'] = round(($new_imp * $vat['aliquo']) / 100, 2);
+        } else { // è una aliquota che non interessa il valore che devo aggiungere
+          $new_castle[$k]['impcast'] = $v['impcast'];
+          $new_castle[$k]['imponi'] = $v['impcast'];
+          $new_castle[$k]['ivacast'] = round(($v['impcast'] * $vat['aliquo']) / 100, 2);
+        }
+        if (isset($v['impneg'])){
+          $new_castle[$k]['impneg']=$v['impneg'];
+          $new_castle[$k]['ivaneg']=$v['ivaneg'];
+        }
+        if ($vat['aliquo'] < 0.01 && $vat['taxstamp'] > 0) { // � senza IVA ed � soggetto a bolli
+            $this->total_exc_with_duty += $new_castle[$k]['impcast']; // aggiungo all'accumulatore degli esclusi/esenti/non imponibili
+        }
+        if ($vat['tipiva'] == 'T') { // è un'IVA non esigibile per split payment
+            $this->total_isp += $new_castle[$k]['ivacast']; // aggiungo all'accumulatore
+        }
+        $this->total_imp += $new_castle[$k]['impcast']; // aggiungo all'accumulatore del totale
+        $this->total_vat += $new_castle[$k]['ivacast']; // aggiungo anche l'IVA al totale
+      }
+      if (!$match && abs($value) >= 0.01) { // non ho trovato una aliquota uguale a quella del nuovo valore se > 0
+        $vat = gaz_dbi_get_row($gTables['aliiva'], "codice", $vat_rate);
+        $new_castle[$vat_rate]['codiva'] = $vat['codice'];
+        $new_castle[$vat_rate]['periva'] = $vat['aliquo'];
+        $new_castle[$vat_rate]['tipiva'] = $vat['tipiva'];
+        $new_castle[$vat_rate]['impcast'] = $value;
+        $new_castle[$vat_rate]['imponi'] = $value;
+        $new_castle[$vat_rate]['ivacast'] = round(($value * $vat['aliquo']) / 100, 2);
+        $new_castle[$vat_rate]['descriz'] = $vat['descri'];
+        $new_castle[$vat_rate]['fae_natura'] = $vat['fae_natura'];
+        if ($vat['aliquo'] < 0.01 && $vat['taxstamp'] > 0) { // � senza IVA ed � soggetto a bolli
+          $this->total_exc_with_duty += $new_castle[$vat_rate]['impcast']; // aggiungo all'accumulatore degli esclusi/esenti/non imponibili
+        }
+        if ($vat['tipiva'] == 'T') { // è un'IVA non esigibile per split payment
+          $this->total_isp += $new_castle[$vat_rate]['ivacast']; // aggiungo all'accumulatore
+        }
+        $this->total_imp += $new_castle[$vat_rate]['impcast']; // aggiungo all'accumulatore del totale
+        $this->total_vat += $new_castle[$vat_rate]['ivacast']; // aggiungo anche l'IVA al totale
+      }
     }
+    $this->castle = $new_castle;
+  }
+  function round_VAT_castle($vat_castle, $valroundvat=[]) {
+    global $gTables;
+    $this->totroundcastle = 0;
+    $new_castle=$vat_castle;
+    foreach ($vat_castle as $k => $v) {   // riattraverso l'array del castelletto
+      if(isset($valroundvat[$k])){
+        $new_castle[$k]['ivacast'] = round($v['ivacast']+$valroundvat[$k],2);
+        $this->total_vat += $valroundvat[$k];
+        $this->totroundcastle += $valroundvat[$k];
+      }
+    }
+    $this->castle = $new_castle;
+  }
 
 }
 
@@ -2743,7 +2787,7 @@ class Schedule {
             $clfoco = $this->target;
         }
         if (!$date) {
-            $date = strftime("%Y-%m-%d", mktime(0, 0, 0, date("m"), date("d"), date("Y")));
+            $date = date('Y-m-d');
         }
         // prima trovo la eventuale ultima apertura dei conti
         $sqllastAPE = "SELECT " . $gTables['tesmov'] . ".* ," . $gTables['rigmoc'] . ".import, " . $gTables['rigmoc'] . ".darave, '0' AS progressivo
@@ -3019,7 +3063,7 @@ class Schedule {
             $clfoco = $this->target;
         }
         if (!$date) {
-            $date = strftime("%Y-%m-%d", mktime(0, 0, 0, date("m"), date("d"), date("Y")));
+            $date = date("Y-m-d");
         }
         $sqlquery = "SELECT " . $gTables['paymov'] . ".*, " . $gTables['tesmov'] . ".* ," . $gTables['rigmoc'] . ".*
             FROM " . $gTables['paymov'] . " LEFT JOIN " . $gTables['rigmoc'] . " ON (" . $gTables['paymov'] . ".id_rigmoc_pay + " . $gTables['paymov'] . ".id_rigmoc_doc) = " . $gTables['rigmoc'] . ".id_rig "

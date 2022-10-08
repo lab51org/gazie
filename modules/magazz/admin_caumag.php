@@ -103,7 +103,7 @@ print "<form method=\"POST\">\n";
 print "<input type=\"hidden\" name=\"" . ucfirst($toDo) . "\" value=\"\">\n";
 print "<input type=\"hidden\" value=\"" . $_POST['ritorno'] . "\" name=\"ritorno\">\n";
 echo '<div class="text-center"><h3>'.$title.'</h3></div>';
-print "<table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" class=\"FacetFormTABLE\" align=\"center\">\n";
+print "<table class=\"Tmiddle table-striped\" align=\"center\">\n";
 if (!empty($msg)) {
     $message = "";
     $rsmsg = array_slice(explode('+', chop($msg)), 0, -1);
@@ -153,13 +153,11 @@ for ($counter = -1; $counter <= 1; $counter++) {
     print "<option value=\"$counter\" $selected > " . $script_transl[$counter + 9] . "</option>\n";
 }
 print "</select></td></tr>\n";
-print "<tr><td class=\"FacetFieldCaptionTD\"><input type=\"reset\" name=\"Cancel\" value=\"" . $script_transl['cancel'] . "\">\n";
-print "</td><td class=\"FacetDataTD\" align=\"right\">\n";
-print "<input type=\"submit\" name=\"Return\" value=\"" . $script_transl['return'] . "\">\n";
+print "<tr><td class=\"FacetFooterTD text-center\" colspan=2>\n";
 if ($toDo == 'update') {
-    print '<input type="submit" accesskey="m" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="' . ucfirst($script_transl['update']) . '!"></td></tr><tr></tr>';
+    print '<input type="submit" class="btn btn-warning" accesskey="m" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="' . ucfirst($script_transl['update']) . '"></td></tr><tr></tr>';
 } else {
-    print '<input type="submit" accesskey="i" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="' . ucfirst($script_transl['insert']) . '!"></td></tr><tr></tr>';
+    print '<input type="submit" class="btn btn-warning" accesskey="i" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="' . ucfirst($script_transl['insert']) . '"></td></tr><tr></tr>';
 }
 print "</td></tr></table>\n";
 ?>

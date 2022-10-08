@@ -94,7 +94,7 @@ if ($toDo == 'insert') {
    echo "<div align=\"center\" class=\"FacetFormHeaderFont\">".$script_transl['upd_this']." '".$form['codice']."'</div>\n";
    echo "<input type=\"hidden\" value=\"".$form['codice']."\" name=\"codice\" />\n";
 }
-echo "<table class=\"Tmiddle\">\n";
+echo "<table class=\"Tmiddle table-striped\">\n";
 if (!empty($msg)) {
     echo '<tr><td colspan="3" class="FacetDataTDred">'.$gForm->outputErrors($msg,$script_transl['errors'])."</td></tr>\n";
 }
@@ -119,13 +119,10 @@ echo "<tr><td class=\"FacetFieldCaptionTD\">".$script_transl['annota']."</td>
 echo "\t<input type=\"text\" name=\"annota\" value=\"".$form['annota']."\" maxlength=\"50\"  class=\"FacetInput\">\n";
 echo "</td></tr>";
 echo "<tr>\n";
-echo "\t<td class=\"FacetFieldCaptionTD\">".$script_transl['sqn']."</td>";
+echo "\t<td class=\"FacetFooterTD\">".$script_transl['sqn']."</td>";
 echo "\t </td>\n";
-echo "\t<td  class=\"FacetDataTD\">\n";
-echo '<input name="Return" type="submit" value="'.$script_transl['return'].'">';
-echo "\t </td>\n";
-echo "\t<td  class=\"FacetDataTD\" align=\"right\">\n";
-echo '<input name="Submit" type="submit" value="'.ucfirst($script_transl[$toDo]).'">';
+echo '<td colspan=2 class="FacetFooterTD text-center">';
+echo '<input name="Submit" class="btn btn-warning" type="submit" value="'.ucfirst($script_transl[$toDo]).'">';
 echo "\t </td>\n";
 echo "</tr>\n";
 ?>

@@ -27,7 +27,7 @@ $admin_aziend = checkAdmin();
 $cemail = gaz_dbi_get_row($gTables['company_config'], 'var', 'cemail');
 $dest_fae_zip_package = gaz_dbi_get_row($gTables['company_config'], 'var', 'dest_fae_zip_package');
 $send_fae_zip_package = gaz_dbi_get_row($gTables['company_config'], 'var', 'send_fae_zip_package');
-
+$pecsdi_sdi_email = gaz_dbi_get_row($gTables['company_config'], 'var', 'pecsdi_sdi_email');
 
 if (!isset($_POST['ritorno'])) {
 	$form['ritorno'] = $_SERVER['HTTP_REFERER'];
@@ -187,7 +187,8 @@ require("../../library/include/header.php");
 $script_transl=HeadMain(0,array('calendarpopup/CalendarPopup',
                                   'custom/modal_form',
                                   'custom/varie'));
-echo '<script>
+?>
+<script>
 $(function() {
    $( "#dialogMail" ).dialog({
       autoOpen: false
@@ -210,12 +211,12 @@ function confirMail(link) {
       show: "blind",
       hide: "explode",
       buttons: {
-                      " ' . $script_transl['submit'] . ' ": function() {
-                         window.location.href = targetUrl;
-                      },
-                      " ' . $script_transl['cancel'] . ' ": function() {
-                        $(this).dialog("close");
-                      }
+        "<?php echo $script_transl['submit']; ?>": function() {
+          window.location.href = targetUrl;
+        },
+        "<?php echo $script_transl['cancel']; ?>": function() {
+          $(this).dialog("close");
+        }
       }
    });
    $("#dialogMail" ).dialog( "open" );
@@ -232,23 +233,24 @@ function confirSend(link) {
       show: "blind",
       hide: "explode",
       buttons: {
-                      " ' . $script_transl['submit'] . ' ": function() {
-                         window.location.href = targetUrl;
-                      },
-                      " ' . $script_transl['cancel'] . ' ": function() {
-                        $(this).dialog("close");
-                      }
+        "<?php echo $script_transl['submit']; ?>": function() {
+          window.location.href = targetUrl;
+        },
+        "<?php echo $script_transl['cancel']; ?>": function() {
+          $(this).dialog("close");
+        }
       }
    });
    $("#dialogSend" ).dialog( "open" );
 }
-</script>';
+</script>
+<?php
 $gForm = new GAzieForm();
 echo '<form method="GET">';
 echo "<input type=\"hidden\" value=\"".$form['ritorno']."\" name=\"ritorno\" />\n";
 echo "<div align=\"center\" class=\"FacetFormHeaderFont\">".$script_transl['title'];
 echo "</div>\n";
-if (strlen($cemail['val'])>5 || strlen($dest_fae_zip_package['val'])>5) {
+if (strlen($cemail['val'])>5 || strlen($dest_fae_zip_package['val'])>5 || ( $pecsdi_sdi_email && strlen($pecsdi_sdi_email['val'])>5) ) {
 	$yes_mail = ' enabled ';
 }
 if (isset($send_fae_zip_package['val']) && strlen($send_fae_zip_package['val'])>5) {
@@ -293,7 +295,6 @@ $recordnav->output();
     </div>
 
 <tr style="margin-bottom: 20px !important;">
-<td class="FacetFieldCaptionTD"></td>
 <td class="FacetFieldCaptionTD">
 <input type="text" name="ricerca_fe" id="ricerca_fe" value="<?php echo $ricerca_fe ?>" maxlength="30" tabindex="1" class="FacetInput">
 </td>
@@ -361,9 +362,9 @@ while ($r = gaz_dbi_fetch_array($result)) {
 			echo '<tr><td class="bg-info" colspan="11">Il file pacchetto di fatture <span class="bg-warning">'.$r['filename_zip_package'].'</span> è stato generato per contenere le seguenti fatture elettroniche:</td>';
 			echo '<td colspan="2" align="center"><a '.$yes_mail.'class="btn btn-xs btn-info btn-email" onclick="confirMail(this);return false;" id="fn' . substr($r["filename_zip_package"],0,-4) . '" url="send_fae_package.php?fn='.$r['filename_zip_package'].'" href="#" title="Mailto: ' . $dest_fae_zip_package['val'] . '"
 				mail="' . $dest_fae_zip_package['val'] . '" namedoc="'.$r["filename_zip_package"].'">Invia <i class="glyphicon glyphicon-envelope"></i></a>';
-			if ($r['id_SDI'] == 0) {
-				echo '<td align="center"><a '.$yes_send.'class="btn btn-xs btn-info btn-email" onclick="confirSend(this);return false;" id="zn' . substr($r["filename_zip_package"],0,-4) . '" url="post_fae_package.php?zn='.$r['filename_zip_package'].'" href="#" title="POST call: ' . $send_fae_zip_package['val'] . ' library"
-					library="' . $send_fae_zip_package['val'] . '" namedoc="'.$r["filename_zip_package"].'">Inoltra <i class="glyphicon glyphicon-upload"></i></a>';
+			if ($r['id_SDI'] == 0 && $r['flux_status'] != "@" && $r['flux_status'] != "@@") {
+				echo '<td align="center"><a '.$yes_send.'class="btn btn-xs btn-info btn-email" onclick="confirSend(this);return false;" id="zn' . substr($r["filename_zip_package"],0,-4) . '" url="electronic_invoice.php?zn='.$r['filename_zip_package'].'&sdiflux=' . $send_fae_zip_package['val'] . '&invia" href="#" title="POST call: ' . $send_fae_zip_package['val'] . ' library"
+					library="' . $send_fae_zip_package['val'] . '" namedoc="'.$r["filename_zip_package"].'">Invia con<br><b>'.$send_fae_zip_package['val'].'</b><i class="glyphicon glyphicon-upload"></i></a>';
 			} else {
 				echo '<td></td>';
 			}
@@ -372,12 +373,9 @@ while ($r = gaz_dbi_fetch_array($result)) {
 				if ($ctrl_zip == 'START_CHECK_VALUE') {
 					$class='btn btn-xs btn-default btn-elimina';
 					$title='Cancella il pacchetto di fatture elettroniche';
-					if ($r['flux_status'] == "@@" || $r['flux_status'] == "@"){
-						$class='btn btn-xs btn-danger btn-elimina';
-						$title='SEI SICURO? ATTENZIONE! Stai cancellando un pacchetto già inviato all\'intermediario';
+					if ($r['flux_status'] != "@@" && $r['flux_status'] != "@"){ // l'ultimo zip può essere eliminato solo se non è stato inviato
+            echo '<td colspan="2"><a class="'.$class.'" title="'.$title.'" href="delete_zip_package.php?fn='.$r['filename_zip_package'].'">'.$script_transl['delete'].'<i class="glyphicon glyphicon-remove"></i></a></td>';
 					}
-					// l'ultimo zip può essere eliminato ma se è stato inviato all'intermediario/servizio si deve controllare che il suo contenuto non sia stato trasmesso al SdI
-					echo '<td colspan="2"><a class="'.$class.'" title="'.$title.'" href="delete_zip_package.php?fn='.$r['filename_zip_package'].'">'.$script_transl['delete'].'<i class="glyphicon glyphicon-remove"></i></a></td>';
 				} else {
 					echo '<td colspan="2"></td>';
 				}
@@ -465,19 +463,14 @@ while ($r = gaz_dbi_fetch_array($result)) {
     echo "<td class=\"$class\" align=\"center\">".$r['mail_id']."</td>";
 
     //aggiungere una icona invece del cancelletto
-	//TO-DO: COMBINARE GESTORE AUTOMATICO DELLE NOTIFICHE CON NOTIFICAZIONE MANUALE FORZATA DELLE FATTURE
     if ($r['flux_status'] == "##") {
         echo "<td class=\"$class  $class2\" align=\"center\" title=\"".$script_transl['flux_status_value'][$r['flux_status']]."\">". "<form method=\"POST\"  enctype=\"multipart/form-data\"><input type=\"file\" accept=\".xml,.p7m\" name=\"p7mfile_".$r['id']."\" />" . "<input name=\"Submit_file\" type=\"submit\" class=\"btn btn-warning\" value=\"Carica fattura firmata\" /></form>" . "</td>";
     } elseif ($r['flux_status'] == "#" || $r['flux_status'] == "DI") {
         $modulo_fae_report="report_fae_sdi.php?id_record=".$r['id']."&amp;id_tes_ref=".$r['id_tes_ref']."&amp;file_name=".$r['filename_ori'];
         echo "<td class=\"$class  $class2\" align=\"center\" title=\"".$script_transl['flux_status_value'][$r['flux_status']]."\">". "<a href=\"".$modulo_fae_report."\">#</a>" . "</td>";
     } elseif ($r['flux_status'] == "@") {
-        //$percorso_fae="/fae_inviate/".$r['filename_ori']; //definire un alias per la posizione dei documenti inviati a SDI
-        //echo "<td class=\"$class  $class2\" align=\"center\" target=\"_blank\" title=\"".$script_transl['flux_status_value'][$r['flux_status']]."\">". "<a href=\"".$percorso_fae."\">@</a>" . "</td>";
         echo "<td class=\"$class  $class2\" align=\"center\" target=\"_blank\" title=\"".$script_transl['flux_status_value'][$r['flux_status']]."\">". "<a href=\"#\">@</a>" . "</td>";
     } elseif ($r['flux_status'] == "@@") {
-        //$percorso_faeara="/fae_inviateara/".$r['filename_ori']; //definire un alias per la posizione dei documenti inviati a SDI
-        //echo "<td class=\"$class  $class2\" align=\"center\" target=\"_blank\">". "<a href=\"".$percorso_faeara."\">@@</a>" . "</td>";
         echo "<td class=\"$class  $class2\" align=\"center\" target=\"_blank\">". "<a href=\"#\">@@</a>" . "</td>";
     } else {
         echo "<td class=\"$class  $class2\" align=\"center\" title=\"".$script_transl['flux_status_value'][$r['flux_status']]."\">".$r['flux_status']."</td>";

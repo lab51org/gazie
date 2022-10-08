@@ -9,5 +9,13 @@
         "phpoffice/phpspreadsheet": "^1.17.1",
         "ddeboer/imap":"^1.12.1",
         "vlucas/phpdotenv": "^5.4"
-    }
+        "tecnickcom/tc-lib-pdf": "dev-main",
+        "phpmailer/phpmailer": "^6.5"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git@github.com:tecnickcom/tc-lib-pdf.git"
+        }
+    ]
 }
