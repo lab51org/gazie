@@ -20,3 +20,5 @@ library/tcpdf/cache/**
 !/data/files/1/ricevutesdi/*/.gitkeep
 !/data/files/1/tmp/*/.gitkeep
 !/data/files/1/tmp/*/.gitkeep
+info.php
+congig/config/gconfig.myconf.php
