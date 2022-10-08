@@ -5,9 +5,6 @@
 library/tcpdf/cache/**
 !library/tcpdf/cache/.gitkeep
 .env
-.env.prd
-.env.stg
-.env.dev
 /data/files/**
 !/data/files/*/
 !/data/files/*/.gitkeep
