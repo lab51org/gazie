@@ -17,7 +17,7 @@ library/tcpdf/cache/**
 !/data/files/backups/*/.gitkeep
 !/data/files/ricevutesdi/*/
 !/data/files/1/ricevutesdi/*/.gitkeep
-!/data/files/1/ricevutesdi/*/.gitkeep
-!/data/files/1/tmp/*/.gitkeep
 !/data/files/1/tmp/*/.gitkeep
 info.php
+.well-known/
+vendor/
