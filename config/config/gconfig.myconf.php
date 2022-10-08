@@ -40,29 +40,26 @@
 // carico autoloader
 require __DIR__ . '/../../vendor/autoload.php';
 
-// scelgo lo stato dell'app tra prd, stg, dev, e istanzio la classe dotenv
-$appType = 'dev';
-
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__, '../../.env.'.$appType);
 $dotenv->safeLoad();
 
 
 // abilita il debug delle variabili nel footer della pagina (impostare true/false)
-define('debug_active', $_ENV['debug_active']);
+define('debug_active', $_ENV['DEBUG_ACTIVE']);
 
 // definisco il livello di verbosità degli errori (https://www.php.net/manual/en/errorfunc.constants.php)
-define('error_reporting_level', $_ENV['error_reporting_level']); // consigliato per ambienti di produzione
+define('error_reporting_level', $_ENV['ERROR_REPORTING_LEVEL']); // consigliato per ambienti di produzione
 //define('error_reporting_level', E_ALL & ~E_NOTICE); // consigliato per ambienti di sviluppo
 
 // attiva la modalità manutenzione non è consentito l'accesso e l'uso dei moduli (FALSE oppure 'email amministratore')
-define('maintenance', FALSE);
+define('maintenance', $_ENV['MAINTENANCE']);
 
 if (isset($_SERVER['SCRIPT_FILENAME']) && (str_replace('\\', '/', __FILE__) == $_SERVER['SCRIPT_FILENAME'])) {
     exit('Accesso diretto non consentito');
 }
 //nome DBMS usato per la libreria specifica (MySQL=mysql.lib, SQLite=sqlite.lib, ecc)
 //per il momento disponibile solo la libreria mysql.lib
-define('NomeDB', 'mysqli');
+define('NomeDB', $_ENV['NOMEDB']);
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -75,28 +72,28 @@ define('NomeDB', 'mysqli');
 //
 // $Host = "mysql.2freehosting.com:3306";
 //
-define('Host', $_ENV['Host']);
+define('Host', $_ENV['HOST']);
 
 //
 // Nome della base di dati a cui ci si connette.
 //
-define('Database', $_ENV['Database']);
+define('Database', $_ENV['DATABASE']);
 
 //
 // Utente della base di dati che ha il permesso di accedervi con tutti
 // i privilegi necessari.
 //
-define('User', $_ENV['User']);
+define('User', $_ENV['USER']);
 
 //
 // Parola d'ordine necessaria per accedere alla base di dati
 // in qualità di utente $User.
 //
-define('Password', $_ENV['Password']);
+define('Password', $_ENV['PASSWORD']);
 
 //
 // Porta sulla quale è in ascolto il database (normalmente 3306 per mysql, 3307 per mariadb)
-define('Port', $_ENV['Port']);
+define('Port', $_ENV['PORT']);
 
 //
 // Prefisso delle tabelle di Gazie.
@@ -107,20 +104,20 @@ define('Port', $_ENV['Port']);
 // minuscole e cifre numeriche. Per esempio, "gaz123" è valido, mentre "gaga1"
 // o "gaz_123" non sono validi.
 //
-define('table_prefix', $_ENV['table_prefix']);
+define('table_prefix', $_ENV['TABLE_PREFIX']);
 
 //
 // Utente proposto inizialmente per l'accesso a Gazie. Se non si vuole
 // suggerire alcunché, è sufficiente assegnare la stringa vuota.
 //
-define('default_user', $_ENV['default_user']);
+define('default_user', $_ENV['DEFAULT_USER']);
 
 //
 // Fuso orario, per la rappresentazione corretta delle date, indipendentemente
 // dalla collocazione del server HTTP+PHP. MA NON FUNZIONA, perché MySQL aggiorna
 // in modo indipendente le date di accesso alle tabelle.
 //
-define('Timezone', $_ENV['Timezone']);
+define('Timezone', $_ENV['TIMEZONE']);
 
 //
 // Testo da aggiungere eventualmente ai messaggi di posta elettronica, sistematicamente,
@@ -137,13 +134,13 @@ define('MY_EMAIL_FOOTER', $_ENV['MY_EMAIL_FOOTER']);
 // l'uso della funzione set_time_limit(), sapendo però che ciò pregiudica il funzionamento
 // corretto di GAzie.
 //
-define('disable_set_time_limit', $_ENV['disable_set_time_limit']);
+define('disable_set_time_limit', $_ENV['DISABLE_SET_TIME_LIMIT']);
 
 //
 // Se il servente HTTP-PHP non ha una configurazione locale corretta,
 // questa può essere impostata qui, espressamente.
 //
-define('gazie_locale', $_ENV['gazie_locale']);
+define('gazie_locale', $_ENV['GAZIE_LOCALE']);
 
 //
 // Numero di righe per pagina sui report, determina anche quante ne saranno caricate dallo scroll-onload
@@ -170,14 +167,14 @@ define('MY_K_PATH_CACHE', $_ENV['MY_K_PATH_CACHE']);
 define('MY_SESSION_NAME', $_ENV['MY_SESSION_NAME']);
 
 //url di default per l'aggiornamento di GAzie
-define('update_URI_files', $_ENV['update_URI_files']);
+define('update_URI_files', $_ENV['UPDATE_URI_FILES']);
 
 // url per comunicare (ping) il mio nuovo IP DINAMICO  all'hosting di appoggio
 define('MY_SET_DYNAMIC_IP',$_ENV['MY_SET_DYNAMIC_IP']);
 
 // permetti la modifica dei ddt fatturati, utile se bisogna modificare i prezzi degli articoli
-define('modifica_fatture_ddt', $_ENV['modifica_fatture_ddt']);
+define('modifica_fatture_ddt', $_ENV['MODIFICA_FATTURE_DDT']);
 
 // personalizzazione link al fornitore del servizio
-define('contact_link',$_ENV['contact_link'], FALSE);
+define('contact_link',$_ENV['CONTACT_LINK']);
 
