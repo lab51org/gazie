@@ -22,3 +22,4 @@ library/tcpdf/cache/**
 !/data/files/1/tmp/*/.gitkeep
 info.php
 congig/config/gconfig.myconf.php
+.well-known/
