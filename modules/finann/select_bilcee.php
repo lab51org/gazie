@@ -82,6 +82,8 @@ $bil["aB034"] = 0;
 $bil["aC"] = 0;
 $bil["aC01"] = 0;
 $bil["aC02"] = 0;
+$bil["aC03"] = 0;
+$bil["aC04"] = 0;
 $bil["aC011"] = 0;
 $bil["aC012"] = 0;
 $bil["aC013"] = 0;
@@ -94,6 +96,7 @@ $bil["aC024"] = 0;
 $bil["aC024b"] = 0;
 $bil["aC024c"] = 0;
 $bil["aC025"] = 0;
+$bil["aC03"] = 0;
 $bil["aC031"] = 0;
 $bil["aC032"] = 0;
 $bil["aC033"] = 0;
@@ -261,12 +264,12 @@ for( $counter = 1; $counter <= 31; $counter++ ) {
 print "\t </select>\n";
 // select del mese
 echo "\t <select name=\"mesini\" class=\"FacetSelect\" onchange=\"this.form.submit()\">\n";
+$gazTimeFormatter->setPattern('MMMM');
 for( $counter = 1; $counter <= 12; $counter++ ) {
-     $selected = "";
-     if($counter == $_GET['mesini'])
-        $selected = "selected";
-        $nome_mese = ucwords(strftime("%B", mktime (0,0,0,$counter,1,0)));
-        echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
+  $selected = "";
+  if($counter == $_GET['mesini']) $selected = "selected";
+  $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
+  echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
 }
 echo "\t </select>\n";
 // select del anno
@@ -301,9 +304,8 @@ echo "\t </select>\n";
             for( $counter = 1; $counter <= 12; $counter++ )
                 {
                 $selected = "";
-                if($counter == $_GET['mesfin'])
-                        $selected = "selected";
-                $nome_mese = ucwords(strftime("%B", mktime (0,0,0,$counter,1,0)));
+                if($counter == $_GET['mesfin']) $selected = "selected";
+                $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
                 echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
                 }
             echo "\t </select>\n";
@@ -323,7 +325,7 @@ echo "\t </select>\n";
 <?php
 if ($message == "")
   {
-    echo "<tr><td class=\"FacetFieldCaptionTD\"> </td><td align=\"right\" nowrap class=\"FacetFooterTD\"><input type=\"submit\" name=\"Return\" value=\"Indietro\"> <input type=\"submit\" name=\"visualizza\" value=\"Visualizza l'anteprima\"> </td></tr>";
+    echo "<tr><td class=\"bg-info text-center\" colspan=2><input type=\"submit\" class=\"btn btn-info\" name=\"visualizza\" value=\"Visualizza l'anteprima\"></td></tr>";
   }
 echo "</table>";
 //
@@ -439,7 +441,7 @@ if (isset($_GET['visualizza']) and $message == "")
           }
         else
           {
-            echo "<tr><td colspan=\"4\" align=\"center\"><input type=\"submit\" name=\"stampa\" value=\"STAMPA IL BILANCIO CEE !\"></td></tr>\n";
+            echo "<tr><td colspan=\"4\" class=\"FacetFooterTD text-center\"><input type=\"submit\" class=\"btn btn-warning\" name=\"stampa\" value=\"STAMPA IL BILANCIO CEE !\"></td></tr>\n";
           }
         echo "<tr><td colspan=\"4\"><hr></td></tr>\n";
         echo "<tr><td><hr></td><td align=\"center\" class=\"FacetFormHeaderFont\">SITUAZIONE PATRIMONIALE AL ".$_GET['giofin']."-".$_GET['mesfin']."-".$_GET['annfin']."</td><td colspan=\"2\"><hr></td></tr>\n";
@@ -502,7 +504,7 @@ if (isset($_GET['visualizza']) and $message == "")
                             $stampaval = "(".number_format(-$value,2,'.','').")";
                           }
                         $descricon=gaz_dbi_get_row($gTables['clfoco'],"codice",$key);
-                        echo "<tr><td></td><td style=\"color: red;\">\"".$key." - ".$descricon["descri"]."\" non riclassificato</td><td>Euro</td><td align=\"right\">".$stampaval."</td></tr>\n";
+                        echo "<tr><td></td><td style=\"color: red;\">\"".$key." - ".($descricon?$descricon["descri"]:'')."\" non riclassificato</td><td>Euro</td><td align=\"right\">".$stampaval."</td></tr>\n";
                       }
                   }
                 if($totrom > 0)
@@ -597,7 +599,7 @@ if (isset($_GET['visualizza']) and $message == "")
                     else
                       {
                         $descricon=gaz_dbi_get_row($gTables['clfoco'],"codice",$key);
-                        echo "<tr><td></td><td style=\"color: red;\">\"".$key." - ".$descricon["descri"]."\" non riclassificato</td><td>Euro</td><td align=\"right\">".$stampaval."</td></tr>\n";
+                        echo "<tr><td></td><td style=\"color: red;\">\"".$key." - ".($descricon?$descricon["descri"]:'')."\" non riclassificato</td><td>Euro</td><td align=\"right\">".$stampaval."</td></tr>\n";
                       }
                   }
                 if($totrom > 0)
@@ -683,7 +685,7 @@ if (isset($_GET['visualizza']) and $message == "")
                     else
                       {
                         $descricon=gaz_dbi_get_row($gTables['clfoco'],"codice",$key);
-                        echo "<tr><td></td><td style=\"color: red;\">\"".$key." - ".$descricon["descri"]."\" non riclassificato</td><td>Euro</td><td align=\"right\">".$stampaval."</td></tr>\n";
+                        echo "<tr><td></td><td style=\"color: red;\">\"".$key." - ".($descricon?$descricon["descri"]:'')."\" non riclassificato</td><td>Euro</td><td align=\"right\">".$stampaval."</td></tr>\n";
                       }
                   }
                 if($totrom > 0)
@@ -893,7 +895,7 @@ if (isset($_GET['visualizza']) and $message == "")
         // Tutto questo casino puo' essere spiegato:
         // con un percorso logico-matematico ===>se io faccio "ValoreDellaProduzione" MENO "CostoDellaProduzione" e separo le rimanenze dei prodotti (che metto nel primo aggregato) dalle rimanenze di materie prime (che metto nel secondo aggregato) è naturale che io debba invertire il segno per le rimanenze di materie da quelle di prodotti
         // con un ragionamento economico ====>se durante l'anno:
-        // mi si incrementano le scorte di prodotti è naturale che tale incremento debba concorrere positivamente a formare il valore della produzione (RF&minus;RI) 
+        // mi si incrementano le scorte di prodotti è naturale che tale incremento debba concorrere positivamente a formare il valore della produzione (RF&minus;RI)
         // mi si incrementano le scorte di materie prime è naturale che io debba rettificare il costo della produzione (RI&minus;RF)
         //
         echo "<tr><td align=\"center\">c.e. A2+A3</td><td align=\"center\">+</td>";
@@ -1855,13 +1857,6 @@ if (isset($_GET['visualizza']) and $message == "")
         //
         echo "</table>\n";
       }
-    ////
-    //// Diag.
-    ////
-    //foreach ($bil as $x => $valor)
-    //  {
-    //    echo "<p>".$x." ".$valor."</p>";
-    //  }
   }
 ?>
 </form>

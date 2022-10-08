@@ -33,7 +33,9 @@ $msg = "";
 $show_artico_composit = gaz_dbi_get_row($gTables['company_config'], 'var', 'show_artico_composit');
 $tipo_composti = gaz_dbi_get_row($gTables['company_config'], 'var', 'tipo_composti');
 function getDayNameFromDayNumber($day_number) {
-    return ucfirst(utf8_encode(strftime('%A', mktime(0, 0, 0, 3, 19 + $day_number, 2017))));
+  global $gazTimeFormatter;
+  $gazTimeFormatter->setPattern('eeee');
+  return ucfirst(utf8_encode($gazTimeFormatter->format(new DateTime('@'.mktime(12,0,0,3,19+$day_number, 2017)))));
 }
 
 $upd_mm = new magazzForm;
@@ -68,7 +70,7 @@ if ((isset($_POST['Update'])) or ( isset($_GET['Update']))) {
 	$class_btn_confirm='btn-warning';
 } else {
     $toDo = 'insert';
-	$class_btn_confirm='btn-success';
+	$class_btn_confirm='btn-warning';
 }
 
 if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il primo accesso
@@ -239,7 +241,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
             $form['rows'][$next_row]['scorta'] = floatval($v['scorta']);
             $form['rows'][$next_row]['quamag'] = floatval($v['quamag']);
             $form['rows'][$next_row]['pesosp'] = floatval($v['pesosp']);
-            $form['rows'][$next_row]['extdoc'] = filter_var($_POST['rows'][$next_row]['extdoc'], FILTER_SANITIZE_STRING);//die(print_r($_POST['rows'],TRUE));
+            $form['rows'][$next_row]['extdoc'] = filter_var($_POST['rows'][$next_row]['extdoc'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);//die(print_r($_POST['rows'],TRUE));
             if (!empty($_FILES['docfile_' . $next_row]['name'])) {//die(print_r($_FILES,TRUE));
                 $move = false;
                 $mt = substr($_FILES['docfile_' . $next_row]['name'], -3);
@@ -271,7 +273,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
                     $form['in_descri'] = $form['rows'][$k_row]['descri'];
                     $form['in_tiprig'] = $form['rows'][$k_row]['tiprig'];
                     $form['in_codart'] = $form['rows'][$k_row]['codart'];
-					$form['in_good_or_service'] = $form['rows'][$k_row]['good_or_service'];
+                    $form['in_good_or_service'] = $form['rows'][$k_row]['good_or_service'];
                     $form['in_pervat'] = $form['rows'][$k_row]['pervat'];
                     $form['in_tipiva'] = $form['rows'][$k_row]['tipiva'];
                     $form['in_ritenuta'] = $form['rows'][$k_row]['ritenuta'];
@@ -279,7 +281,6 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
                     $form['in_prelis'] = $form['rows'][$k_row]['prelis'];
                     $form['in_sconto'] = $form['rows'][$k_row]['sconto'];
                     $form['in_quanti'] = $form['rows'][$k_row]['quanti'];
-                    //$form['in_codvat'] = $form['rows'][$k_row]['codvat'];
                     $form['in_codric'] = $form['rows'][$k_row]['codric'];
                     $form['in_provvigione'] = $form['rows'][$k_row]['provvigione'];
                     $form['in_id_mag'] = $form['rows'][$k_row]['id_mag'];
@@ -289,15 +290,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
                     $form['in_pesosp'] = $form['rows'][$k_row]['pesosp'];
                     $form['in_extdoc'] = $form['rows'][$k_row]['extdoc'];
                     $form['in_status'] = "UPDROW" . $k_row;
-                    /* if ($form['in_artsea'] == 'D') {
-                      $artico_u = gaz_dbi_get_row($gTables['artico'], 'codice', $form['rows'][$k_row]['codart']);
-                      $form['cosear'] = $artico_u['descri'];
-                      } elseif ($form['in_artsea'] == 'B') {
-                      $artico_u = gaz_dbi_get_row($gTables['artico'], 'codice', $form['rows'][$k_row]['codart']);
-                      $form['cosear'] = $artico_u['barcode'];
-                      } else { */
                     $form['cosear'] = $form['rows'][$k_row]['codart'];
-                    //}
                     array_splice($form['rows'], $k_row, 1);
                     $next_row--;
                 }
@@ -1195,7 +1188,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
     $form['in_sconto'] = '#';
     /* fine modifica FP */
     $form['in_quanti'] = 0;
-    $form['in_codvat'] = 0;
+    $form['in_codvat'] = $cliente['aliiva'];
     $form['in_codric'] = substr($admin_aziend['impven'], 0, 3);
     $form['in_id_mag'] = 0;
     $form['in_annota'] = "";
@@ -1272,6 +1265,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
     $next_row = 0;
     while ($rigo = gaz_dbi_fetch_array($rs_rig)) {
         $articolo = gaz_dbi_get_row($gTables['artico'], "codice", $rigo['codart']);
+
         if ($rigo['id_body_text'] > 0) { //se ho un rigo testo
             $text = gaz_dbi_get_row($gTables['body_text'], "id_body", $rigo['id_body_text']);
             $form["row_$next_row"] = $text['body_text'];
@@ -1280,10 +1274,10 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
         $form['rows'][$next_row]['tiprig'] = $rigo['tiprig'];
         $form['rows'][$next_row]['id_doc'] = $rigo['id_doc'];
         $form['rows'][$next_row]['codart'] = $rigo['codart'];
-		$form['rows'][$next_row]['good_or_service'] = $articolo['good_or_service'];
+        $form['rows'][$next_row]['good_or_service'] = (isset($articolo['good_or_service']))?$articolo['good_or_service']:1;
         $form['rows'][$next_row]['pervat'] = $rigo['pervat'];
         $iva_row = gaz_dbi_get_row($gTables['aliiva'], 'codice', $rigo['codvat']);
-        $form['rows'][$next_row]['tipiva'] = $iva_row['tipiva'];
+        $form['rows'][$next_row]['tipiva'] = (isset($iva_row['tipiva']))?$iva_row['tipiva']:'';
         $form['rows'][$next_row]['ritenuta'] = $rigo['ritenuta'];
         $form['rows'][$next_row]['unimis'] = $rigo['unimis'];
         $form['rows'][$next_row]['prelis'] = number_format($rigo['prelis'], $admin_aziend['decimal_price'], '.', '');
@@ -1293,14 +1287,14 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
         $form['rows'][$next_row]['codric'] = $rigo['codric'];
         $form['rows'][$next_row]['provvigione'] = $rigo['provvigione'];
         $form['rows'][$next_row]['id_mag'] = $rigo['id_mag'];
-        $form['rows'][$next_row]['annota'] = $articolo['annota'];
+        $form['rows'][$next_row]['annota'] = (isset($articolo['annota']))?$articolo['annota']:'';
         $mv = $upd_mm->getStockValue(false, $rigo['codart'], "", $admin_aziend['stock_eval_method']);
         $magval = array_pop($mv);
         $magval=(is_numeric($magval))?['q_g'=>0,'v_g'=>0]:$magval;
 
-        $form['rows'][$next_row]['scorta'] = $articolo['scorta'];
+        $form['rows'][$next_row]['scorta'] = (isset($articolo['scorta']))?$articolo['scorta']:'';
         $form['rows'][$next_row]['quamag'] = $magval['q_g'];
-        $form['rows'][$next_row]['pesosp'] = $articolo['peso_specifico'];
+        $form['rows'][$next_row]['pesosp'] = (isset($articolo['peso_specifico']))?$articolo['peso_specifico']:'';
         $form['rows'][$next_row]['extdoc'] = '';
         $form['rows'][$next_row]['status'] = "UPDATE";
 		// recupero il filename dal filesystem e lo sposto sul tmp
@@ -1606,12 +1600,13 @@ if ($form['tipdoc'] == 'VOG') {
     echo '				</select>';
     // select del mese
     echo '				<select name="mesemi" class="FacetSelect">';
+    $gazTimeFormatter->setPattern('MMMM');
     for ($counter = 1; $counter <= 12; $counter++) {
         $selected = "";
         if ($counter == $form['mesemi']) {
             $selected = ' selected=""';
         }
-        $nome_mese = ucwords(strftime("%B", mktime(0, 0, 0, $counter, 1, 0)));
+        $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
         echo '					<option value="' . $counter . '"' . $selected . '>' . $nome_mese . '</option>';
     }
     echo '				</select>';
@@ -1702,7 +1697,8 @@ $select_agente->addSelected($form["id_agente"]);
 $select_agente->output();
 echo '		</td>
 		</tr>
-	  </table></div>';
+	  </table></div>
+    <div class="FacetSeparatorTD" align="center"><b>' . $script_transl[1] . '</b></div>';
 echo '<div class="table-responsive">
 	  <table name="elenco" class="Tlarge table table-striped table-bordered table-condensed">
 		<thead>
@@ -1752,10 +1748,10 @@ foreach ($form['rows'] as $k => $v) {
     ;
 
     echo "<input type=\"hidden\" value=\"" . $v['codart'] . "\" name=\"rows[$k][codart]\">\n";
-	echo "<input type=\"hidden\" value=\"" . $v['good_or_service'] . "\" name=\"rows[$k][good_or_service]\">\n";
+    echo "<input type=\"hidden\" value=\"" . ((isset($v['good_or_service']))?$v['good_or_service']:1) . "\" name=\"rows[$k][good_or_service]\">\n";
     echo "<input type=\"hidden\" value=\"" . $v['status'] . "\" name=\"rows[$k][status]\">\n";
     echo "<input type=\"hidden\" value=\"" . $v['tiprig'] . "\" name=\"rows[$k][tiprig]\">\n";
-    echo "<input type=\"hidden\" value=\"" . $v['id_doc'] . "\" name=\"rows[$k][id_doc]\">\n";
+    echo "<input type=\"hidden\" value=\"" . ((isset($v['id_doc']))?$v['id_doc']:0) . "\" name=\"rows[$k][id_doc]\">\n";
     echo "<input type=\"hidden\" value=\"" . $v['codvat'] . "\" name=\"rows[$k][codvat]\">\n";
     echo "<input type=\"hidden\" value=\"" . $v['pervat'] . "\" name=\"rows[$k][pervat]\">\n";
     echo "<input type=\"hidden\" value=\"" . $v['tipiva'] . "\" name=\"rows[$k][tipiva]\">\n";
@@ -1766,7 +1762,7 @@ foreach ($form['rows'] as $k => $v) {
     echo "<input type=\"hidden\" value=\"" . $v['scorta'] . "\" name=\"rows[$k][scorta]\">\n";
     echo "<input type=\"hidden\" value=\"" . $v['quamag'] . "\" name=\"rows[$k][quamag]\">\n";
     echo "<input type=\"hidden\" value=\"" . $v['pesosp'] . "\" name=\"rows[$k][pesosp]\">\n";
-    echo "<input type=\"hidden\" value=\"" . $v['extdoc'] . "\" name=\"rows[$k][extdoc]\">\n";
+    echo "<input type=\"hidden\" value=\"" . ((isset($v['extdoc']))?$v['extdoc']:'') . "\" name=\"rows[$k][extdoc]\">\n";
     //stampo i rows in modo diverso a secondo del tipo
     echo "<tr>";
     switch ($v['tiprig']) {
@@ -1786,9 +1782,8 @@ foreach ($form['rows'] as $k => $v) {
 				$btn_class = 'btn-info';
 				$btn_title = " Senza magazzino";
 			}
-            /* Peso */
             $peso = 0;
-            if ($v['pesosp'] <> 0) {
+            if (is_numeric($v['pesosp']) && $v['pesosp'] <> 0) {
                 $peso = gaz_format_number($v['quanti'] / $v['pesosp']);
             }
             echo '	<td>
@@ -2104,32 +2099,31 @@ foreach ($form['rows'] as $k => $v) {
 if (isset($ultimoprezzo) && $ultimoprezzo<>'') {
     $msgtoast = $upd_mm->toast(" <strong>Ultime vendite:</strong>".$ultimoprezzo, 'alert-last-row', 'alert-success');
 }
-
-/* Nuovo alert per scontistica, da visualizzare rigorosamente dopo l'ultima riga inserita */
-if (count($form['rows']) > 0) {
-    $msgtoast = $upd_mm->toast($msgtoast);  //lo mostriamo
-
-    if (isset($_POST['in_submit']) && count($form['rows']) > 5) {
-        /* for($i=0;$i<3;$i++) {	//	Predisposizione per mostrare gli ultimi n articoli inseriti (in ordine inverso ovviamente)
-          $msgtoast .= $last_row[$i].'<br />';
-          } */
-        //$msgtoast .= $last_row[0];
-        $msgtoast = $upd_mm->toast($script_transl['last_row'] . ': ' . $last_row[0], 'alert-last-row', 'alert-success');  //lo mostriamo
-    }
-} else {
-    echo '<tr id="alert-zerorows">
-			<td colspan="12" class="alert alert-danger">' . $script_transl['zero_rows'] . '</td>
-		  </tr>';
+$class_conf_row='btn-success';
+$descributton = $script_transl['insert'];
+$nurig = count($form['rows'])+1;
+$expsts = explode('UPDROW',$form['in_status']);
+if (isset($expsts[1])){
+  $nurig = (int)$expsts[1]+1;
+  $class_conf_row = 'btn-warning';
+  $descributton = $script_transl['update'];
 }
-
+$descributton .= ' il rigo '.$nurig;
+if (count($form['rows']) > 0) {
+  $msgtoast = $upd_mm->toast($msgtoast);  //lo mostriamo
+  if (isset($_POST['in_submit']) && count($form['rows']) > 5) {
+    $msgtoast = $upd_mm->toast($script_transl['last_row'] . ': ' . $last_row[0], 'alert-last-row', 'alert-success');  //lo mostriamo
+  }
+} else {
+  echo '<tr id="alert-zerorows"><td colspan="12" class="alert alert-danger">' . $script_transl['zero_rows'] . '</td></tr>';
+}
 echo '</tbody></table></div>';
-
-echo '<div class="FacetSeparatorTD" align="center">' . $script_transl[1] . '</div>
+echo '
 	  <input type="hidden" value="' . $form['in_descri'] . '" name="in_descri" />
 	  <input type="hidden" value="' . $form['in_pervat'] . '" name="in_pervat" />
 	  <input type="hidden" value="' . $form['in_tipiva'] . '" name="in_tipiva" />
 	  <input type="hidden" value="' . $form['in_ritenuta'] . '" name="in_ritenuta" />
-      <input type="hidden" value="' . $form['in_unimis'] . '" name="in_unimis" />
+    <input type="hidden" value="' . $form['in_unimis'] . '" name="in_unimis" />
 	  <input type="hidden" value="' . $form['in_prelis'] . '" name="in_prelis" />
 	  <input type="hidden" value="' . $form['in_id_mag'] . '" name="in_id_mag" />
 	  <input type="hidden" value="' . $form['in_id_doc'] . '" name="in_id_doc" />
@@ -2140,41 +2134,31 @@ echo '<div class="FacetSeparatorTD" align="center">' . $script_transl[1] . '</di
 	  <input type="hidden" value="' . $form['in_extdoc'] . '" name="in_extdoc" />
 	  <input type="hidden" value="' . $form['in_status'] . '" name="in_status" />
 	  <input type="hidden" value="' . $form['hidden_req'] . '" name="hidden_req" />
-	  <div class="table-responsive"><table class="Tlarge table table-striped table-bordered table-condensed">
+	  <div class="table-responsive"><table class="Tlarge table input-area">
 	  	<tr>
-			<td class="FacetColumnTD">' . $script_transl[17] . ':';
-/** ENRICO FEDELE */
+			<td>' . $script_transl[17] . ':';
 $gForm->selTypeRow('in_tiprig', $form['in_tiprig']);
 echo $script_transl[15] . ':&nbsp;';
 $select_artico = new selectartico("in_codart");
 $select_artico->addSelected($form['in_codart']);
 //$select_artico->output($form['cosear'], $form['in_artsea']);
 $select_artico->output($form['cosear']);
-
-/** ENRICO FEDELE */
-/* glyph-icon */
 ?>
-			</td>
-			<td class="FacetColumnTD">
-				<?php echo $script_transl[16] ?>:&nbsp;<input type="text" value="<?php echo $form['in_quanti'] ?>" maxlength="11" name="in_quanti" tabindex="5" accesskey="q" />
-			</td>
-			<td class="FacetColumnTD" align="right">
+	</td>
+	<td><?php echo $script_transl[16] ?>:&nbsp;<input type="text" value="<?php echo $form['in_quanti'] ?>" maxlength="11" name="in_quanti" tabindex="5" accesskey="q" /></td>
+	<td align="right">
 <?php
 if (substr($form['in_status'], 0, 6) != "UPDROW") { //se non è un rigo da modificare
 ?>
-			<button type="submit" class="btn btn-default btn-sm" name="in_submit_desc" title="Aggiungi rigo Descrittivo"><i class="glyphicon glyphicon-pencil"></i></button>
-			<button type="submit" class="btn btn-default btn-sm" name="in_submit_text" title="Aggiungi rigo Testo"><i class="glyphicon glyphicon-list"></i></button>
-			<span>||</span>
+			<button type="submit" class="btn btn-info btn-sm" name="in_submit_desc" title="Aggiungi rigo Descrittivo"><i class="glyphicon glyphicon-pencil"></i></button>
+			<button type="submit" class="btn btn-info btn-sm" name="in_submit_text" title="Aggiungi rigo Testo"><i class="glyphicon glyphicon-list"></i></button>
 <?php
 }
 ?>
-				<button type="submit" class="btn btn-default btn-xs" name="in_submit" title="<?php echo $script_transl['submit'] . $script_transl['thisrow'] ?>" tabindex="6">
-					<i class="glyphicon glyphicon-ok"></i>
-				</button>
 			</td>
 		</tr>
 		<tr>
-			<td class="FacetColumnTD">
+			<td>
 <?php
 echo $script_transl[18] . ": ";
 $select_codric = new selectconven("in_codric");
@@ -2184,14 +2168,23 @@ echo '			%' . $script_transl[24] . ': <input type="text" value="' . $form['in_sc
 	  			 %' . $script_transl[56] . ': <input type="text" value="' . $form['in_provvigione'] . '" maxlength="6" name="in_provvigione">'
  . ' %' . $script_transl['ritenuta'] . ': <input type="text" value="' . $form['in_ritenuta'] . '" maxlength="6" name="in_ritenuta">
 	   			</td>
-				<td class="FacetColumnTD">' . $script_transl['vat_constrain'];
+				<td>' . $script_transl['vat_constrain'];
 $select_in_codvat = new selectaliiva("in_codvat");
 $select_in_codvat->addSelected($form['in_codvat']);
 $select_in_codvat->output();
-echo '</td><td class="FacetColumnTD"></td></tr></table></div>';
+?>
+</td>
+<td>
+  <button type="submit" class="btn <?php echo $class_conf_row; ?>" name="in_submit" tabindex="6"><?php echo $descributton ?>
+    <i class="glyphicon glyphicon-ok"></i>
+  </button>
+</td>
+</tr>
+</table>
+</div>
+<?php
 
-
-echo '<div class="FacetSeparatorTD text-center">' . $script_transl[2] . '</div><div>
+echo '<div class="FacetSeparatorTD text-center"><b>' . $script_transl[2] . '</b></div><div>
 		<table class="Tlarge table table-striped table-bordered table-condensed">
 			<input type="hidden" value="' . $form['numrat'] . '" name="numrat" />
 			<input type="hidden" value="' . $form['expense_vat'] . '" name="expense_vat" />
@@ -2249,7 +2242,6 @@ echo "			</td>
 					<input class=\"FacetText\" type=\"text\" name=\"mestra\" VALUE=\"" . $form['mestra'] . "\" >
 					<input class=\"FacetText\" type=\"text\" name=\"anntra\" VALUE=\"" . $form['anntra'] . "\" >
 					<a href=\"#\" onClick=\"cal.showCalendar('anchor','" . $form['mestra'] . "/" . $form['giotra'] . "/" . $form['anntra'] . "'); return false;\" title=\" cambia la data! \" name=\"anchor\" id=\"anchor\" class=\"btn btn-default btn-xs\">\n";
-//echo "<img border=\"0\" src=\"../../library/images/cal.png\"></A>$script_transl[31]";
 echo '<i class="glyphicon glyphicon-calendar"></i></a>' . $script_transl[31];
 // select dell'ora
 echo "\t <select name=\"oratra\" class=\"FacetText\" >\n";
@@ -2283,8 +2275,6 @@ while ($row = gaz_dbi_fetch_array($result)) {
     }
     echo "				<option value=\"" . $row['codice'] . "\"" . $selected . ">" . $row['codice'] . "-" . substr($row['descri'], 0, 20) . "</option>\n";
 }
-/** ENRICO FEDELE */
-/* td non chiuso */
 echo "			</select>
 			</td>
 			<td class=\"FacetFieldCaptionTD text-right\">$script_transl[55]</td>
@@ -2322,7 +2312,6 @@ echo '			</td>
 				<td class="FacetFieldCaptionTD text-right">' . $script_transl['stamp'] . '</td>
 				<td class="FacetFieldCaptionTD text-right">' . $admin_aziend['html_symbol'] . $script_transl[36] . '</td>
 			</tr>';
-
 foreach ($calc->castle as $k => $v) {
     echo '		<tr>
    					<td class="text-right">' . gaz_format_number($v['impcast']) . '</td>
@@ -2360,9 +2349,9 @@ if ($next_row > 0) {
     }
     echo '		<tr>
 					<td colspan="2" class="text-right">
-						<input name="prestampa" class="btn btn-default" onClick="preStampa();" type="button" value="Prestampa">
+						<input name="prestampa" class="btn btn-info" onClick="preStampa();" type="button" value="Prestampa">
 					</td>
-					<td colspan="4" class="text-center">
+					<td colspan="4" class="text-center FacetFooterTD">
 						<input name="ins" class="btn '.$class_btn_confirm.'" id="preventDuplicate" onClick="chkSubmit();" type="submit" value="' . ucfirst($script_transl[$toDo]) . '">
 					</td>
 				';

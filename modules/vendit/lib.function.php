@@ -229,6 +229,9 @@ class venditForm extends GAzieForm {
 
 	function getFAEunpacked($include_fe_PA = true) { // FUNZIONE CHE CONTROLLA LO STATO DELLE FATTURE DA IMPACCHETTARE PER INVIARE ALLO SDI
 		global $gTables, $admin_aziend;
+    // controllo se impacchettare le fatture derivanti da corrispettivi non anonimi
+    $fae_ticket_pack = gaz_dbi_get_row($gTables['company_config'], 'var', 'fae_ticket_pack');
+    $packVCO = ($fae_ticket_pack['val']==0)?"":"OR (tipdoc = 'VCO' AND numfat > 0)";
 		$calc = new Compute;
 		$from = $gTables['tesdoc'] . ' AS tesdoc
 				 LEFT JOIN ' . $gTables['pagame'] . ' AS pay ON tesdoc.pagame=pay.codice
@@ -238,18 +241,18 @@ class venditForm extends GAzieForm {
 				 LEFT JOIN ' . $gTables['fae_flux'] . ' AS flux ON tesdoc.id_tes = flux.id_tes_ref ';
 		$where = "(fattura_elettronica_zip_package IS NULL OR fattura_elettronica_zip_package = '')
 				  AND (flux_status = '' OR flux_status = 'DI' OR flux_status IS NULL)
-				  AND (tipdoc LIKE 'F__'  OR (tipdoc = 'VCO' AND numfat > 0) OR (tipdoc LIKE 'X__') )";
+				  AND (tipdoc LIKE 'F__'  ".$packVCO." OR (tipdoc LIKE 'X__') )";
 		if (!$include_fe_PA) {
 			$where.= " AND LENGTH(fe_cod_univoco)<>6";
 		}
 		$orderby = "seziva ASC,tipdoc ASC, protoc ASC";
-		$result = gaz_dbi_dyn_query('tesdoc.*, CONCAT(SUBSTRING(tesdoc.tipdoc,1,1),tesdoc.protoc) AS ctrlp, SUBSTRING(tesdoc.tipdoc,1,1) AS ctrlreg ,
+		$result = gaz_dbi_dyn_query('tesdoc.*, CONCAT(tesdoc.seziva,SUBSTRING(tesdoc.tipdoc,1,1),tesdoc.protoc) AS ctrlp, SUBSTRING(tesdoc.tipdoc,1,1) AS ctrlreg ,
 							pay.tippag,pay.numrat,pay.incaut,pay.tipdec,pay.giodec,pay.tiprat,pay.mesesc,pay.giosuc,pay.id_bank,
 							customer.codice, customer.speban AS addebitospese,
 							CONCAT(anagraf.ragso1,\' \',anagraf.ragso2) AS ragsoc, anagraf.citspe, anagraf.prospe, anagraf.capspe, anagraf.country, anagraf.fe_cod_univoco, anagraf.pec_email, anagraf.e_mail, anagraf.country,
-							country.istat_area, flux.flux_status', $from, $where, $orderby);
+							country.istat_area, flux.flux_status, flux.id_tes_ref', $from, $where, $orderby);
 		$docs['data'] = [];
-		$ctrlp = 0;
+		$ctrlp = '';
 		$carry = 0;
 		$ivasplitpay = 0;
 		$somma_spese = 0;
@@ -257,123 +260,126 @@ class venditForm extends GAzieForm {
 		$taxstamp = 0;
 		$rit = 0;
 		while ($tes = gaz_dbi_fetch_array($result)) {
-			if ($tes['ctrlp'] <> $ctrlp) { // la prima testata della fattura
-				if ($ctrlp > 0 && ($docs['data'][$ctrlp]['tes']['stamp'] >= 0.01 || $docs['data'][$ctrlp]['tes']['taxstamp'] >= 0.01 )) { // non è il primo ciclo faccio il calcolo dei bolli del pagamento e lo aggiungo ai castelletti
-					$calc->payment_taxstamp($calc->total_imp + $calc->total_vat + $carry - $rit - $ivasplitpay + $taxstamp, $docs['data'][$ctrlp]['tes']['stamp'], $docs['data'][$ctrlp]['tes']['round_stamp'] * $docs['data'][$ctrlp]['tes']['numrat']);
-					$calc->add_value_to_VAT_castle($docs['data'][$ctrlp]['vat'], $taxstamp + $calc->pay_taxstamp, $admin_aziend['taxstamp_vat']);
-					$docs['data'][$ctrlp]['vat'] = $calc->castle;
-					// aggiungo il castelleto conti
-					if (!isset($docs['data'][$ctrlp]['acc'][$admin_aziend['boleff']])) {
-						$docs['data'][$ctrlp]['acc'][$admin_aziend['boleff']]['import'] = 0;
-					}
-					$docs['data'][$ctrlp]['acc'][$admin_aziend['boleff']]['import'] += $taxstamp + $calc->pay_taxstamp;
-				}
-				$carry = 0;
-				$ivasplitpay = 0;
-				$cast_vat = [];
-				$cast_acc = [];
-				$somma_spese = 0;
-				$totimpdoc = 0;
-				$totimp_decalc = 0.00;
-				$n_vat_decalc = 0;
-				$spese_incasso = $tes['numrat'] * $tes['speban'];
-				$taxstamp = 0;
-				$rit = 0;
-			} else {
-				$spese_incasso = 0;
-			}
-			// aggiungo il bollo sugli esenti/esclusi se nel DdT c'è ma non è ancora stato mai aggiunto
-			if ($tes['taxstamp'] >= 0.01 && $taxstamp < 0.01) {
-				$taxstamp = $tes['taxstamp'];
-			}
-			if ($tes['virtual_taxstamp'] == 0 || $tes['virtual_taxstamp'] == 3) { //  se è a carico dell'emittente non lo aggiungo al castelletto IVA
-				$taxstamp = 0.00;
-			}
-			if ($tes['traspo'] >= 0.01) {
-				if (!isset($cast_acc[$admin_aziend['imptra']]['import'])) {
-					$cast_acc[$admin_aziend['imptra']]['import'] = $tes['traspo'];
-				} else {
-					$cast_acc[$admin_aziend['imptra']]['import'] += $tes['traspo'];
-				}
-			}
-			if ($spese_incasso >= 0.01) {
-				if (!isset($cast_acc[$admin_aziend['impspe']]['import'])) {
-					$cast_acc[$admin_aziend['impspe']]['import'] = $spese_incasso;
-				} else {
-					$cast_acc[$admin_aziend['impspe']]['import'] += $spese_incasso;
-				}
-			}
-			if ($tes['spevar'] >= 0.01) {
-				if (!isset($cast_acc[$admin_aziend['impvar']]['import'])) {
-					$cast_acc[$admin_aziend['impvar']]['import'] = $tes['spevar'];
-				} else {
-					$cast_acc[$admin_aziend['impvar']]['import'] += $tes['spevar'];
-				}
-			}
-			//recupero i dati righi per creare il castelletto
-			$from = $gTables['rigdoc'] . ' AS rs
-						LEFT JOIN ' . $gTables['aliiva'] . ' AS vat
-						ON rs.codvat=vat.codice';
-			$rs_rig = gaz_dbi_dyn_query('rs.*,vat.tipiva AS tipiva', $from, "rs.id_tes = " . $tes['id_tes'], "id_tes DESC");
-			while ($r = gaz_dbi_fetch_array($rs_rig)) {
-				if ($tes['tipdoc']=='XNC'){ // è una nota di credito del reverse charge lo SdI vuole che siano negativi gli importi in quanto non prevista una tipologia specifica
-					$r['prelis']=-abs($r['prelis']);
-				}
-				if ($r['tiprig'] <= 1 || $r['tiprig'] == 90) { //ma solo se del tipo normale, forfait, vendita cespite
-					//calcolo importo rigo
-					$importo = CalcolaImportoRigo($r['quanti'], $r['prelis'], array($r['sconto'], $tes['sconto']));
-					if ($r['tiprig'] == 1 || $r['tiprig'] == 90) { // se di tipo forfait o vendita cespite
-						$importo = CalcolaImportoRigo(1, $r['prelis'], $tes['sconto']);
-					}
-					//creo il castelletto IVA
-					if (!isset($cast_vat[$r['codvat']]['impcast'])) {
-						$cast_vat[$r['codvat']]['impcast'] = 0;
-						$cast_vat[$r['codvat']]['ivacast'] = 0;
-						$cast_vat[$r['codvat']]['periva'] = $r['pervat'];
-						$cast_vat[$r['codvat']]['tipiva'] = $r['tipiva'];
-					}
-					$cast_vat[$r['codvat']]['impcast'] += $importo;
-					$cast_vat[$r['codvat']]['ivacast'] += round(($importo * $r['pervat']) / 100, 2);
-					$totimpdoc += $importo;
-					//creo il castelletto conti
-					if (!isset($cast_acc[$r['codric']]['import'])) {
-						$cast_acc[$r['codric']]['import'] = 0;
-					}
-					$cast_acc[$r['codric']]['import'] += $importo;
-					if ($r['tiprig'] == 90) { // se è una vendita cespite lo indico sull'array dei conti
-						$cast_acc[$r['codric']]['asset'] = 1;
-					}
-					$rit += round($importo * $r['ritenuta'] / 100, 2);
-					// aggiungo all'accumulatore l'eventuale iva non esigibile (split payment)
-					if ($r['tipiva'] == 'T') {
-						$ivasplitpay += round(($importo * $r['pervat']) / 100, 2);
-					}
-				} elseif ($r['tiprig'] == 3) {
-					$carry += $r['prelis'];
-				}
-			}
-			$docs['data'][$tes['ctrlp']]['tes'] = $tes;
-			$docs['data'][$tes['ctrlp']]['acc'] = $cast_acc;
-			$docs['data'][$tes['ctrlp']]['car'] = $carry;
-			$docs['data'][$tes['ctrlp']]['isp'] = $ivasplitpay;
-			$docs['data'][$tes['ctrlp']]['rit'] = $rit;
-			$somma_spese += $tes['traspo'] + $spese_incasso + $tes['spevar'];
-			$calc->add_value_to_VAT_castle($cast_vat, $somma_spese, $tes['expense_vat']);
-			$docs['data'][$tes['ctrlp']]['vat'] = $calc->castle;
+      // se è la testata di una fattura differita con più DdT che manca di referenza su fae_flux allora la salto
+      $checkddt = gaz_dbi_get_row($gTables['tesdoc']. ' as td LEFT JOIN ' . $gTables['fae_flux'] . ' as ff ON td.id_tes = ff.id_tes_ref', 'td.tipdoc', 'FAD', " AND td.seziva = ".$tes['seziva']." AND td.datfat = '".$tes['datfat']."' AND td.protoc = ".$tes['protoc']."  AND ff.flux_status <> '' AND ff.flux_status <> 'DI' AND ff.flux_status IS NOT NULL"); // se questo restituisce una riga vuol dire che il DdT non può comunque essere impacchettato in quanto
+      if(!$checkddt){ // considero impachettabili solo i protocolli che non hanno alcuna testata risultante inviata dal controllo di sopra
+        if ($tes['ctrlp'] <> $ctrlp) { // la prima testata della fattura
+          if (strlen($ctrlp) > 0 && ($docs['data'][$ctrlp]['tes']['stamp'] >= 0.01 || $docs['data'][$ctrlp]['tes']['taxstamp'] >= 0.01 )) { // non è il primo ciclo faccio il calcolo dei bolli del pagamento e lo aggiungo ai castelletti
+            $calc->payment_taxstamp($calc->total_imp + $calc->total_vat + $carry - $rit - $ivasplitpay + $taxstamp, $docs['data'][$ctrlp]['tes']['stamp'], $docs['data'][$ctrlp]['tes']['round_stamp'] * $docs['data'][$ctrlp]['tes']['numrat']);
+            $calc->add_value_to_VAT_castle($docs['data'][$ctrlp]['vat'], $taxstamp + $calc->pay_taxstamp, $admin_aziend['taxstamp_vat']);
+            $docs['data'][$ctrlp]['vat'] = $calc->castle;
+            // aggiungo il castelleto conti
+            if (!isset($docs['data'][$ctrlp]['acc'][$admin_aziend['boleff']])) {
+              $docs['data'][$ctrlp]['acc'][$admin_aziend['boleff']]['import'] = 0;
+            }
+            $docs['data'][$ctrlp]['acc'][$admin_aziend['boleff']]['import'] += $taxstamp + $calc->pay_taxstamp;
+          }
+          $carry = 0;
+          $ivasplitpay = 0;
+          $cast_vat = [];
+          $cast_acc = [];
+          $somma_spese = 0;
+          $totimpdoc = 0;
+          $totimp_decalc = 0.00;
+          $n_vat_decalc = 0;
+          $spese_incasso = $tes['numrat'] * $tes['speban'];
+          $taxstamp = 0;
+          $rit = 0;
+        } else {
+          $spese_incasso = 0;
+        }
+        // aggiungo il bollo sugli esenti/esclusi se nel DdT c'è ma non è ancora stato mai aggiunto
+        if ($tes['taxstamp'] >= 0.01 && $taxstamp < 0.01) {
+          $taxstamp = $tes['taxstamp'];
+        }
+        if ($tes['virtual_taxstamp'] == 0 || $tes['virtual_taxstamp'] == 3) { //  se è a carico dell'emittente non lo aggiungo al castelletto IVA
+          $taxstamp = 0.00;
+        }
+        if ($tes['traspo'] >= 0.01) {
+          if (!isset($cast_acc[$admin_aziend['imptra']]['import'])) {
+            $cast_acc[$admin_aziend['imptra']]['import'] = $tes['traspo'];
+          } else {
+            $cast_acc[$admin_aziend['imptra']]['import'] += $tes['traspo'];
+          }
+        }
+        if ($spese_incasso >= 0.01) {
+          if (!isset($cast_acc[$admin_aziend['impspe']]['import'])) {
+            $cast_acc[$admin_aziend['impspe']]['import'] = $spese_incasso;
+          } else {
+            $cast_acc[$admin_aziend['impspe']]['import'] += $spese_incasso;
+          }
+        }
+        if ($tes['spevar'] >= 0.01) {
+          if (!isset($cast_acc[$admin_aziend['impvar']]['import'])) {
+            $cast_acc[$admin_aziend['impvar']]['import'] = $tes['spevar'];
+          } else {
+            $cast_acc[$admin_aziend['impvar']]['import'] += $tes['spevar'];
+          }
+        }
+        //recupero i dati righi per creare il castelletto
+        $from = $gTables['rigdoc'] . ' AS rs
+              LEFT JOIN ' . $gTables['aliiva'] . ' AS vat
+              ON rs.codvat=vat.codice';
+        $rs_rig = gaz_dbi_dyn_query('rs.*,vat.tipiva AS tipiva', $from, "rs.id_tes = " . $tes['id_tes'], "id_tes DESC");
+        while ($r = gaz_dbi_fetch_array($rs_rig)) {
+          if ($tes['tipdoc']=='XNC'){ // è una nota di credito del reverse charge lo SdI vuole che siano negativi gli importi in quanto non prevista una tipologia specifica
+            $r['prelis']=-abs($r['prelis']);
+          }
+          if ($r['tiprig'] <= 1 || $r['tiprig'] == 90) { //ma solo se del tipo normale, forfait, vendita cespite
+            //calcolo importo rigo
+            $importo = CalcolaImportoRigo($r['quanti'], $r['prelis'], array($r['sconto'], $tes['sconto']));
+            if ($r['tiprig'] == 1 || $r['tiprig'] == 90) { // se di tipo forfait o vendita cespite
+              $importo = CalcolaImportoRigo(1, $r['prelis'], $tes['sconto']);
+            }
+            //creo il castelletto IVA
+            if (!isset($cast_vat[$r['codvat']]['impcast'])) {
+              $cast_vat[$r['codvat']]['impcast'] = 0;
+              $cast_vat[$r['codvat']]['ivacast'] = 0;
+              $cast_vat[$r['codvat']]['periva'] = $r['pervat'];
+              $cast_vat[$r['codvat']]['tipiva'] = $r['tipiva'];
+            }
+            $cast_vat[$r['codvat']]['impcast'] += $importo;
+            $cast_vat[$r['codvat']]['ivacast'] += round(($importo * $r['pervat']) / 100, 2);
+            $totimpdoc += $importo;
+            //creo il castelletto conti
+            if (!isset($cast_acc[$r['codric']]['import'])) {
+              $cast_acc[$r['codric']]['import'] = 0;
+            }
+            $cast_acc[$r['codric']]['import'] += $importo;
+            if ($r['tiprig'] == 90) { // se è una vendita cespite lo indico sull'array dei conti
+              $cast_acc[$r['codric']]['asset'] = 1;
+            }
+            $rit += round($importo * $r['ritenuta'] / 100, 2);
+            // aggiungo all'accumulatore l'eventuale iva non esigibile (split payment)
+            if ($r['tipiva'] == 'T') {
+              $ivasplitpay += round(($importo * $r['pervat']) / 100, 2);
+            }
+          } elseif ($r['tiprig'] == 3) {
+            $carry += $r['prelis'];
+          }
+        }
+        $docs['data'][$tes['ctrlp']]['tes'] = $tes;
+        $docs['data'][$tes['ctrlp']]['acc'] = $cast_acc;
+        $docs['data'][$tes['ctrlp']]['car'] = $carry;
+        $docs['data'][$tes['ctrlp']]['isp'] = $ivasplitpay;
+        $docs['data'][$tes['ctrlp']]['rit'] = $rit;
+        $somma_spese += $tes['traspo'] + $spese_incasso + $tes['spevar'];
+        $calc->add_value_to_VAT_castle($cast_vat, $somma_spese, $tes['expense_vat']);
+        $docs['data'][$tes['ctrlp']]['vat'] = $calc->castle;
 
-			// QUI ACCUMULO I VALORI MASSIMI E MINIMI DEI PROTOCOLLI PER OGNI SINGOLO REGISTRO/SEZIONE IVA
-			if (!isset($docs['head'][$tes['seziva']][$tes['ctrlreg']])){
-				$docs['head'][$tes['seziva']][$tes['ctrlreg']]['min']=999999999;
-				$docs['head'][$tes['seziva']][$tes['ctrlreg']]['max']=1;
-			}
-			if ($tes['ctrlreg']=='V'){ $tes['protoc']=$tes['numfat']; }
-			$docs['head'][$tes['seziva']][$tes['ctrlreg']]['min']=($tes['protoc']<$docs['head'][$tes['seziva']][$tes['ctrlreg']]['min'])?$tes['protoc']:$docs['head'][$tes['seziva']][$tes['ctrlreg']]['min'];
-			$docs['head'][$tes['seziva']][$tes['ctrlreg']]['max']=($tes['protoc']>$docs['head'][$tes['seziva']][$tes['ctrlreg']]['max'])?$tes['protoc']:$docs['head'][$tes['seziva']][$tes['ctrlreg']]['max'];
-			// FINE ACCUMULO MIN-MAX PROTOCOLLI
-
-			$ctrlp = $tes['ctrlp'];
+        // QUI ACCUMULO I VALORI MASSIMI E MINIMI DEI PROTOCOLLI PER OGNI SINGOLO REGISTRO/SEZIONE IVA
+        if (!isset($docs['head'][$tes['seziva']][$tes['ctrlreg']])){
+          $docs['head'][$tes['seziva']][$tes['ctrlreg']]['min']=999999999;
+          $docs['head'][$tes['seziva']][$tes['ctrlreg']]['max']=1;
+        }
+        if ($tes['ctrlreg']=='V'){ $tes['protoc']=$tes['numfat']; }
+        $docs['head'][$tes['seziva']][$tes['ctrlreg']]['min']=($tes['protoc']<$docs['head'][$tes['seziva']][$tes['ctrlreg']]['min'])?$tes['protoc']:$docs['head'][$tes['seziva']][$tes['ctrlreg']]['min'];
+        $docs['head'][$tes['seziva']][$tes['ctrlreg']]['max']=($tes['protoc']>$docs['head'][$tes['seziva']][$tes['ctrlreg']]['max'])?$tes['protoc']:$docs['head'][$tes['seziva']][$tes['ctrlreg']]['max'];
+        // FINE ACCUMULO MIN-MAX PROTOCOLLI
+        $ctrlp = $tes['ctrlp'];
+      }
 		}
-		if ($ctrlp > 0 && ($docs['data'][$ctrlp]['tes']['stamp'] >= 0.01 || $taxstamp >= 0.01)) { // a chiusura dei cicli faccio il calcolo dei bolli del pagamento e lo aggiungo ai castelletti
+		if (strlen($ctrlp) > 0 && ($docs['data'][$ctrlp]['tes']['stamp'] >= 0.01 || $taxstamp >= 0.01)) { // a chiusura dei cicli faccio il calcolo dei bolli del pagamento e lo aggiungo ai castelletti
 			$calc->payment_taxstamp($calc->total_imp + $calc->total_vat + $carry - $rit - $ivasplitpay + $taxstamp, $docs['data'][$ctrlp]['tes']['stamp'], $docs['data'][$ctrlp]['tes']['round_stamp'] * $docs['data'][$ctrlp]['tes']['numrat']);
 			// aggiungo al castelletto IVA
 			$calc->add_value_to_VAT_castle($docs['data'][$ctrlp]['vat'], $taxstamp + $calc->pay_taxstamp, $admin_aziend['taxstamp_vat']);
@@ -550,17 +556,13 @@ class venditCalc extends Compute {
          return $scontoTrovato;
       }
 //cerco sconto cliente/raggruppamento
-      $scontoGenericoArticolo = gaz_dbi_get_single_value($tabellaArticoli, "sconto", "codice='$codart'");
-      if ($scontoGenericoArticolo > 0) { //se lo sconto nella scheda dell'articolo è zero, l'articolo non è soggetto ad ulteriori sconti
-         $raggruppamento = gaz_dbi_get_single_value($tabellaArticoli, "ragstat", "codice='$codart'");
-         while (!empty($raggruppamento)) {
-            $scontoTrovato = gaz_dbi_get_single_value($tabellaScontiRaggruppamenti, "sconto", "clfoco='$codcli' and ragstat = '$raggruppamento'");
-            if ($scontoTrovato > 0) { // sconto presente
-               $msgtoast = $codart . ": sconto raggruppamento statistico riservato al cliente";
-               return $scontoTrovato;
-            }
-            $raggruppamento = substr($raggruppamento, 0, -1); // levo il carattere più a destra così passo al raggruppamento superiore
-         }
+      $artico = gaz_dbi_get_row($gTables['artico'], "codice", $codart);
+      if (strlen($artico['ragstat']) >= 1) { // questo articolo fa parte di un raggruppamento statico, controllo se è stato selezionato un sconto particolare per il cliente
+        $scontoTrovato = gaz_dbi_get_single_value($tabellaScontiRaggruppamenti, "sconto", "clfoco='$codcli' AND ragstat = '".$artico['ragstat']."'");
+        if ($scontoTrovato > 0) { // sconto presente
+          $msgtoast = $codart . ": sconto raggruppamento statistico riservato al cliente";
+          return $scontoTrovato;
+        }
       }
 //cerco sconto cliente
       $scontoTrovato = gaz_dbi_get_single_value($tabellaClienti, "sconto", "codice='$codcli'");
@@ -570,6 +572,7 @@ class venditCalc extends Compute {
       }
 //cerco sconto articolo
 //      $scontoTrovato = gaz_dbi_get_single_value($tabellaArticoli, "sconto", "codice='$codart'");
+      $scontoGenericoArticolo = gaz_dbi_get_single_value($tabellaArticoli, "sconto", "codice='$codart'");
       if ($scontoGenericoArticolo > 0) { // sconto articolo
          $msgtoast = $codart . ": sconto da anagrafe articoli";
          return $scontoGenericoArticolo;
@@ -596,7 +599,7 @@ class lotmag {
       return $this->lot;
    }
 
-   function getAvailableLots($codart, $excluded_movmag = 0, $date="") {
+   function getAvailableLots($codart, $excluded_movmag = 0, $date="", $negative=0) {
 // restituisce tutti i lotti non completamente venduti ordinandoli in base alla configurazione aziendale (FIFO o LIFO)
 // e propone una ripartizione, se viene passato un movimento di magazzino questo verrà escluso perché si suppone sia lo stesso
 // che si sta modificando
@@ -637,7 +640,7 @@ class lotmag {
       $acc = array();
       $rs = false;
       while ($row = gaz_dbi_fetch_array($result)) {
-         if ($row['rest'] >= 0.00001) { // l'articolo ha almeno un lotto caricato
+         if ($row['rest'] >= 0.00001 || ($negative>0 && $row['rest'] <0) ) { // l'articolo ha almeno un lotto caricato
             $rs = true;
             $acc[] = $row;
          }

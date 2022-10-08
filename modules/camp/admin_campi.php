@@ -34,7 +34,6 @@ require("../../library/include/datlib.inc.php");
 $admin_aziend=checkAdmin();
 $msg = "";
 
-
 if ((isset($_POST['Update'])) or (isset($_GET['Update']))) {
     $toDo = 'update';
 } else {
@@ -70,7 +69,9 @@ if ((isset($_POST['Insert'])) or (isset($_POST['Update']))) {   //se non e' il p
               // controllo che il file non sia più; grande di 300kb
           if ( $_FILES['userfile']['size'] > 307200)
               $msg .= '9+';
-       }
+       }else{
+		   $form['userfile']="";
+	   }
 
        if ($toDo == 'insert') { // e' un inserimento, controllo se il codice esiste
           $rs_ctrl = gaz_dbi_get_row($gTables['campi'],'codice',$form['codice']);
@@ -95,7 +96,8 @@ if ((isset($_POST['Insert'])) or (isset($_POST['Update']))) {   //se non e' il p
           if ($toDo == 'update') { // e' una modifica
             gaz_dbi_table_update('campi',$form["codice"],$form);
           } else { // e' un'inserimento
-            $form['giorno_decadimento']='0000-00-00 00:00:00';gaz_dbi_table_insert('campi',$form);
+            $form['giorno_decadimento']='0000-00-00 00:00:00';
+			gaz_dbi_table_insert('campi',$form);
           }
           header("Location: ".$_POST['ritorno']);
           exit;
@@ -103,6 +105,11 @@ if ((isset($_POST['Insert'])) or (isset($_POST['Update']))) {   //se non e' il p
   }
 } elseif ((!isset($_POST['Update'])) and (isset($_GET['Update']))) { //se e' il primo accesso per UPDATE
     $campi = gaz_dbi_get_row($gTables['campi'],"codice",$_GET['codice']);
+	if (strlen($campi['used_from_modules'])==0){
+		$form['used_from_modules']=$module;	
+	}else{
+		$form['used_from_modules']=$campi['used_from_modules'];	
+	}
     $form['ritorno'] = $_POST['ritorno'];
 	$form['userfile'] = "";
     $form['codice'] = $campi['codice'];
@@ -141,6 +148,7 @@ if ((isset($_POST['Insert'])) or (isset($_POST['Update']))) {   //se non e' il p
 	$form['codice_prodotto_usato'] ='';
 	$form['id_mov'] ='';
 	$form['userfile'] = "";
+	$form['used_from_modules']=$module;
 }
 require("../../library/include/header.php");
 $script_transl = HeadMain();
@@ -158,6 +166,7 @@ print "<form method=\"POST\" enctype=\"multipart/form-data\">\n";
 print "<div align=\"center\" class=\"lead\"><h1>$title</h1></div>";
 print "<input type=\"hidden\" name=\"".ucfirst($toDo)."\" value=\"\">\n";
 print "<input type=\"hidden\" value=\"".$_POST['ritorno']."\" name=\"ritorno\">\n";
+print "<input type=\"hidden\" value=\"".$form['used_from_modules']."\" name=\"used_from_modules\">\n";
 if (!empty($msg)) {
     $message = "";
     $rsmsg = array_slice( explode('+',chop($msg)),0,-1);

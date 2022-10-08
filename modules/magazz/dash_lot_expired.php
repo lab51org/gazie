@@ -33,7 +33,7 @@ while ($row = gaz_dbi_fetch_array($result)) {
 	$lm -> getAvailableLots($row['codice'],0);
 	if (count($lm->available) > 0) {
 		foreach ($lm->available as $v_lm) {
-			if (strtotime($v_lm['expiry'])>0 and strtotime($v_lm['expiry']) <= strtotime (date("Ymd"))) { // lotti scaduti
+			if (!empty($v_lm['expiry']) && strtotime($v_lm['expiry'])>0 && strtotime($v_lm['expiry']) <= strtotime (date("Ymd"))) { // lotti scaduti
 				$lotscad[$scad]['codice']=$row['codice'];
 				$lotscad[$scad]['descri']=$row['descri'];
 				$lotscad[$scad]['identifier']=$v_lm['identifier'];
@@ -47,7 +47,7 @@ while ($row = gaz_dbi_fetch_array($result)) {
 	 ?>
        <div class="panel panel-danger col-sm-12">
             <div class="box-header bg-danger">
-                <h3 class="box-title"><?php echo $script_transl['scalot']; ?></h3>
+                <b><?php echo $script_transl['scalot']; ?></b>
 				<a class="pull-right dialog_grid" id_bread="<?php echo $grr['id_bread']; ?>" style="cursor:pointer;"><i class="glyphicon glyphicon-cog"></i></a>
                </div>
                <div class="box-body">

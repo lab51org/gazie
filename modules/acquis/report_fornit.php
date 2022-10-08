@@ -33,36 +33,28 @@ $masfor = $fornit . "000000";
 
 // campi ammissibili per la ricerca
 $search_fields = [
-    'codice'
-    => "codice LIKE '$fornit%%%d%%'",
-    'nome'
-    => "CONCAT(ragso1, ragso2) LIKE '%%%s%%'",
-    'tipo'
-    => "sexper = '%s'",
-    'citta'
-    => "citspe = '%s'",
-    'telefono'
-    => "telefo LIKE '%%%s%%'",
-    'fiscali'
-    => "(codfis LIKE '%%%1\$s%%' OR pariva LIKE '%%%1\$s%%')",
-    'codmin'
-    => "codice >= $masfor + GREATEST(%d, 1)",
-    'codmax'
-    => "codice <= $masfor + LEAST(%d, 999999)"
+  'codice' => "codice LIKE '$fornit%%%d%%'",
+  'nome' => "CONCAT(ragso1, ragso2) LIKE '%%%s%%'",
+  'tipo' => "sexper = '%s'",
+  'citta' => "citspe = '%s'",
+  'telefono' => "telefo LIKE '%%%s%%'",
+  'idfisc' => "CONCAT(codfis, pariva) LIKE '%%%s%%'",
+  'codmin' => "codice >= $masfor + GREATEST(%d, 1)",
+  'codmax' => "codice <= $masfor + LEAST(%d, 999999)"
 ];
 
 // creo l'array (header => campi) per l'ordinamento dei record
 $sortable_headers = array(
-    "Codice" => "codice",
-    "Ragione sociale" => "ragso1",
-    "Tipo" => "sexper",
-    "Citt&agrave;" => "citspe",
-    "Telefono" => "",
-    "P.IVA - C.F." => "",
-    "Privacy" => "" ,
-    "Paga" => "" ,
-    "Visualizza<br> e/o stampa" => "",
-    "Cancella" => ""
+  "Codice" => "codice",
+  "Ragione sociale" => "ragso1",
+  "Tipo" => "sexper",
+  "Citt&agrave;" => "citspe",
+  "Telefono" => "",
+  "P.IVA - C.F." => "",
+  "Privacy" => "" ,
+  "Paga" => "" ,
+  "Visualizza<br> e/o stampa" => "",
+  "Cancella" => ""
 );
 
 require("../../library/include/header.php");
@@ -82,7 +74,7 @@ $(function() {
 	$('.dialog_delete').click(function() {
 		$("p#idcodice").html($(this).attr("ref"));
 		$("p#iddescri").html($(this).attr("ragso"));
-		var id = $(this).attr('ref');		
+		var id = $(this).attr('ref');
 		$( "#dialog_delete" ).dialog({
 			minHeight: 1,
 			width: "auto",
@@ -90,9 +82,16 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
-				delete:{ 
-					text:'Elimina', 
-					'class':'btn btn-danger delete-button',
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
+				delete:{
+					text:'Elimina',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'fornit',ref:id},
@@ -103,13 +102,10 @@ $(function() {
 							window.location.replace("./report_fornit.php");
 						}
 					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+				}}
 			}
 		});
-		$("#dialog_delete" ).dialog( "open" );  
+		$("#dialog_delete" ).dialog( "open" );
 	});
 });
 </script>
@@ -126,46 +122,46 @@ $(function() {
 <div class="table-responsive">
 <table class="Tlarge table table-striped table-bordered table-condensed">
 	<tr>
-	    <td class="FacetFieldCaptionTD">
-                <?php gaz_flt_disp_int("codice", "Cerca cod."); ?>
-	    </td>
-	    <td class="FacetFieldCaptionTD">
-                <?php gaz_flt_disp_int("nome", "Ragione Sociale"); ?>
-	    </td>
-	    <td class="FacetFieldCaptionTD">
-		<select class="form-control input-sm" name="tipo" onchange="this.form.submit()">
-                    <?php
-                    if (!isset($tipo)) $tipo = "";
-                    foreach(['' => $script_transl['tuttitipi'],
-                             'G' => 'Giuridica',
-                             'M' => 'Maschio',
-                             'F' => 'Femmina'] as $t => $desc) {
-                        echo "<option value='$t' " . (($t == $tipo) ? "selected" : "") . ">$desc</option>";
-                    };
-                    ?>
-		</select>
-	    </td>
+	  <td class="FacetFieldCaptionTD">
+      <?php gaz_flt_disp_int("codice", "Cerca cod."); ?>
+	  </td>
+	  <td class="FacetFieldCaptionTD">
+      <?php gaz_flt_disp_int("nome", "Ragione Sociale"); ?>
+	  </td>
+	  <td class="FacetFieldCaptionTD">
+      <select class="form-control input-sm" name="tipo" onchange="this.form.submit()">
+        <?php
+        if (!isset($tipo)) $tipo = "";
+        foreach(['' => $script_transl['tuttitipi'],
+                'G' => 'Giuridica',
+                'M' => 'Maschio',
+                'F' => 'Femmina'] as $t => $desc) {
+            echo "<option value='$t' " . (($t == $tipo) ? "selected" : "") . ">$desc</option>";
+        };
+        ?>
+      </select>
+	  </td>
 		<td class="FacetFieldCaptionTD">
-                    <?php
-                        gaz_flt_disp_select("citta", "citspe as citta", 
-					    $partners,
-					    $ts->where, "citspe ASC");
-                    ?>
+    <?php
+      gaz_flt_disp_select("citta", "citspe as citta",
+		  $partners,
+		  $ts->where, "citspe ASC");
+    ?>
 		</td>
 		<td class="FacetFieldCaptionTD">
-                    <?php gaz_flt_disp_int("telefono", "Cerca tel."); ?>
+    <?php gaz_flt_disp_int("telefono", "Cerca tel."); ?>
 		</td>
 		<td class="FacetFieldCaptionTD">
-	            <?php gaz_flt_disp_int("fiscali", "Cerca fisc."); ?>
+    <?php gaz_flt_disp_int("idfisc", "C.F. o P.I."); ?>
 		</td>
 		<td class="FacetFieldCaptionTD"></td>
 		<td class="FacetFieldCaptionTD"></td>
 		<td class="FacetFieldCaptionTD">
-                    <input type="submit" class="btn btn-sm btn-default" name="search" value="Cerca" tabindex="1" />
-                    <?php $ts->output_order_form(); ?>    
+      <input type="submit" class="btn btn-sm btn-default" name="search" value="Cerca" tabindex="1" />
+      <?php $ts->output_order_form(); ?>
 		</td>
 		<td class="FacetFieldCaptionTD" colspan="1">
-		    <a class="btn btn-sm btn-default" href="?">Reset</a>
+      <a class="btn btn-sm btn-default" href="?">Reset</a>
 		</td>
 	</tr>
 <tr>
@@ -189,14 +185,14 @@ while ($a_row = gaz_dbi_fetch_array($result)) {
 	} else {
 		$regol_lnk="<a class=\"btn btn-xs btn-default\" href=\"stampa_privacy.php?codice=".$a_row["codice"]."\" target=\"_blank\"><i class=\"glyphicon glyphicon-eye-close\"></i></a>";
 	}
-	
+
     echo "<tr class=\"FacetDataTD\">";
 	 //colonna codice
-    echo "<td><a class=\"btn btn-xs btn-default\" href=\"admin_fornit.php?codice=".substr($a_row["codice"],3)."&Update\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;".intval(substr($a_row["codice"],3))."</a></td>";
+    echo "<td align=\"center\"><a class=\"btn btn-xs btn-edit\" href=\"admin_fornit.php?codice=".substr($a_row["codice"],3)."&Update\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;".intval(substr($a_row["codice"],3))."</a></td>";
     echo "<td title=\"".$a_row["ragso2"]."\">".$a_row["ragso1"]." &nbsp;</td>";
     echo "<td align=\"center\">".$a_row["sexper"]."</td>";
 	 $google_string = str_replace(" ","+",$a_row["indspe"]).",".str_replace(" ","+",$a_row["capspe"]).",".str_replace(" ","+",$a_row["citspe"]).",".str_replace(" ","+",$a_row["prospe"]);
-		echo "<td title=\"".$a_row["capspe"]." ".$a_row["indspe"]."\">";	
+		echo "<td title=\"".$a_row["capspe"]." ".$a_row["indspe"]."\">";
 		echo "<a class=\"btn btn-xs btn-default\" target=\"_blank\" rel=\"noreferrer\" href=\"https://www.google.it/maps/place/".$google_string."\">".$a_row["citspe"]." (".$a_row["prospe"].")&nbsp;<i class=\"glyphicon glyphicon-map-marker\"></i></a>";
 		echo "</td>";
     //echo "<td class=\"FacetDataTD\" title=\"".$a_row["capspe"]." ".$a_row["indspe"]."\">".$a_row["citspe"]." (".$a_row["prospe"].")</td>";
@@ -229,7 +225,7 @@ while ($a_row = gaz_dbi_fetch_array($result)) {
         echo "<td align=\"center\">".$a_row['codfis']."</td>";
     } elseif($a_row['pariva'] > 0 and !empty($a_row['codfis'])) {
 		if ( $a_row['pariva'] == $a_row['codfis'] ) {
-			echo "<td align=\"center\">".$a_row['pariva']."</td>";		
+			echo "<td align=\"center\">".$a_row['pariva']."</td>";
 		} else {
 			echo "<td align=\"center\">".$a_row['pariva']."<br>".$a_row['codfis']."</td>";
 		}
@@ -262,20 +258,20 @@ while ($a_row = gaz_dbi_fetch_array($result)) {
  $(document).ready(function(){
      var selects = $("select");
      // la funzione gaz_flt_dsp_select usa "All", qui usiamo invece valori vuoti
-     // (in questo modo i campi non usati possono essere esclusi)        
+     // (in questo modo i campi non usati possono essere esclusi)
      $("option", selects).filter(function(){ return this.value == "All"; }).val("");
-     
-     // la stessa funzione imposta onchange="this.form.submit()" sulle select: 
+
+     // la stessa funzione imposta onchange="this.form.submit()" sulle select:
      // l'azione non lancia un evento "submit" e non può essere intercettata.
      // per non andare a modificare la funzione rimpiazziamo l'attributo onchange:
      selects.attr('onchange', null).change(function() { $(this.form).submit(); });
-     
+
      // così ora possiamo intercettare tutti i submit e pulire la GET dal superfluo
      $("form").submit(function() {
          $(this).find(":input").filter(function(){ return !this.value; }).attr("disabled", "disabled");
          return true; // ensure form still submits
      });
-     
+
      // Un-disable form fields when page loads, in case they click back after submission
      $( "form" ).find( ":input" ).prop( "disabled", false );
  });

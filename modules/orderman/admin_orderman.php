@@ -88,8 +88,7 @@ if ((isset($_GET['Update']) and !isset($_GET['codice'])) or isset($_POST['Return
     header("Location: " . $_POST['ritorno']);
     exit;
 }
-if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani   ***  Se NON è IL PRIMO ACCESSO ***
-  //echo"<pre>",print_r($_POST);
+if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ // se NON è il primo accesso
   $form = gaz_dbi_parse_post('orderman');
   $form['order_type'] = $_POST['order_type'];
   $form['description'] = $_POST['description'];
@@ -228,11 +227,8 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
           $form['quanti_comp'][$m] = $_POST['quanti_comp' . $m];
           $form['prezzo_comp'][$m] = $_POST['prezzo_comp' . $m];
           $form['q_lot_comp'][$m] = $_POST['q_lot_comp' . $m];
-
-
           $form['id_mov'][$m]=$_POST['id_mov' . $m];
           $form['old_quanti_comp'][$m]=$_POST['old_quanti_comp' . $m];
-
           $form['recip_stocc_comp'][$m] = (isset($_POST['recip_stocc_comp' . $m]))?$_POST['recip_stocc_comp' . $m]:"";
           if (strlen($form['recip_stocc_comp'][$m])>0 AND intval($form['cod_operazione'] >0 AND intval($form['cod_operazione'])<4)) { // se sono operazioni che producono olio confezionato
             $var_orig = $campsilos->getContentSil($form['recip_stocc_comp'][$m]);
@@ -267,9 +263,7 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
           $form['old_quanti_comp'][0]=0;
       }
     }
-
     // Se viene inviata la richiesta di conferma totale ... ******   CONTROLLO ERRORI   ******
-
     $form['datemi'] = $form['anninp'] . "-" . $form['mesinp'] . "-" . $form['gioinp'];
     if (isset($_POST['ins'])) {
 
@@ -414,7 +408,7 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
             // i dati dell'articolo che non sono nel form li avrò nell' array $resartico
           $form['quantip']=gaz_format_quantity($form['quantip']);// trasformo la quantità per salvarla nel database
 
-          if ($toDo == "update") { // se è un update cancello tutto il vecchio
+          if ($toDo == "update") { // se è un update cancello tutto il vecchio tranne il rigo di orderman
             foreach (glob("../../modules/orderman/tmp/*") as $fn) {// cancello eventuali precedenti file temporanei nella cartella tmp
               unlink($fn);
             }
@@ -436,16 +430,13 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
               gaz_dbi_del_row($gTables['camp_mov_sian'], "id_movmag", $r['id_mov']);// cancello i relativi movimenti SIAN
             }
 
-              if (intval($res['clfoco'])==0) { // se NON è un ordine cliente esistente e quindi fu generato automaticamente da orderman
-                $result = gaz_dbi_del_row($gTables['tesbro'], "id_tes", $form['id_tesbro']); // cancello tesbro
-                $result = gaz_dbi_del_row($gTables['orderman'], "id", intval($_GET['codice'])); // cancello orderman/produzione
-                $result = gaz_dbi_del_row($gTables['rigbro'], "id_tes", $form['id_tesbro']); // cancello rigbro
-                $form['order']=0;
-              } else { // se invece è un ordine cliente devo lasciarlo e solo sganciarlo da orderman
-                gaz_dbi_query ("UPDATE " . $gTables['tesbro'] . " SET id_orderman = '' WHERE id_tes ='".$form['id_tesbro']."'") ; // sgancio tesbro da orderman
-                $result = gaz_dbi_del_row($gTables['orderman'], "id", intval($_GET['codice'])); // cancello orderman/produzione
-              }
-
+			if (intval($res['clfoco'])==0) { // se NON è un ordine cliente esistente e quindi fu generato automaticamente da orderman
+			$result = gaz_dbi_del_row($gTables['tesbro'], "id_tes", $form['id_tesbro']); // cancello tesbro
+			$result = gaz_dbi_del_row($gTables['rigbro'], "id_tes", $form['id_tesbro']); // cancello rigbro
+			$form['order']=0;
+			} else { // se invece è un ordine cliente devo lasciarlo e solo sganciarlo da orderman
+			gaz_dbi_query ("UPDATE " . $gTables['tesbro'] . " SET id_orderman = '' WHERE id_tes ='".$form['id_tesbro']."'") ; // sgancio tesbro da orderman
+			}
 
             // in ogni caso riporto l'auto_increment all'ultimo valore disponibile
             $query="SELECT max(id)+1 AS li FROM ".$gTables['orderman'];
@@ -455,18 +446,17 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
             $query="ALTER TABLE ".$gTables['orderman']." AUTO_INCREMENT=".$li;
             gaz_dbi_query($query); // riporto l'auto_increment al primo disponibile per non avere vuoti di numerazione
 
-          } else { // se è insert
+          }
             if (intval($form['order']) > 0) { // se c'è un ordine prendo gli id tesbro e rigbro esistenti nel form
                 $id_tesbro = $form['id_tesbro'];
                 $id_rigbro = $form['id_rigbro'];
             }
-          }
+
 
           if ($form['order_type'] == "AGR" or $form['order_type'] == "RIC" or $form['order_type'] == "PRF") {
               // escludo AGR RIC e PRF dal creare movimento di magazzino e lotti
               $id_movmag="";
           }
-
 
           // INSERISCO
           // creo e salvo ORDERMAN, tesbro e rigbro
@@ -495,7 +485,17 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
             }
           // inserisco orderman: l'attuale produzione
             $form['start_work']=$start_work; $form['end_work']=$end_work; $form['id_tesbro']=(isset($id_tesbro))?$id_tesbro:0; $form['stato_lavorazione']=$status; $form['adminid']=$admin_aziend['adminid']; $form['duration']=$form['day_of_validity'];
-            $id_orderman = gaz_dbi_table_insert('orderman', $form);
+
+			if (isset($_GET['codice']) && intval($_GET['codice'])>0){// se è un update aggiorno rigo orderman
+				$id_orderman=intval($_GET['codice']);
+				$update = array();
+				$update[]="id";
+				$update[]=$id_orderman;
+				gaz_dbi_table_update('orderman', $update , $form);
+			}else{// se è insert
+
+				$id_orderman = gaz_dbi_table_insert('orderman', $form);
+			}
             if (isset($id_tesbro)){// connetto tesbro a orderman
               tesbroUpdate(array('id_tes',$id_tesbro), array('id_orderman'=>$id_orderman));
             }
@@ -637,7 +637,7 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
           if ($form['lot_or_serial'] > 0) { // se l'articolo prodotto prevede un lotto
 
             // ripulisco il numero lotto inserito da caratteri dannosi
-            $form['identifier'] = (empty($form['identifier'])) ? '' : filter_var($form['identifier'], FILTER_SANITIZE_STRING);
+            $form['identifier'] = (empty($form['identifier'])) ? '' : filter_var($form['identifier'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
             if (strlen($form['identifier']) == 0) { // se non c'è il lotto lo inserisco con data e ora in automatico
               $form['identifier'] = date("Ymd Hms");
             }
@@ -691,10 +691,9 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
           exit;
         }
     }
-    //  fine scrittura database §§§§§§§§§§§§§§§§§§§§§§§§§§§§
+    //  fine scrittura database
 
-} elseif ((!isset($_POST['Update'])) and (isset($_GET['Update']))) {//  **  se e' il primo accesso per UPDATE  **
-
+} elseif ((!isset($_POST['Update'])) and (isset($_GET['Update']))) {//   se e' il primo accesso per UPDATE
   if (!empty($admin_aziend['synccommerce_classname']) && class_exists($admin_aziend['synccommerce_classname'])){
 		// allineo l'e-commerce con eventuali ordini non ancora caricati
 		$gs=$admin_aziend['synccommerce_classname'];
@@ -703,59 +702,59 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
 			$gSync->get_sync_status(0);
 		}
 	}
-  $result = gaz_dbi_get_row($gTables['orderman'], "id", intval($_GET['codice']));
-  $form['ritorno'] = $_POST['ritorno'];
-  $form['id'] = intval($_GET['codice']);
-  $form['order_type'] = $result['order_type'];
-  $form['description'] = $result['description'];
-  $form['id_tesbro'] = $result['id_tesbro'];
-  $form['id_rigbro'] = $result['id_rigbro'];
-  $form['add_info'] = $result['add_info'];
-  $form['day_of_validity'] = $result['duration'];
+	$result = gaz_dbi_get_row($gTables['orderman'], "id", intval($_GET['codice']));
+	$form['ritorno'] = $_POST['ritorno'];
+	$form['id'] = intval($_GET['codice']);
+	$form['order_type'] = $result['order_type'];
+	$form['description'] = $result['description'];
+	$form['id_tesbro'] = $result['id_tesbro'];
+	$form['id_rigbro'] = $result['id_rigbro'];
+	$form['add_info'] = $result['add_info'];
+	$form['day_of_validity'] = $result['duration'];
 	$s = strtotime($result['start_work']);
 	$form['iniprod'] = date('d-m-Y', $s);
 	$form['iniprodtime'] = date('H:i', $s);
 	$s = strtotime($result['end_work']);
 	$form['fineprod'] = date('d-m-Y', $s);
 	$form['fineprodtime'] = date('H:i', $s);
-  $result4 = gaz_dbi_get_row($gTables['movmag'], "id_orderman", intval($_GET['codice']), "AND operat ='1'");
-  $form['datreg'] = ($result4)?$result4['datreg']:'';
-  $form['quantip'] = ($result4)?$result4['quanti']:0;
-  $form['id_movmag'] = ($result4)?$result4['id_mov']:0;
-  $resmov_sian = gaz_dbi_get_row($gTables['camp_mov_sian'], "id_movmag", $form['id_movmag']);
-  $form['cod_operazione'] =($resmov_sian)?$resmov_sian['cod_operazione']:'';
-  $form['recip_stocc'] =($resmov_sian)?$resmov_sian['recip_stocc']:'';
-  $form['recip_stocc_destin'] =($resmov_sian)?$resmov_sian['recip_stocc_destin']:'';
-  $result2 = gaz_dbi_get_row($gTables['tesbro'], "id_tes", $result['id_tesbro']);
-  $form['gioinp'] = substr(($result2)?$result2['datemi']:'', 8, 2);
-  $form['mesinp'] = substr(($result2)?$result2['datemi']:'', 5, 2);
-  $form['anninp'] = substr(($result2)?$result2['datemi']:'', 0, 4);
-  $form['datemi'] = ($result2)?$result2['datemi']:'';
-  $form['campo_impianto'] = $result['campo_impianto'];
-  $form['id_lotmag'] = $result['id_lotmag'];
-  $form['order'] = ($result2)?$result2['numdoc']:0;
+	$result4 = gaz_dbi_get_row($gTables['movmag'], "id_orderman", intval($_GET['codice']), "AND operat ='1'");
+	$form['datreg'] = ($result4)?$result4['datreg']:'';
+	$form['quantip'] = ($result4)?$result4['quanti']:0;
+	$form['id_movmag'] = ($result4)?$result4['id_mov']:0;
+	$resmov_sian = gaz_dbi_get_row($gTables['camp_mov_sian'], "id_movmag", $form['id_movmag']);
+	$form['cod_operazione'] =($resmov_sian)?$resmov_sian['cod_operazione']:'';
+	$form['recip_stocc'] =($resmov_sian)?$resmov_sian['recip_stocc']:'';
+	$form['recip_stocc_destin'] =($resmov_sian)?$resmov_sian['recip_stocc_destin']:'';
+	$result2 = gaz_dbi_get_row($gTables['tesbro'], "id_tes", $result['id_tesbro']);
+	$form['gioinp'] = substr(($result2)?$result2['datemi']:'', 8, 2);
+	$form['mesinp'] = substr(($result2)?$result2['datemi']:'', 5, 2);
+	$form['anninp'] = substr(($result2)?$result2['datemi']:'', 0, 4);
+	$form['datemi'] = ($result2)?$result2['datemi']:'';
+	$form['campo_impianto'] = $result['campo_impianto'];
+	$form['id_lotmag'] = $result['id_lotmag'];
+	$form['order'] = ($result2)?$result2['numdoc']:0;
 	if (isset($result2['clfoco'])){
-    $res3 = gaz_dbi_get_row($gTables['clfoco'], "codice", $result2['clfoco']);// importo il nome del cliente dell'ordine
+		$res3 = gaz_dbi_get_row($gTables['clfoco'], "codice", $result2['clfoco']);// importo il nome del cliente dell'ordine
 	}
-  $form['coseor'] = ($result2)?$result2['id_tes']:0;
-  $form['id_tes'] = ($result2)?$result2['id_tes']:0;
-  $result3 = gaz_dbi_get_row($gTables['rigbro'], "id_rig", $result['id_rigbro']);
-  $form['codart'] = ($result3)?$result3['codart']:'';
-  $form['quantipord'] = ($result3)?$result3['quanti']:0;
-  $quantiprod=$form['quantipord'];
-  $result5 = gaz_dbi_get_row($gTables['lotmag'], "id", $result['id_lotmag']);
-  $form['identifier'] =($result5)?$result5['identifier']:'';
-  $form['expiry'] =($result5)?$result5['expiry']:'';
-  $resartico = gaz_dbi_get_row($gTables['artico'], "codice", $form['codart']);
-  if ($resartico){
-    $form['lot_or_serial'] = $resartico['lot_or_serial'];
-    $form['SIAN'] = $resartico['SIAN'];
-  } else {
-    $form['lot_or_serial'] = '';
-    $form['SIAN'] = '';
-    $resartico=array('unimis'=>'','lot_or_serial'=>'','good_or_service'=>'');
-  }
-  if ($resartico && $resartico['good_or_service'] == 2) { // se è un articolo composto
+	$form['coseor'] = ($result2)?$result2['id_tes']:0;
+	$form['id_tes'] = ($result2)?$result2['id_tes']:0;
+	$result3 = gaz_dbi_get_row($gTables['rigbro'], "id_rig", $result['id_rigbro']);
+	$form['codart'] = ($result3)?$result3['codart']:'';
+	$form['quantipord'] = ($result3)?$result3['quanti']:0;
+	$quantiprod=$form['quantipord'];
+	$result5 = gaz_dbi_get_row($gTables['lotmag'], "id", $result['id_lotmag']);
+	$form['identifier'] =($result5)?$result5['identifier']:'';
+	$form['expiry'] =($result5)?$result5['expiry']:'';
+	$resartico = gaz_dbi_get_row($gTables['artico'], "codice", $form['codart']);
+	if ($resartico){
+		$form['lot_or_serial'] = $resartico['lot_or_serial'];
+		$form['SIAN'] = $resartico['SIAN'];
+	} else {
+		$form['lot_or_serial'] = '';
+		$form['SIAN'] = '';
+		$resartico=array('unimis'=>'','lot_or_serial'=>'','good_or_service'=>'');
+	}
+	if ($resartico && $resartico['good_or_service'] == 2) { // se è un articolo composto
 			 // prendo i movimenti di magazzino dei componenti e l'unità di misura
 			$where="operat = '-1' AND id_orderman = ". intval($_GET['codice']);
 			$table = $gTables['movmag']." LEFT JOIN ".$gTables['artico']." on (".$gTables['movmag'].".artico = ".$gTables['artico'].".codice)
@@ -770,7 +769,7 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
       $rescompo = gaz_dbi_dyn_query ($gTables['distinta_base'].".*, ".$gTables['artico'].".*", $table, $where );
 	}
 
-  if (isset($result7)) {// se ci sono stati componenti carico i righi dei componenti
+	if (isset($result7)) {// se ci sono stati componenti carico i righi dei componenti
       $m = 0;$form['artcomp']=array();
       while ($row = $result7->fetch_assoc()) {
 
@@ -817,8 +816,7 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
         $form['numcomp'] = $m;
       }
     }
-//echo "<pre>",print_r($form);die;
-  // Antonio Germani - se è presente, recupero il file documento lotto
+  // se è presente, recupero il file documento lotto
   $form['filename'] = "";
   if (file_exists(DATA_DIR.'files/' . $admin_aziend['company_id']) > 0) {
       // recupero il filename dal filesystem
@@ -839,7 +837,7 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
 
   $form['cosear'] = "";
 
-} else {                 //                  **   se e' il primo accesso per INSERT    **
+} else {                 //  se e' il primo accesso per INSERT
 	if (!empty($admin_aziend['synccommerce_classname']) && class_exists($admin_aziend['synccommerce_classname'])){
 		// allineo l'e-commerce con eventuali ordini non ancora caricati
 		$gs=$admin_aziend['synccommerce_classname'];
@@ -848,80 +846,78 @@ if ((isset($_POST['Insert'])) || (isset($_POST['Update']))){ //Antonio Germani  
 			$gSync->get_sync_status(0);
 		}
 	}
-    $form['ritorno'] = $_SERVER['HTTP_REFERER'];
+  $form['ritorno'] = $_SERVER['HTTP_REFERER'];
 	$form['numdoc']="";
-    if (isset($_GET['type'])) { // controllo se proviene anche da una richiesta del modulo camp
-        $form['order_type'] = substr($_GET['type'],0,3);
-    } else { // altrimenti prendo quello in configurazione azienda
-        $form['order_type'] = $admin_aziend['order_type'];
-    }
-    $form['description'] = "";
-    $form['id_tesbro'] = "";
-    $form['add_info'] = "";
-    $form['gioinp'] = date("d");
-    $form['mesinp'] = date("m");
-    $form['anninp'] = date("Y");
-    $form['datemi'] = date("Y-m-d", time());
-    $form['iniprod'] = date ("d-m-Y");
-    $form['iniprodtime'] = date ("H:i");
-    $form['fineprod'] = date ("d-m-Y");
-    $form['fineprodtime'] = date ("H:i");
-    $form['day_of_validity'] = "";
-    $form["campo_impianto"] = "";
-    $form['order'] = 0;
-    $form['coseor'] = "";
-    $form['codart'] = "";
-    $form['cosear'] = "";
-    $form['mov'] = 0;
-    $form['nmov'] = 0;
-    $form['nmovdb'] = 0;
-    //$form['staff'][$form['mov']] = "";
-    $form['filename'] = "";
-    $form['identifier'] = "";
-    $form['expiry'] = "";
-    $form['lot_or_serial'] = "";
-    $form['SIAN'] = "";
-    $form['quality'] = "";
-    $form['cod_operazione']="";
-    $form['recip_stocc']="";
-    $form['recip_stocc_destin']="";
-    $form['datreg'] = date("Y-m-d");
-    $form['quantip'] = "";
-    $form['quantipord'] = "";
-    $form['id_movmag'] = "";
-    $form['id_lotmag'] = "";
-    $form['numcomp'] = 0;
-    $resartico['lot_or_serial']="";
-    $resartico['good_or_service']="";
-    $resartico['unimis']="";
-    $form['id_tes']="";
-    $form['id_staff_def']=0;
+  if (isset($_GET['type'])) { // controllo se proviene anche da una richiesta del modulo camp
+      $form['order_type'] = substr($_GET['type'],0,3);
+  } else { // altrimenti prendo quello in configurazione azienda
+      $form['order_type'] = $admin_aziend['order_type'];
+  }
+  $form['description'] = "";
+  $form['id_tesbro'] = "";
+  $form['add_info'] = "";
+  $form['gioinp'] = date("d");
+  $form['mesinp'] = date("m");
+  $form['anninp'] = date("Y");
+  $form['datemi'] = date("Y-m-d", time());
+  $form['iniprod'] = date ("d-m-Y");
+  $form['iniprodtime'] = date ("H:i");
+  $form['fineprod'] = date ("d-m-Y");
+  $form['fineprodtime'] = date ("H:i");
+  $form['day_of_validity'] = "";
+  $form["campo_impianto"] = "";
+  $form['order'] = 0;
+  $form['coseor'] = "";
+  $form['codart'] = "";
+  $form['cosear'] = "";
+  $form['mov'] = 0;
+  $form['nmov'] = 0;
+  $form['nmovdb'] = 0;
+  $form['filename'] = "";
+  $form['identifier'] = "";
+  $form['expiry'] = "";
+  $form['lot_or_serial'] = "";
+  $form['SIAN'] = "";
+  $form['quality'] = "";
+  $form['cod_operazione']="";
+  $form['recip_stocc']="";
+  $form['recip_stocc_destin']="";
+  $form['datreg'] = date("Y-m-d");
+  $form['quantip'] = "";
+  $form['quantipord'] = "";
+  $form['id_movmag'] = "";
+  $form['id_lotmag'] = "";
+  $form['numcomp'] = 0;
+  $resartico['lot_or_serial']="";
+  $resartico['good_or_service']="";
+  $resartico['unimis']="";
+  $form['id_tes']="";
+  $form['id_staff_def']=0;
 }
 if (isset($_POST['Cancel'])) { // se è stato premuto ANNULLA
-    $form['hidden_req'] = '';
-    $form['order_type'] = "";
-    $form['description'] = "";
-    $form['id_tesbro'] = "";
-    $form['add_info'] = "";
-    $form['gioinp'] = date("d");
-    $form['mesinp'] = date("m");
-    $form['anninp'] = date("Y");
-    $form['day_of_validity'] = "";
-    $form["campo_impianto"] = "";
-    $form['order'] = "";
-    $form['codart'] = "";
-    $form['mov'] = 0;
-    $form['nmov'] = 0;
-    $form['nmovdb'] = 0;
-    //$form['staff'][$form['mov']] = "";
+  $form['hidden_req'] = '';
+  $form['order_type'] = "";
+  $form['description'] = "";
+  $form['id_tesbro'] = "";
+  $form['add_info'] = "";
+  $form['gioinp'] = date("d");
+  $form['mesinp'] = date("m");
+  $form['anninp'] = date("Y");
+  $form['day_of_validity'] = "";
+  $form["campo_impianto"] = "";
+  $form['order'] = "";
+  $form['codart'] = "";
+  $form['mov'] = 0;
+  $form['nmov'] = 0;
+  $form['nmovdb'] = 0;
 	$form['id_staff_def']=0;
-    $form['filename'] = "";
-    $form['identifier'] = "";
-    $form['expiry'] = "";
-    $form['quantip'] = "";
-    $form['id_movmag'] = "";
-    $form['id_lotmag'] = "";
-    $form['numcomp'] = 0;
+  $form['filename'] = "";
+  $form['identifier'] = "";
+  $form['expiry'] = "";
+  $form['quantip'] = "";
+  $form['id_movmag'] = "";
+  $form['id_lotmag'] = "";
+  $form['numcomp'] = 0;
 }
 if (!empty($_FILES['docfile_']['name'])) { // Antonio Germani - se c'è un nome in $_FILES
     $prefix = $admin_aziend['adminid'] . '_' . $admin_aziend['company_id'];
@@ -944,45 +940,45 @@ if ($toDo == 'update') {
     $title = ucwords($script_transl['ins_this']);
 }
 //echo "<pre>",print_r($form);
-print "<form method=\"POST\" name=\"myform\" enctype=\"multipart/form-data\">\n";
-print "<input type=\"hidden\" name=\"" . ucfirst($toDo) . "\" value=\"\">\n";
-print "<input type=\"hidden\" value=\"" . $_POST['ritorno'] . "\" name=\"ritorno\">\n";
-print "<input type=\"hidden\" name=\"hidden_req\" value=\"TRUE\">\n"; // per auto submit on change select input
-print "<div align=\"center\" class=\"FacetFormHeaderFont\">$title</div>";
-print "<table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" class=\"FacetFormTABLE\" align=\"center\">\n";
-$class="btn-success";$addvalue="";
+echo "<form method=\"POST\" name=\"myform\" enctype=\"multipart/form-data\">\n";
+echo "<input type=\"hidden\" name=\"" . ucfirst($toDo) . "\" value=\"\">\n";
+echo "<input type=\"hidden\" value=\"" . $_POST['ritorno'] . "\" name=\"ritorno\">\n";
+echo "<input type=\"hidden\" name=\"hidden_req\" value=\"TRUE\">\n"; // per auto submit on change select input
+echo "<div align=\"center\" class=\"FacetFormHeaderFont\">$title</div>";
+echo "<table class=\"Tmiddle table-striped\" align=\"center\">\n";
+$addvalue="";
 if (!empty($msg)) {
-    $message = "";
-    $rsmsg = array_slice(explode('+', chop($msg)), 0, -1);
-    foreach ($rsmsg as $value) {
-        $message.= $script_transl['error'] . "! -> ";
-        $rsval = explode('-', chop($value));
-        foreach ($rsval as $valmsg) {
-            $message.= $script_transl[$valmsg] . " ";
-        }
-        $message.= "<br />";
-    }
-    echo '<tr><td colspan="5" class="FacetDataTDred">' . $message . "</td></tr>\n";
+  $message = "";
+  $rsmsg = array_slice(explode('+', chop($msg)), 0, -1);
+  foreach ($rsmsg as $value) {
+      $message.= $script_transl['error'] . "! -> ";
+      $rsval = explode('-', chop($value));
+      foreach ($rsval as $valmsg) {
+          $message.= $script_transl[$valmsg] . " ";
+      }
+      $message.= "<br />";
+  }
+  echo '<tr><td colspan="5" class="FacetDataTDred">' . $message . "</td></tr>\n";
 }
 if (!empty($warnmsg)) {
-    $message = "";
-	$class="btn-danger"; $addvalue=" nonostante l'avviso";
-    $rsmsg = array_slice(explode('+', chop($warnmsg)), 0, -1);
-    foreach ($rsmsg as $value) {
-        $message.= $script_transl['warning'] . "! -> ";
-        $rsval = explode('-', chop($value));
-        foreach ($rsval as $valmsg) {
-            $message.= $script_transl[$valmsg] . " ";
-        }
-        $message.= "<br />";
+  $message = "";
+	$addvalue=" nonostante l'avviso";
+  $rsmsg = array_slice(explode('+', chop($warnmsg)), 0, -1);
+  foreach ($rsmsg as $value) {
+    $message.= $script_transl['warning'] . "! -> ";
+    $rsval = explode('-', chop($value));
+    foreach ($rsval as $valmsg) {
+        $message.= $script_transl[$valmsg] . " ";
     }
-    echo '<tr><td colspan="5" class="FacetDataTDred">' . $message . "</td></tr>\n";
+    $message.= "<br />";
+  }
+  echo '<tr><td colspan="5" class="FacetDataTDred">' . $message . "</td></tr>\n";
 }
 if ($toDo == 'update') {
-    print "<tr><td class=\"FacetFieldCaptionTD\">$script_transl[0]</td><td class=\"FacetDataTD\"><input type=\"hidden\" name=\"id\" value=\"" . $form['id'] . "\" />" . $form['id'] . "</td></tr>\n";
+  echo "<tr><td class=\"FacetFieldCaptionTD\">$script_transl[0]</td><td class=\"FacetDataTD\"><input type=\"hidden\" name=\"id\" value=\"" . $form['id'] . "\" />" . $form['id'] . "</td></tr>\n";
 }
 // Antonio Germani > inserimento tipo di produzione
-print "<tr><td class=\"FacetFieldCaptionTD\">$script_transl[1]</td><td class=\"FacetDataTD\">";
+echo "<tr><td class=\"FacetFieldCaptionTD\">$script_transl[1]</td><td class=\"FacetDataTD\">";
 ?>
 <script>
   $(function() {
@@ -1041,7 +1037,7 @@ if ($form['order_type'] <> "AGR") { // Se non è produzione agricola
 		</td>
 	</tr>
 	<?php
-    if ($form['order'] > 0 && $toDo != "update") { // se c'è un ordine e non siamo in update seleziono l'articolo fra quelli ordinati
+  if ($form['order'] > 0 && $toDo != 'update') { // se c'è un ordine e non siamo in update seleziono l'articolo fra quelli ordinati
 		echo "<tr><td class=\"FacetFieldCaptionTD\">" . $script_transl[9] . "</td><td class=\"FacetDataTD\">\n";
 		// SELECT articolo da rigbro
 		$gForm->selectFromDB('rigbro', 'cosear','codart', $form['codart'], 'id_tes', 1, ' - ','descri','TRUE','FacetSelect' , null, '','id_tes = '. $form['id_tes'].' ');
@@ -1083,12 +1079,13 @@ if ($form['order_type'] <> "AGR") { // Se non è produzione agricola
 					$excluded_movmag=array();
 					$exc=0;
 					foreach($form['artcomp'] as $artco){// per ogni componente
-
-					  foreach ($form['lot_idmov'][$exc] as $excl_lot){// ciclo i suoi lotti
-						if (!in_array($excl_lot,$excluded_movmag)){// se non c'è già aggiungo movimento magazzino riferito al lotto da escludere
-							$excluded_movmag[]=$excl_lot;
+						if (isset($form['lot_idmov'][$exc])){
+						  foreach ($form['lot_idmov'][$exc] as $excl_lot){// ciclo i suoi lotti
+							if (!in_array($excl_lot,$excluded_movmag)){// se non c'è già aggiungo movimento magazzino riferito al lotto da escludere
+								$excluded_movmag[]=$excl_lot;
+							}
+						  }
 						}
-					  }
 					  if (!in_array($form['id_mov'][$exc],$excluded_movmag)){// se non c'è già aggiungo movimento magazzino da escludere
 						$excluded_movmag[]=$form['id_mov'][$exc];
 					  }
@@ -1156,8 +1153,8 @@ if ($form['order_type'] <> "AGR") { // Se non è produzione agricola
                       <input type="hidden" name="SIAN_comp<?php echo $nc; ?>" value="<?php echo $row['SIAN']; ?>">
                       <input type="text" class="FacetSelect" name="artcomp<?php echo $nc; ?>" value="<?php echo $codartlot['codart']; ?>" readonly="readonly">
                       <input type="hidden" name="prezzo_comp<?php echo $nc; ?>" value="<?php echo $price_comp; ?>">
-                      <input type="hidden" name="old_quanti_comp<?php echo $nc; ?>" value="<?php echo $form['old_quanti_comp'][$nc]; ?>">
-                      <input type="hidden" name="id_mov<?php echo $nc; ?>" value="<?php echo $form['id_mov'][$nc]; ?>">
+                      <input type="hidden" name="old_quanti_comp<?php echo $nc; ?>" value="<?php echo (isset($form['old_quanti_comp'][$nc]))?$form['old_quanti_comp'][$nc]:0; ?>">
+                      <input type="hidden" name="id_mov<?php echo $nc; ?>" value="<?php echo (isset($form['id_mov'][$nc]))?$form['id_mov'][$nc]:0; ?>">
                       <input type="hidden" name="quality_comp<?php echo $nc; ?>" value="<?php echo $row['quality']; ?>">
                       <input type="hidden" name="quanti_comp<?php echo $nc; ?>" value="<?php echo floatval(preg_replace('/[^\d.]/', '', number_format((($qta*$perc_util)/100),8))); ?>"> <!-- quantità utilizzata di ogni componente   -->
                       <input type="hidden" name="id_lot_comp<?php echo $nc, $l; ?>" value="<?php echo $idlot; ?>">
@@ -1507,7 +1504,6 @@ if ($form['order_type'] <> "AGR") { // Se non è produzione agricola
 					}
 				}
 				echo '<input type="hidden" name="numcomp" value="' . $nc . '">'; // Antonio Germani - Nota bene: numcomp ha sempre una unità in più! Non l'ho tolta per distinguere se c'è un solo componente o nessuno.
-
 		?>
 		</div>	<!-- chiude container  -->
 		<?php
@@ -1516,7 +1512,7 @@ if ($form['order_type'] <> "AGR") { // Se non è produzione agricola
 	</td>
 	</tr>
 	<?php // Antonio Germani - Inizio form SIAN
-	if ($form['SIAN']>0 AND $form['order_type'] == "IND"){ // se l'articolo prevede un movimento SIAN e siamo su prod.industriale
+	if ($form['SIAN'] > 0 && $form['order_type'] == "IND") { // se l'articolo prevede un movimento SIAN e siamo su prod.industriale
 		$rescampbase = gaz_dbi_get_row($gTables['camp_artico'], "codice", $form['codart']);
 		echo "<tr><td class=\"FacetFieldCaptionTD\">Gestione SIAN</td>";
 		echo "<td>";
@@ -1602,7 +1598,7 @@ if ($form['order_type'] <> "AGR") { // Se non è produzione agricola
 	</tr>
 	<?php
 } else { // se è produzione agricola
-   print "<tr><td><input type=\"hidden\" name=\"order\" value=\"\">";
+   echo "<tr><td><input type=\"hidden\" name=\"order\" value=\"\">";
 	?>
 	<!-- Antonio Germani > inserimento articolo	con autocomplete dalla tabella artico-->
 	<tr>
@@ -1655,11 +1651,12 @@ if ($form['order_type'] <> "AGR") { // Se non è produzione agricola
   }
   echo "\t </select>\n";
   echo "\t <select name=\"mesinp\" class=\"FacetSelect\" onchange=\"this.form.submit()\">\n";
+  $gazTimeFormatter->setPattern('MMMM');
   for ($counter = 1;$counter <= 12;$counter++) {
-      $selected = "";
-      if ($counter == $form['mesinp']) $selected = "selected";
-      $nome_mese = ucwords(strftime("%B", mktime(0, 0, 0, $counter, 1, 0)));
-      echo "\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
+    $selected = "";
+    if ($counter == $form['mesinp']) $selected = "selected";
+    $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
+    echo "\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
   }
   echo "\t </select>\n";
   echo "\t <select name=\"anninp\" class=\"FacetSelect\" onchange=\"this.form.submit()\">\n";
@@ -1683,9 +1680,9 @@ if (!isset($form['datemi']) || strlen($form['datemi'])==0 || intval($form['datem
 }
 // Antonio Germani > DURATA produzione
 
-print "<tr><td class=\"FacetFieldCaptionTD\">$script_transl[11]</td>";
+echo "<tr><td class=\"FacetFieldCaptionTD\">$script_transl[11]</td>";
 
-print "<td class=\"FacetDataTD\"><input type=\"number\" name=\"day_of_validity\" min=\"0\" maxlength=\"3\" step=\"any\"  size=\"10\" value=\"" . $form['day_of_validity'] . "\"  /></td></tr>\n";
+echo "<td class=\"FacetDataTD\"><input type=\"number\" name=\"day_of_validity\" min=\"0\" maxlength=\"3\" step=\"any\"  size=\"10\" value=\"" . $form['day_of_validity'] . "\"  /></td></tr>\n";
 /*Antonio Germani LUOGO di produzione  */
 echo "<tr><td class=\"FacetFieldCaptionTD\">" . $script_transl[7] . "</td><td class=\"FacetDataTD\">\n";
 // SELECT luogo di produzione da campi
@@ -1698,12 +1695,10 @@ echo "<tr><td class=\"FacetFieldCaptionTD\">Responsabile/addetto produzione</td>
 ?>
 <select name="id_staff_def" onchange="this.form.submit()">
 <?php
-$sql = gaz_dbi_dyn_query ($gTables['anagra'].".* ",
- $gTables['anagra']."
- LEFT JOIN ".$gTables['clfoco']." on (".$gTables['clfoco'].".id_anagra = ".$gTables['anagra'].".id)
- LEFT JOIN ".$gTables['staff']." on (".$gTables['staff'].".id_clfoco = ".$gTables['clfoco'].".codice)
- LEFT JOIN ".$gTables['admin']." on (".$gTables['admin'].".id_anagra = ".$gTables['anagra'].".id)",
- "(".$gTables['staff'].".id_clfoco > 0 OR ". $gTables['admin'] .".id_anagra > 0) AND (". $gTables['staff'] .".end_date >= '". $form['datemi'] ."' OR ". $gTables['staff'] .".end_date IS NULL)");
+$sql = gaz_dbi_query("SELECT ".$gTables['anagra'].".* FROM ".$gTables['staff']." LEFT JOIN ".$gTables['clfoco']." ON ".$gTables['staff'].".id_clfoco = ".$gTables['clfoco'].".codice LEFT JOIN ".$gTables['anagra']." ON ".$gTables['clfoco'].".id_anagra = ".$gTables['anagra'].".id ".
+// tolgo l'UNION con gli utenti
+//UNION SELECT ".$gTables['anagra'].".*  FROM ".$gTables['admin']." LEFT JOIN ".$gTables['anagra']." ON ".$gTables['admin'].".id_anagra = ".$gTables['anagra'].".id
+" WHERE 1" );
 $sel=0;
 while ($row = $sql->fetch_assoc()){
 	$selected = "";
@@ -1721,16 +1716,16 @@ if ($sel==0){
 
 <!-- Inserimento data inizio lavori -->
 <tr>
-  <td class=\"FacetFieldCaptionTD\"><?php echo $script_transl[33]; ?></td>
-  <td class=\"FacetDataTD\">
+  <td class="FacetFieldCaptionTD"><?php echo $script_transl[33]; ?></td>
+  <td class="FacetDataTD">
   <?php echo gaz_select_data ( "iniprod", $form['iniprod'] ),"&nbsp; Ora inizio ", gaz_select_ora ( "iniprodtime", $form['iniprodtime'] ); ?>
   </td>
 </tr>
 
 <!-- Inserimento data fine lavori -->
 <tr>
-  <td class=\"FacetFieldCaptionTD\"><?php echo $script_transl[34]; ?></td>
-  <td class=\"FacetDataTD\">
+  <td class="FacetFieldCaptionTD"><?php echo $script_transl[34]; ?></td>
+  <td class="FacetDataTD">
   <?php echo gaz_select_data ( "fineprod", $form['fineprod'] ),"&nbsp;Ora fine ", gaz_select_ora ( "fineprodtime", $form['fineprodtime'] ); ?>
   </td>
 </tr>
@@ -1788,31 +1783,25 @@ if ($form['order_type'] <> "AGR") { // input esclusi se NON produzione agricola
 
     // fine LOTTI in entrata
 } else { //se è produzione agricola
-  print "<tr><td><input type=\"hidden\" name=\"nmov\" value=\"0\">";
-  print "<input type=\"hidden\" name=\"nmovdb\" value=\"\">\n";
-  // print "<input type=\"hidden\" name=\"staff0\" value=\"\">\n";
-  print "<input type=\"hidden\" name=\"filename\" value=\"\">\n";
-  print "<input type=\"hidden\" name=\"expiry\" value=\"\">\n";
-  print "<input type=\"hidden\" name=\"identifier\" value=\"\">\n";
-  print "<input type=\"hidden\" name=\"id_lotmag\" value=\"\">\n";
-	print "<input type=\"hidden\" name=\"SIAN\" value=\"\">\n";
-	print "<input type=\"hidden\" name=\"quality\" value=\"\">\n";
-  print "<input type=\"hidden\" name=\"lot_or_serial\" value=\"\"></td></tr>";
+  echo "<tr><td><input type=\"hidden\" name=\"nmov\" value=\"0\">";
+  echo "<input type=\"hidden\" name=\"nmovdb\" value=\"\">\n";
+  // echo "<input type=\"hidden\" name=\"staff0\" value=\"\">\n";
+  echo "<input type=\"hidden\" name=\"filename\" value=\"\">\n";
+  echo "<input type=\"hidden\" name=\"expiry\" value=\"\">\n";
+  echo "<input type=\"hidden\" name=\"identifier\" value=\"\">\n";
+  echo "<input type=\"hidden\" name=\"id_lotmag\" value=\"\">\n";
+	echo "<input type=\"hidden\" name=\"SIAN\" value=\"\">\n";
+	echo "<input type=\"hidden\" name=\"quality\" value=\"\">\n";
+  echo "<input type=\"hidden\" name=\"lot_or_serial\" value=\"\"></td></tr>";
 }
-if ($popup <> 1) {
-    //ANNULLA/RESET NON FUNZIONA DA RIVEDERE > print "<tr><td class=\"FacetFieldCaptionTD\"><input type=\"reset\" name=\"Cancel\" value=\"".$script_transl['cancel']."\">\n";
-    print "<tr><td style=\"padding-top: 10px; text-align:center;\" class=\"FacetDataTD\" >\n";
-    print "<input type=\"submit\" name=\"Return\" value=\"" . $script_transl['return'] . "\">\n</td><td style=\"padding-top: 10px; text-align:center;\" class=\"FacetDataTD\">";
-} else {
-    print "<tr><td>&nbsp;</td><td style=\"padding-top: 10px; text-align:center;\" class=\"FacetDataTD\" >";
-}
+echo '<tr><td colspan=2 class="FacetFooterTD text-center" >';
 
 if ($toDo == 'update') {
-    print '<input type="submit" accesskey="m" class="btn '.$class.'" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="' . ucfirst($script_transl['update']) . $addvalue . '">';
+    echo '<input type="submit" accesskey="m" class="btn btn-warning" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="' . ucfirst($script_transl['update']) . $addvalue . '">';
 } else {
-    print '<input type="submit" accesskey="i" class="btn '.$class.'" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="' . ucfirst($script_transl['insert']) . $addvalue . '">';
+    echo '<input type="submit" accesskey="i" class="btn btn-warning" name="ins" id="preventDuplicate" onClick="chkSubmit();" value="' . ucfirst($script_transl['insert']) . $addvalue . '">';
 }
-print "</td></tr></table>\n";
+echo "</td></tr></table>\n";
 ?>
 </form>
 <?php

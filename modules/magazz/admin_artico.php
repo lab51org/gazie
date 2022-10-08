@@ -101,7 +101,7 @@ if (isset($_POST['Insert']) || isset($_POST['Update'])) {   //se non e' il primo
   $form['web_public_init'] = $_POST['web_public_init'];
   $form['var_id'] = (isset($_POST['var_id']))?$_POST['var_id']:'';
   $form['var_name'] = (isset($_POST['var_name']))?$_POST['var_name']:'';
-  $form['ref_code'] = substr($_POST['ref_code'], 0, 15);
+  $form['ref_code'] = substr($_POST['ref_code'], 0,32);
   // i prezzi devono essere arrotondati come richiesti dalle impostazioni aziendali
   $form["preacq"] = number_format($form['preacq'], $admin_aziend['decimal_price'], '.', '');
   $form["preve1"] = number_format($form['preve1'], $admin_aziend['decimal_price'], '.', '');
@@ -404,6 +404,7 @@ if (isset($_POST['Insert']) || isset($_POST['Update'])) {   //se non e' il primo
     $bodytext = gaz_dbi_get_row($gTables['body_text'], "table_name_ref", 'artico_' . $form['codice']);
     $form['body_text'] = ($bodytext)?$bodytext['body_text']:'';
 } else { //se e' il primo accesso per INSERT
+	$autoincrement_id_ecomm = gaz_dbi_get_row($gTables['company_config'], 'var', 'autoincrement_id_ecomm')['val'];// acquisico impostazione per autoincremento ID ref ecommerce
     $form = gaz_dbi_fields('artico');
     /** ENRICO FEDELE */
     if ($modal === false) {
@@ -434,9 +435,13 @@ if (isset($_POST['Insert']) || isset($_POST['Update'])) {   //se non e' il primo
     // eventuale descrizione amplia
     $form['body_text'] = '';
     // propongo il primo ID libero per l'ecommerce
-    $max_ref_ecommerce_id_product = gaz_dbi_query("select ref_ecommerce_id_product from ".$gTables['artico']." ORDER BY ref_ecommerce_id_product DESC LIMIT 1");
-    $max_id = gaz_dbi_fetch_array($max_ref_ecommerce_id_product);
-    $form['ref_ecommerce_id_product'] = ++$max_id[0];
+	if ($autoincrement_id_ecomm==1){// se è stato impostato in configurazione avanzata azienda
+		$max_ref_ecommerce_id_product = gaz_dbi_query("select ref_ecommerce_id_product from ".$gTables['artico']." ORDER BY ref_ecommerce_id_product DESC LIMIT 1");
+		$max_id = gaz_dbi_fetch_array($max_ref_ecommerce_id_product);
+		$form['ref_ecommerce_id_product'] = ++$max_id[0];
+	} else {// altrimenti lascio non impostato
+		$form['ref_ecommerce_id_product']="";
+	}
     // ripropongo le ultime unità di misura più utilizzate
     $rs_unimis = gaz_dbi_query("SELECT unimis, COUNT(unimis) c FROM ".$gTables['artico']." GROUP BY unimis ORDER BY c DESC LIMIT 1");
     $unimis = gaz_dbi_fetch_array($rs_unimis);
@@ -580,14 +585,14 @@ $(function () {
 			buttons: {
 				delete:{
 					text:'Annulla',
-					'class':'btn btn-danger delete-button',
+					'class':'btn btn-default',
 					click:function (event, ui) {
 						$(this).dialog("close");
 					}
 				},
 				confirm :{
 				  text:'CONFERMA',
-				  'class':'btn btn-success pull-right btn-conferma',
+				  'class':'btn btn-warning pull-right',
 				  click:function() {
 					var msg = null;
 					$.ajax({ // registro con i nuovi dati delle posizioni
@@ -644,12 +649,10 @@ if ($modal_ok_insert === true) {
     $mv = $gForm->getStockValue(false, $form['codice']);
     $magval = array_pop($mv);
     $magval=(is_numeric($magval))?['q_g'=>0,'v_g'=>0]:$magval;
-    /** ENRICO FEDELE */
-    /* Se sono in finestra modale, non visualizzo questo titolo */
+    //  ENRICO FEDELE:  Se sono in finestra modale, non visualizzo questo titolo
     $changesubmit = '';
     if ($modal === false) {
         ?>
-    		<!--+ DC - 06/02/2019 -->
     		<script type="text/javascript" src="../../library/IER/IERincludeExcludeRows.js"></script>
 
     		<input type="hidden" id="IERincludeExcludeRowsInput" name="IERincludeExcludeRowsInput" />
@@ -658,7 +661,7 @@ if ($modal_ok_insert === true) {
   			<a target="_blank" href="../wiki/099 - Interfaccia generale/99.. Personalizzare una form a run-time (lato utente).md"><div id="IERhelpIncludeExcludeRows" title="Aiuto"></div></a>
   			<div id="IERsaveIncludeExcludeRows" title="Nessuna modifica fatta" onclick="saveIncludeExcludeRows()"></div>
       	<div id="IERresetIncludeExcludeRows" title="Ripristina"></div>
-        <!--- DC - 06/02/2019 -->
+
     		<?php
     }
     echo '<input type="hidden" name="' . ucfirst($toDo) . '" value="" />';
@@ -706,18 +709,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 -->
-                <!--
-                Come rendere una videata personalizzabile:
-                Su tutte le div con class="row" (tranne quelle che contengono campi obbligatori)
-                sostituirle nel seguente modo:
-                PRIMA:
-                <div class="row">
-                DOPO:
-                <div id="catMer" class="row IERincludeExcludeRow">
-                In pratica inserite un id (unico per ogni riga) ed aggiungere la classe "IERincludeExcludeRow"
-                -->
-                <!--- DC - 06/02/2019 -->
                 <div id="catMer" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -760,7 +751,6 @@ if ($modal_ok_insert === true) {
                 </div><!-- chiude row  -->
                 <div class="row">
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="bodyText" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -781,7 +771,6 @@ if ($modal_ok_insert === true) {
 						</div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="lotOrSerial" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -792,7 +781,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="image" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -801,7 +789,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="uniMis" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -810,7 +797,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="sconto" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -819,19 +805,16 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="preve1" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
                             <label for="preve1" class="col-sm-4 control-label"><?php echo $script_transl['preve1']; ?></label>
-                            <input type="number" step="any" min="0" id="preve1" name="preve1" value="<?php echo $form['preve1']; ?>"  maxlength="15" />
+                            <input type="number" step="any" min="0" id="preve1" name="preve1" value="<?php echo $form['preve1']; ?>"  maxlength="32" />
     <?php echo $script_transl['preve1_sc']; ?>
                             <input type="text" readonly="true" id="preve1_sc" name="preve1_sc" value="<?php echo gaz_format_number($form['preve1'] * (1 - $form['sconto'] / 100)); ?>" />
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="preve2" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -842,7 +825,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="preve3" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -853,7 +835,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="preve4" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -872,7 +853,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="uniAcq" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -881,7 +861,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="preAcq" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -890,7 +869,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="aliIva" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -903,7 +881,6 @@ if ($modal_ok_insert === true) {
                 </div><!-- chiude row  -->
               </div><!-- chiude tab-pane  -->
               <div id="magazz" class="tab-pane fade">
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="esiste" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -912,7 +889,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="valore" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -921,18 +897,16 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
 <?php if ($modal === false && $toDo=='update') { ?>
                 <div id="position" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
                             <label for="valore" class="col-sm-4 control-label">Magazzino, Scaffale</label>
-                						<div class="col-sm-8"><a class="btn btn-info dialog_artico_position" artico_name="<?php echo $form['descri']; ?>" codart="<?php echo $form['codice']; ?>" ><i class="glyphicon glyphicon-object-align-horizontal"></i> Posizione</a><?php echo $accpos; ?></div>
+                						<div class="col-sm-8"><a class="btn btn-info dialog_artico_position" artico_name="<?php echo $form['descri']; ?>" codart="<?php echo $form['codice']; ?>" ><i class="glyphicon glyphicon-map-marker"></i> Posizione</a><?php echo $accpos; ?></div>
                         </div>
                     </div>
                 </div><!-- chiude row  -->
 <?php } ?>
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="packUnits" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -941,7 +915,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="scorta" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -950,7 +923,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="riordino" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -959,7 +931,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="ragStat" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -970,7 +941,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="refEcommercIdProduct" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -979,7 +949,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="webUrl" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -992,7 +961,6 @@ if ($modal_ok_insert === true) {
 				 // se esiste un json per l'attributo della variante dell'e-commerce
 				if (isset ($form['var_id']) OR isset ($form['var_name'])){
 					?>
-					<!--+ DC - 06/02/2019 div class="row" --->
 					<div id="webUrl" class="row IERincludeExcludeRow">
 						<div class="col-md-12">
 							<div class="form-group">
@@ -1001,7 +969,6 @@ if ($modal_ok_insert === true) {
 							</div>
 						</div>
 					</div><!-- chiude row  -->
-					<!--+ DC - 06/02/2019 div class="row" --->
 					<div id="webUrl" class="row IERincludeExcludeRow">
 						<div class="col-md-12">
 							<div class="form-group">
@@ -1014,7 +981,6 @@ if ($modal_ok_insert === true) {
 				}
 
 				?>
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="depliPublic" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1025,7 +991,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="webPublic" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1036,7 +1001,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="ordinabile" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1047,7 +1011,6 @@ if ($modal_ok_insert === true) {
                          </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="movimentabile" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1097,7 +1060,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="last_buys" class="row IERincludeExcludeRow">
                     <div class="col-xs-12">
                         <div class="form-group">
@@ -1110,7 +1072,6 @@ if ($modal_ok_insert === true) {
                 </div><!-- chiude row  -->
               </div><!-- chiude tab-pane  -->
               <div id="contab" class="tab-pane fade">
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="webPrice" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1119,7 +1080,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="webMultiplier" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1136,7 +1096,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="retentionTax" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1147,7 +1106,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="payrollTax" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1158,7 +1116,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="codCon" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1169,7 +1126,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="idCost" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1190,7 +1146,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="lunghezza" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1199,7 +1154,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="larghezza" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1208,7 +1162,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="spessore" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1217,7 +1170,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="pesoSpecifico" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1226,7 +1178,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="bendingMoment" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1235,7 +1186,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="classifAmb" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1246,7 +1196,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="maintenance_period" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1255,7 +1204,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="volumeSpecifico" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1264,7 +1212,6 @@ if ($modal_ok_insert === true) {
                         </div>
                     </div>
                 </div><!-- chiude row  -->
-                <!--+ DC - 06/02/2019 div class="row" --->
                 <div id="annota" class="row IERincludeExcludeRow">
                     <div class="col-md-12">
                         <div class="form-group">
@@ -1274,8 +1221,7 @@ if ($modal_ok_insert === true) {
                     </div>
                 </div><!-- chiude row  -->
     <?php if ($toDo == 'update') { ?>
-                    <!--+ DC - 06/02/2019 div class="row" --->
-                    <div id="docCert" class="row IERincludeExcludeRow">
+                        <div id="docCert" class="row IERincludeExcludeRow">
                         <div class="col-md-12">
                             <div class="form-group">
                                 <label for="docCert" class="col-sm-4 control-label"><?php echo $script_transl['document']; ?></label>
@@ -1329,7 +1275,7 @@ if ($modal_ok_insert === true) {
     <?php } ?>
             </div><!-- chiude tab-pane  -->
           </div>
-        <div class="col-sm-12">
+        <div class="col-sm-12 FacetFooterTD">
     <?php
     /** ENRICO FEDELE */
     /* SOlo se non sono in finestra modale */
@@ -1374,8 +1320,7 @@ if ($modal_ok_insert === true) {
 
 
 <?php
-/** ENRICO FEDELE */
-/* SOlo se non sono in finestra modale */
+// ENRICO FEDELE: Solo se non sono in finestra modale
 if ($modal === false) {
 } else {
     ?>

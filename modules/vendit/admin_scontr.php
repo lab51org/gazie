@@ -25,13 +25,15 @@
  */
 require("../../library/include/datlib.inc.php");
 require("../../modules/magazz/lib.function.php");
+require("../../library/include/check.inc.php");
+$ctrl_cf = new check_VATno_TAXcode();
 $admin_aziend = checkAdmin();
 $msg = array('err' => array(), 'war' => array());
 $anagrafica = new Anagrafica();
 $gForm = new venditForm();
 $magazz = new magazzForm();
 $class="btn-danger";
-$addvalue=" nonostante l'avviso";
+$addvalue="";
 
 $show_artico_composit = gaz_dbi_get_row($gTables['company_config'], 'var', 'show_artico_composit');
 $tipo_composti = gaz_dbi_get_row($gTables['company_config'], 'var', 'tipo_composti');
@@ -59,7 +61,7 @@ if ((isset($_POST['Update'])) or ( isset($_GET['Update']))) {
 
 if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il primo accesso
     //qui si deve fare un parsing di quanto arriva dal browser...
-	$class="btn-success";$addvalue="";
+	$class="btn-warning";$addvalue="";
 	if (isset($_POST['button_ok_barcode']) || $_POST['ok_barcode']=="ok"){
 		$form['ok_barcode']="ok";
 	} else {
@@ -156,14 +158,13 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
     $form['rows'] = array();
     $next_row = 0;
     if (isset($_POST['rows'])) {
-
         foreach ($_POST['rows'] as $next_row => $v) {
             $form['rows'][$next_row]['tiprig'] = intval($v['tiprig']);
             $form['rows'][$next_row]['codart'] = substr($v['codart'], 0, 32);
             $form['rows'][$next_row]['status'] = substr($v['status'], 0, 30);
             $form['rows'][$next_row]['descri'] = substr($v['descri'], 0, 100);
             $form['rows'][$next_row]['unimis'] = substr($v['unimis'], 0, 3);
-            if ($v['tiprig'] <= 1) {
+            if ($v['tiprig'] <= 1 || $v['tiprig']== 3) {
                 $form['rows'][$next_row]['prelis'] = number_format(floatval(preg_replace("/\,/", '.', $v['prelis'])), $admin_aziend['decimal_price'], '.', '');
             } else {
                 $form['rows'][$next_row]['prelis'] = 0;
@@ -196,14 +197,11 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
             $form['rows'][$next_row]['cod_operazione'] = $v['cod_operazione'];
             $form['rows'][$next_row]['recip_stocc'] = $v['recip_stocc'];
             $form['rows'][$next_row]['recip_stocc_destin'] = $v['recip_stocc_destin'];
-
             // ripartisco i lotti automaticamente solo se ancora non è mai stato fatto
             if ( $form['rows'][$next_row]['lot_or_serial'] > 0 && intval($form['rows'][$next_row]['id_lotmag'])==0 && $form['rows'][$next_row]['quanti']>0) {
               $lm->getAvailableLots($form['rows'][$next_row]['codart'], $form['rows'][$next_row]['id_mag']);
               $ld = $lm->divideLots($form['rows'][$next_row]['quanti']);
-              /* ripartisco la quantità introdotta tra i vari lotti disponibili per l'articolo
-               * e se è il caso creo più righi
-               */
+              // ripartisco la quantità introdotta tra i vari lotti disponibili per l'articolo  e se è il caso creo più righi
               $i = $next_row;
               foreach ($lm->divided as $k => $v) {
                   if ($v['qua'] >= 0.00001) {
@@ -216,7 +214,6 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
                   }
               }
             }
-
             if (isset($_POST['upd_row'])) {
                 $key_row = key($_POST['upd_row']);
                 if ($key_row == $next_row) {
@@ -241,7 +238,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
                     $form['in_lot_or_serial'] = $form['rows'][$key_row]['lot_or_serial'];
                     $form['in_id_lotmag'] = $form['rows'][$key_row]['id_lotmag'];
                     $getlot = $lm->getLot(intval($form['rows'][$key_row]['id_lotmag']));
-                    $form['in_identifier'] = $getlot['identifier'];
+                    $form['in_identifier'] = $getlot?$getlot['identifier']:'';
                     $form['in_status'] = "UPDROW" . $key_row;
                     $form['cosear'] = $form['rows'][$key_row]['codart'];
                     $form['in_SIAN'] = $form['rows'][$key_row]['SIAN'];
@@ -267,7 +264,6 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
             $form['sconto'] = $form['rows'][0]['new_body_discount'];
         }
     }
-
     // Se viene inviata la richiesta di conferma totale ...
     if (isset($_POST['ins'])) {
         if (!gaz_format_date($form["datemi"], 'chk')) {
@@ -381,8 +377,6 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
             }
         }
         if (!empty($form['fiscal_code'])) {  // controllo codice fiscale
-            require("../../library/include/check.inc.php");
-            $ctrl_cf = new check_VATno_TAXcode();
             $rs_cf = $ctrl_cf->check_TAXcode($form['fiscal_code']);
             if (!empty($rs_cf)) {
                 $msg['err'][] = "codfis";
@@ -620,6 +614,16 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
                 $form['rows'][$old_key]['unimis'] = "";
                 $form['rows'][$old_key]['quanti'] = 0;
                 $form['rows'][$old_key]['sconto'] = 0;
+            } elseif ($form['in_tiprig'] == 3) { // variazione pagamento
+                $form['rows'][$old_key]['codart'] = "";
+                $form['rows'][$old_key]['annota'] = "";
+                $form['rows'][$old_key]['pesosp'] = "";
+                $form['rows'][$old_key]['unimis'] = "";
+                $form['rows'][$old_key]['quanti'] = 0;
+                $form['rows'][$old_key]['codric'] = 0;
+                $form['rows'][$old_key]['sconto'] = 0;
+                $form['rows'][$old_key]['pervat'] = 0;
+                $form['rows'][$old_key]['codvat'] = 0;
             } elseif ($form['in_tiprig'] == 5) { // lotteria scontrini
                 $form['rows'][$old_key]['codart'] = "";
                 $form['rows'][$old_key]['annota'] = "";
@@ -750,6 +754,18 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
                 }
                 $provvigione = new Agenti;
                 $form['rows'][$next_row]['provvigione'] = $provvigione->getPercent($form['id_agente']);
+            } elseif ($form['in_tiprig'] == 3) { // variazione pagamento
+                $form['rows'][$next_row]['codart'] = "";
+                $form['rows'][$next_row]['annota'] = "";
+                $form['rows'][$next_row]['pesosp'] = "";
+                $form['rows'][$next_row]['unimis'] = "";
+                $form['rows'][$next_row]['quanti'] = 0;
+                $form['rows'][$next_row]['prelis'] = 0;
+                $form['rows'][$next_row]['pervat'] = 0;
+                $form['rows'][$next_row]['codric'] = 0;
+                $form['rows'][$next_row]['sconto'] = 0;
+                $form['rows'][$next_row]['codvat'] = 0;
+                $form['rows'][$next_row]['provvigione'] = 0;
             } elseif ($form['in_tiprig'] == 2 || $form['in_tiprig'] == 5) { //descrittivo
                 $form['rows'][$next_row]['codart'] = "";
                 $form['rows'][$next_row]['annota'] = "";
@@ -816,7 +832,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
 			if (strtotime($datem) < strtotime($uldtfile) && $war<>"warning"){
 				$msg['war'][] = "siandate";
 				$class="btn-danger";
-				$addvalue=" nonostante l'avviso";
+				$addvalue=" nonostante l'avviso SIAN";
 				$war="warning";//per evitare di avvisare più volte nel caso di più righi con lo stesso problema
 			}
 		}
@@ -830,7 +846,7 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
 					if ($n>1){
 						$msg['war'][] = "doppioIDlot";
 						$class="btn-danger";
-						$addvalue=" nonostante l'avviso";
+						$addvalue=" nonostante l'avviso lotti";
 					}
 				}
 			}
@@ -861,7 +877,13 @@ if ((isset($_POST['Insert'])) or ( isset($_POST['Update']))) {   //se non e' il 
     $form['numfat'] = $tesdoc['numfat'];
     $form['clfoco'] = $tesdoc['clfoco'];
     // uso impropriamente la colonna spediz per mettere il codice fiscale inserito manualmente
-    $form['fiscal_code'] = $tesdoc['spediz'];
+    // controllo se $tesdoc'spediz' è un codice fiscale
+	$rs_cf = $ctrl_cf->check_TAXcode($tesdoc['spediz']);
+	if (!empty($rs_cf)) {// non è codice fiscale
+		$form['fiscal_code'] = "";
+	} else {// è un codice fiscale
+		$form['fiscal_code'] = $tesdoc['spediz'];
+	}
     $form['search']['clfoco'] =($cliente)?substr($cliente['ragso1'], 0, 6):'';
     $form['id_agente'] = $tesdoc['id_agente'];
     $provvigione = new Agenti;
@@ -1046,7 +1068,7 @@ if (!(count($msg['err']) > 0 || count($msg['war']) > 0)) { // ho un errore non s
 ?>
     });
 </script>
-<form class="form-horizontal" role="form" method="post" name="docven" enctype="multipart/form-data" >
+<form role="form" method="post" name="docven" enctype="multipart/form-data" >
     <input type="hidden" name="<?php echo ucfirst($toDo); ?>" value="">
     <input type="hidden" value="<?php echo $form['id_tes']; ?>" name="id_tes">
     <input type="hidden" value="<?php echo $form['tipdoc']; ?>" name="tipdoc">
@@ -1164,9 +1186,10 @@ if (!(count($msg['err']) > 0 || count($msg['war']) > 0)) { // ho un errore non s
                         </div>
                     </div>
                 </div>
-            </div> <!-- chiude row  -->
+            </div>
         </div><!-- chiude container  -->
     </div><!-- chiude panel  -->
+    <div align="center"><b>Corpo</b></div>
     <?php
     echo "<input type=\"hidden\" value=\"" . $form['in_descri'] . "\" name=\"in_descri\" />
         <input type=\"hidden\" value=\"" . $form['in_pervat'] . "\" name=\"in_pervat\" />
@@ -1190,40 +1213,41 @@ if (!(count($msg['err']) > 0 || count($msg['war']) > 0)) { // ho un errore non s
         <input type=\"hidden\" value=\"" . $form['hidden_req'] . "\" name=\"hidden_req\" />
 		<input type=\"hidden\" value=\"" . $form['ok_barcode'] . "\" name=\"ok_barcode\" />";
     if ($next_row > 0) {
-        $tot = 0;
-        $tot_row = 0;
-        $form['net_weight'] = 0;
-        $form['units'] = 0;
-        $form['volume'] = 0;
-		$vp = gaz_dbi_get_row($gTables['company_config'], 'var', 'vat_price')['val'];
-        foreach ($form['rows'] as $k => $v) {
-            $imprig=0;
-			// se voglio inserire manualmente il prezzo IVA compresa (configurazione avanzata azienda) attivo il form modale
-			$ivacomp=($vp>0)?' onclick="vatPrice(\''.$k.'\',\''.$v['pervat'].'\');" ':'';
-            // addizione ai totali peso,pezzi,volume
-            $artico = gaz_dbi_get_row($gTables['artico'], 'codice', $v['codart']);
-            if ($artico) {
-                $form['net_weight'] += $v['quanti'] * $artico['peso_specifico'];
-                if ($artico['pack_units'] > 0) {
-                    $form['units'] += intval(round($v['quanti'] / $artico['pack_units']));
-                }
-                $form['volume'] += $v['quanti'] * $artico['volume_specifico'];
-            } else {
-                $artico=array('good_or_service'=>0);
-            }
-            // fine addizione peso,pezzi,volume
-            $btn_class = 'btn-success';
-            $btn_title = '';
-            $peso = 0;
-            if ($v['tiprig'] == 0) {
-                if ($artico['good_or_service']==1){
+      $tot = 0;
+      $tot_row = 0;
+      $form['net_weight'] = 0;
+      $form['units'] = 0;
+      $form['volume'] = 0;
+      $vp = gaz_dbi_get_row($gTables['company_config'], 'var', 'vat_price')['val'];
+      $carry = 0;
+      foreach ($form['rows'] as $k => $v) {
+        $imprig=0;
+        // se voglio inserire manualmente il prezzo IVA compresa (configurazione avanzata azienda) attivo il form modale
+        $ivacomp=($vp>0)?' onclick="vatPrice(\''.$k.'\',\''.$v['pervat'].'\');" ':'';
+        // addizione ai totali peso,pezzi,volume
+        $artico = gaz_dbi_get_row($gTables['artico'], 'codice', $v['codart']);
+        if ($artico) {
+          $form['net_weight'] += $v['quanti'] * $artico['peso_specifico'];
+          if ($artico['pack_units'] > 0) {
+              $form['units'] += intval(round($v['quanti'] / $artico['pack_units']));
+          }
+          $form['volume'] += $v['quanti'] * $artico['volume_specifico'];
+        } else {
+          $artico=array('good_or_service'=>0);
+        }
+        // fine addizione peso,pezzi,volume
+        $btn_class = 'btn-success';
+        $btn_title = '';
+        $peso = 0;
+        if ($v['tiprig'] == 0) {
+          if ($artico['good_or_service']==1){
 					$btn_class = 'btn-info';
 					$btn_title = ' Servizio';
 				} elseif ($v['quamag'] < 0.00001 && $admin_aziend['conmag']==2) { // se gestisco la contabilità di magazzino controllo presenza articolo
-                    $btn_class = 'btn-danger';
+          $btn_class = 'btn-danger';
 					$btn_title = ' ARTICOLO NON DISPONIBILE';
 				} elseif ($v['quamag'] <= $v['scorta'] && $admin_aziend['conmag']==2) { // se gestisco la contabilità di magazzino controllo il sottoscorta
-                    $btn_class = 'btn-warning';
+          $btn_class = 'btn-warning';
 					$btn_title = ' Articolo sottoscorta: disponibili '.gaz_format_quantity($v['quamag'], 1, $admin_aziend['decimal_quantity']).'/'.floatval($v['scorta']);
                 } else {
                     $btn_class = 'btn-success';
@@ -1236,6 +1260,8 @@ if (!(count($msg['err']) > 0 || count($msg['war']) > 0)) { // ho un errore non s
                 $v['codart'] ='Forfait';
             } elseif ($v['tiprig'] == 2) {
                 $v['codart'] ='Descrittivo';
+            } elseif ($v['tiprig'] == 3) {
+                $v['codart'] ='Variaz.Pagam.';
             } elseif ($v['tiprig'] == 5) {
                 $v['codart'] ='Lotteria';
                 $v['descri'] = strtoupper($v['descri']);
@@ -1243,18 +1269,21 @@ if (!(count($msg['err']) > 0 || count($msg['war']) > 0)) { // ho un errore non s
 
             // calcolo importo totale (iva inclusa) del rigo e creazione castelletto IVA
             if ($v['tiprig'] <= 1) {    //ma solo se del tipo normale o forfait
-                if ($v['tiprig'] == 0) { // tipo normale
-                    $tot_row = CalcolaImportoRigo($v['quanti'], $v['prelis'], array($v['sconto'], $form['sconto'], -$v['pervat']));
-                } else {                 // tipo forfait
-                    $tot_row = CalcolaImportoRigo(1, $v['prelis'], -$v['pervat']);
-                }
-                if (!isset($castel[$v['codvat']])) {
-                    $castel[$v['codvat']] = 0.00;
-                }
-                $castel[$v['codvat']]+=$tot_row;
-                // calcolo il totale del rigo stornato dell'iva
-                $imprig = round($tot_row / (1 + $v['pervat'] / 100), 2);
-                $tot+=$tot_row;
+              if ($v['tiprig'] == 0) { // tipo normale
+                  $tot_row = CalcolaImportoRigo($v['quanti'], $v['prelis'], array($v['sconto'], $form['sconto'], -$v['pervat']));
+              } else {                 // tipo forfait
+                  $tot_row = CalcolaImportoRigo(1, $v['prelis'], -$v['pervat']);
+              }
+              if (!isset($castel[$v['codvat']])) {
+                  $castel[$v['codvat']] = 0.00;
+              }
+              $castel[$v['codvat']]+=$tot_row;
+              // calcolo il totale del rigo stornato dell'iva
+              $imprig = round($tot_row / (1 + $v['pervat'] / 100), 2);
+              $tot+=$tot_row;
+            } elseif ($v['tiprig'] == 3) {
+              $carry += $v['prelis'];
+              $tot_row = $v['prelis'];
             }
             // fine calcolo importo rigo, totale e castelletto IVA
             // colonne non editabili
@@ -1416,6 +1445,19 @@ if (!(count($msg['err']) > 0 || count($msg['war']) > 0)) { // ho un errore non s
                     $resprow[$k][10]['value'] = '';
                     $resprow[$k][11]['value'] = '';
                     break;
+                case "3":
+                    $resprow[$k][3]['value'] = ''; //unimis
+                    $resprow[$k][4]['value'] = ''; //quanti
+                    // scambio l'input con la colonna dell'importo...
+                    $resprow[$k][7]['value'] = $resprow[$k][5]['value'];
+                    // ... e poi non la visualizzo più
+                    $resprow[$k][5]['value'] = ''; //prelis
+                    $resprow[$k][6]['value'] = ''; //sconto
+                    $resprow[$k][8]['value'] = ''; //prelis
+                    $resprow[$k][9]['value'] = '';
+                    $resprow[$k][10]['value'] = '';
+                    $resprow[$k][11]['value'] = '';
+                    break;
                 case "5":
                     $resprow[$k][3]['value'] = ''; //unimis
                     $resprow[$k][4]['value'] = ''; //quanti
@@ -1430,126 +1472,122 @@ if (!(count($msg['err']) > 0 || count($msg['war']) > 0)) { // ho un errore non s
             }
         }
         $gForm->gazResponsiveTable($resprow, 'gaz-responsive-table');
+    } else {
+    echo '<div id="alert-zerorows" class="alert alert-danger col-xs-12">Il documento non contiene righi o prodotti, compila la ricerca articoli nella sezione corpo per aggiungerne, inserisci il valore % per avere una lista completa o per effettuare una ricerca parziale</div>';
     }
+		$class_conf_row='btn-success';
+    $descributton = $script_transl['insert'];
+    $nurig = count($form['rows'])+1;
+    $expsts = explode('UPDROW',$form['in_status']);
+    if (isset($expsts[1])){
+      $nurig = (int)$expsts[1]+1;
+      $class_conf_row = 'btn-warning';
+      $descributton = $script_transl['update'];
+    }
+    $descributton .= ' il rigo '.$nurig;
+
     ?>
-    <ul class="nav nav-tabs">
-        <li class="active"><a data-toggle="pill" href="#insrow1"> <?php echo $script_transl['conf_row']; ?> </a></li>
-        <li><a data-toggle="pill" href="#insrow2"><i class="glyphicon glyphicon-eye-open"></i> <?php echo $script_transl['other_row']; ?> </a></li>
-        <li><a href="#" id="addmodal" href="#myModal" data-toggle="modal" data-target="#edit-modal" class="btn btn-xs btn-default"><i class="glyphicon glyphicon-export"></i><?php echo $script_transl['add_article']; ?></a></li>
-    </ul>
-
-    <div class="panel-info panel-corpo div-bordered bg-info">
-        <div class="tab-content form-horizontal">
-            <div id="insrow1" class="tab-pane fade in active bg-info">
-                <div class="row">
-                    <div class="col-sm-2">
-                        <div class="form-group">
-                            <label for="tiprig" class="col-sm-4 control-label"><?php echo $script_transl['tiprig']; ?></label>
-                            <div class="col-sm-8">
-                                <?php $gForm->variousSelect('in_tiprig', $script_transl['tiprig_value'], $form['in_tiprig'], false, true); ?>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="form-group">
-                            <label for="item" class="col-sm-1 control-label"><?php echo $script_transl['item']; ?></label>
-                            <?php
-                            $select_artico = new selectartico("in_codart");
-                            $select_artico->addSelected($form['in_codart']);
-                            $select_artico->output(substr($form['cosear'], 0,32), 'C', "col-sm-4");
-                            ?>
-
-						<?php
-						// Antonio Germani - input con pistola lettore codice a barre
-
-							//$class_btn_confirm='btn-success';
+      <ul class="nav nav-tabs">
+          <li class="active"><a data-toggle="pill" href="#insrow1"> <?php echo $script_transl['conf_row']; ?> </a></li>
+          <li><a data-toggle="pill" href="#insrow2"><i class="glyphicon glyphicon-eye-open"></i> <?php echo $script_transl['other_row']; ?> </a></li>
+          <li><a href="#" id="addmodal" href="#myModal" data-toggle="modal" data-target="#edit-modal" class="btn btn-xs btn-default"><i class="glyphicon glyphicon-export"></i><?php echo $script_transl['add_article']; ?></a></li>
+      </ul>
+    <div class="panel input-area tab-content">
+        <div id="insrow1" class="tab-pane fade in active row">
+          <div class="col-xs-12 col-md-6 col-lg-3">
+            <div class="form-group">
+                    <label for="tiprig" class="control-label"><?php echo $script_transl['tiprig']; ?></label>
+                    <?php $gForm->variousSelect('in_tiprig', $script_transl['tiprig_value'], $form['in_tiprig'], false, true); ?>
+            </div>
+            </div>
+            <div class="col-xs-12 col-md-6 col-lg-3">
+                <div class="form-group">
+                    <label for="item" class="control-label"><?php echo $script_transl['item']; ?></label>
+                    <?php
+                    $select_artico = new selectartico("in_codart");
+                    $select_artico->addSelected($form['in_codart']);
+                    $select_artico->output(substr($form['cosear'], 0,32), 'C');
+              // Antonio Germani - input con pistola lettore codice a barre
 							if ($form['ok_barcode']!="ok"){
 								?>
-										<button type="submit" name="button_ok_barcode" class="btn btn-edit btn-default btn-xs col-sm-2" title="inserisci con pistola Barcode">
-										<span class="glyphicon glyphicon-barcode"> Barcode</span>
+										<button type="submit" name="button_ok_barcode" class="btn btn-info btn-xs" title="inserisci con pistola Barcode">
+										 Barcode <i class="glyphicon glyphicon-barcode"></i>
 										</button>
 								<?php
 							} else {
 								if ($form['in_barcode']==""){
 								?>
-
-										<input  type="text" value="<?php echo $form['in_barcode']; ?>" name="in_barcode" class="col-sm-4" onchange="this.form.submit()" />
-										<button type="submit"  name="no_barcode" title="Togli con pistola Barcode" class="btn btn-edit btn-xs col-sm-2">
+										<input  type="text" value="<?php echo $form['in_barcode']; ?>" name="in_barcode" onchange="this.form.submit()" />
+										<button type="submit"  name="no_barcode" title="Togli con pistola Barcode" class="btn btn-success btn-xs col-sm-2">
 										<span class="glyphicon glyphicon-remove"> Barcode</span>
 										</button>
 								<?php
 								} elseif ($form['in_barcode']=="NOT FOUND") {
 									$form['in_barcode']="";
 									?>
-
-										<input style="border: 3px solid red;"  type="text" value="<?php echo $form['in_barcode']; ?>" class="col-sm-4" name="in_barcode" onchange="this.form.submit()" />
-										<button type="submit"  name="no_barcode" title="Togli con pistola Barcode" class="btn btn-edit btn-xs col-sm-2">
+										<input style="border: 3px solid red;"  type="text" value="<?php echo $form['in_barcode']; ?>" name="in_barcode" onchange="this.form.submit()" />
+										<button type="submit"  name="no_barcode" title="Togli con pistola Barcode" class="btn btn-success btn-xs col-sm-2">
 										<span class="glyphicon glyphicon-remove"> Barcode</span>
 									<?php
 								}
 							}
-
 						// Antonio Germani - fine input con pistola lettore codice a barre -->
 						?>
 						</div>
 					</div>
-                    <div class="col-sm-2">
+          <div class="col-xs-12 col-md-6 col-lg-3">
 					<?php if ($form['ok_barcode']!="ok"){?>
-                        <div class="form-group">
-                            <label for="quanti" class="col-sm-6 control-label"><?php echo $script_transl['quanti']; ?></label>
-                            <input class="col-sm-6" type="number" step="any" tabindex=6 value="<?php echo $form['in_quanti']; ?>" name="in_quanti" />
-                        </div>
+            <div class="form-group">
+                <label for="quanti" class="control-label"><?php echo $script_transl['quanti']; ?></label>
+                <input type="number" step="any" tabindex=6 value="<?php echo $form['in_quanti']; ?>" name="in_quanti" />
+            </div>
 					<?php } ?>
-                    </div>
+          </div>
 					<?php if ($form['ok_barcode']!="ok"){?>
-                    <div class="col-sm-2">
-                        <div class="form-group text-center">
-                            <button type="submit"  tabindex=7 class="btn btn-default btn-xs col-sm-12" name="in_submit" title="<?php echo $script_transl['submit'] . $script_transl['thisrow']; ?>">
-                                <?php echo $script_transl['conf_row']; ?>&nbsp;<i class="glyphicon glyphicon-ok"></i>
-                            </button>
-                        </div>
-                    </div>
+          <div class="col-xs-12 col-md-6 col-lg-3">
+              <div class="form-group text-center">
+                  <button type="submit"  tabindex=7 class="btn <?php echo $class_conf_row; ?>" name="in_submit">
+                      <?php echo $descributton; ?>&nbsp;<i class="glyphicon glyphicon-ok"></i>
+                  </button>
+              </div>
+          </div>
 					<?php } ?>
-                </div>
             </div><!-- chiude tab-pane  -->
-            <div id="insrow2" class="tab-pane fade bg-info">
-                <div class="row">
-                    <div class="col-sm-6 col-md-3 col-lg-3">
-                        <div class="form-group">
-                            <label for="sconto" class="col-sm-6 control-label"><?php echo $script_transl['sconto']; ?></label>
-                            <input class="col-sm-6" type="number" step="0.01" value="<?php echo $form['in_sconto']; ?>" name="in_sconto" />
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3 col-lg-3">
-                        <div class="form-group">
-                            <label for="vat_constrain" class="col-sm-6 control-label"><?php echo $script_transl['vat_constrain'].' '.$form['in_codvat']; ?></label>
-                            <?php $gForm->selectRepartoIVA($form['in_codvat'],$form['id_cash']); ?>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3 col-lg-3">
-                        <div class="form-group">
-                            <label for="codric" class="col-sm-4 control-label"><?php echo $script_transl['codric']; ?></label>
-                            <?php
-                            $select_codric = new selectconven("in_codric");
-                            $select_codric->addSelected($form['in_codric']);
-                            $select_codric->output(substr($form['in_codric'], 0, 1), 'col-sm-8');
-                            ?>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3 col-lg-3">
-                        <div class="form-group">
-                            <label for="provvigione" class="col-sm-6 control-label"><?php echo $script_transl['provvigione']; ?></label>
-                            <input class="col-sm-6" type="number" step="any" value="<?php echo $form['in_provvigione']; ?>" name="in_provvigione" />
-                        </div>
-                    </div>
-                </div>
+            <div id="insrow2" class="tab-pane fade row">
+              <div class="col-xs-12 col-md-6 col-lg-3">
+                  <div class="form-group">
+                      <label for="sconto" class="control-label"><?php echo $script_transl['sconto']; ?></label>
+                      <input type="number" step="0.01" value="<?php echo $form['in_sconto']; ?>" name="in_sconto" />
+                  </div>
+              </div>
+              <div class="col-xs-12 col-md-6 col-lg-3">
+                  <div class="form-group">
+                      <label for="vat_constrain" class="control-label"><?php echo $script_transl['vat_constrain']; ?></label>
+                      <?php $gForm->selectRepartoIVA($form['in_codvat'],$form['id_cash']); ?>
+                  </div>
+              </div>
+              <div class="col-xs-12 col-md-6 col-lg-3">
+                  <div class="form-group">
+                      <label for="codric" class="control-label"><?php echo $script_transl['codric']; ?></label>
+                      <?php
+                      $select_codric = new selectconven("in_codric");
+                      $select_codric->addSelected($form['in_codric']);
+                      $select_codric->output(substr($form['in_codric'], 0, 1));
+                      ?>
+                  </div>
+              </div>
+              <div class="col-sm-12 col-md-6 col-lg-3">
+                  <div class="form-group">
+                      <label for="provvigione" class="control-label"><?php echo $script_transl['provvigione']; ?></label>
+                      <input type="number" step="any" value="<?php echo $form['in_provvigione']; ?>" name="in_provvigione" />
+                  </div>
+              </div>
             </div><!-- chiude tab-pane  -->
-        </div><!-- chiude tab-content  -->
-
     </div><!-- chiude panel  -->
     <?php
     if ($next_row > 0) {
         ?>
+        <div align="center"><b>Piede</b></div>
         <div class="panel panel-success div-bordered">
             <div class="table-responsive">
                 <table class="table">
@@ -1646,18 +1684,18 @@ if (!(count($msg['err']) > 0 || count($msg['war']) > 0)) { // ho un errore non s
         </div>
     </div>
 </div>
-<div class="modal" id="vat-price" title="IMPORTO IVA COMPRESA">
-	<input type="text" id="cat_prevat" style="text-align: right;" maxlength="11" onkeyup="vatPriceCalc();" />
+<div class="modal" id="vat-price" title="Calcolo prezzo IVA compresa">
+	Prezzo IVA compresa:<input type="text" id="cat_prevat" style="text-align: right;" maxlength="11" onkeyup="vatPriceCalc();" />
 	<br /><br />
 	<!--select id="codvat" name="cat_codvat" class="FacetSelect"></select-->
-	<input type="text" id="cat_pervat" style="text-align: center;" maxlength="5" disabled="disabled" />
+	IVA <input type="text" id="cat_pervat" style="text-align: center;" maxlength="5" disabled="disabled" /> %
 	<br /><br />
-	<input type="text" id="cat_prelis" style="text-align: right;" maxlength="11" disabled="disabled" />
+	Prezzo senza IVA:<input type="text" id="cat_prelis" style="text-align: right;" maxlength="11" onkeyup="priceCalc();"/>
 </div>
 <script type="text/javascript">
 	function vatPrice(row,pervat) {
 		var prelis = $("[name='rows["+row+"][prelis]']").val();
-		var prevat = Math.round(parseFloat(prelis)*(1+parseFloat(pervat)/100),4);
+		var prevat = parseFloat(prelis*(1+parseFloat(pervat)/100)).toFixed(2);
 		$("#cat_prevat").val(prevat);
 		$("#cat_pervat").val(pervat);
 		$("#cat_prelis").val(prelis);
@@ -1666,6 +1704,7 @@ if (!(count($msg['err']) > 0 || count($msg['war']) > 0)) { // ho un errore non s
 			buttons: {
 				Ok: function() {
 					$("[name='rows["+row+"][prelis]']").val($("#cat_prelis").val());
+					$("[name='rows["+row+"][prevat]']").val($("#cat_prevat").val());
 					document.docven.last_focus.value="righi_" + row + "_sconto";
 					$("[name='rows["+row+"][prelis]']").parents("form:first").submit();
 					$(this).dialog("close");
@@ -1675,31 +1714,43 @@ if (!(count($msg['err']) > 0 || count($msg['war']) > 0)) { // ho un errore non s
 	};
 	function vatPriceCalc() {
 		var prevat = $("#cat_prevat").val();
+		var prelis = $("#cat_prelis").val();
 		var pervat = $("#cat_pervat").val();
 		if (prevat!="" && pervat!="") {
-			var prelis = parseFloat(prevat)/(1+parseFloat(pervat)/100)
-			$("#cat_prelis").val(prelis.toFixed(2));
+			var prelis = parseFloat(prevat)/(1+parseFloat(pervat)/100);
+			$("#cat_prelis").val(prelis.toFixed(5));
 		} else {
 			$("#cat_prelis").val("0");
 		}
 	}
-    $(function () {
-        //twitter bootstrap script
-        $("#addmodal").click(function () {
-            $.ajax({
-                type: "POST",
-                url: "../../modules/magazz/admin_artico.php",
-                data: 'mode=modal',
-                success: function (msg) {
-                    $("#edit-modal .modal-sm").css('width', '100%');
-                    $("#edit-modal .modal-body").html(msg);
-                },
-                error: function () {
-                    alert("failure");
-                }
-            });
-        });
-    });
+	function priceCalc() {
+		var prelis = $("#cat_prelis").val();
+		var pervat = $("#cat_pervat").val();
+		var prevat = $("#cat_prevat").val();
+		if (prelis!="" && pervat!="") {
+			var prevat = parseFloat(prelis)*(1+parseFloat(pervat)/100);
+			$("#cat_prevat").val(prevat.toFixed(2));
+		} else {
+			$("#cat_prevat").val("0");
+		}
+	}
+  $(function () {
+      //twitter bootstrap script
+      $("#addmodal").click(function () {
+          $.ajax({
+              type: "POST",
+              url: "../../modules/magazz/admin_artico.php",
+              data: 'mode=modal',
+              success: function (msg) {
+                  $("#edit-modal .modal-sm").css('width', '100%');
+                  $("#edit-modal .modal-body").html(msg);
+              },
+              error: function () {
+                  alert("failure");
+              }
+          });
+      });
+  });
 	var last_focus_value;
 	var last_focus;
 	last_focus_value = document.docven.last_focus.value;

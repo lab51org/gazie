@@ -1,4 +1,5 @@
 UPDATE `gaz_config` SET `cvalue` = '146' WHERE `id` =2;
+INSERT INTO `gaz_menu_script` SELECT MAX(id)+1, (SELECT MIN(id) FROM `gaz_menu_module` WHERE `link`='report_control.php'), 'error_paymov.php', '', '', 8, '', 10  FROM `gaz_menu_script`;
 -- START_WHILE ( questo e' un tag che serve per istruire install.php ad INIZIARE ad eseguire le query seguenti su tutte le aziende dell'installazione)
 ALTER TABLE `gaz_XXXartico`	CHANGE COLUMN `codice_fornitore` `codice_fornitore` VARCHAR(50) NOT NULL COMMENT 'Da intendersi come "codice produttore" ovvero univoco per il medesimo prodotto, indipendentemente dal canale/fornitore utilizzato per l\'approvigionamento. I codici utilizzati dai singoli fornitori vanno eventualmente indicati su rigdoc-rigbro' AFTER `id_artico_group`;
 CREATE TABLE IF NOT EXISTS `gaz_XXXartico_position` (
@@ -60,4 +61,5 @@ INSERT INTO `gaz_XXXcompany_config` (`description`, `var`, `val`) SELECT 'PEC IM
 ALTER TABLE `gaz_XXXfiles` ADD COLUMN `status` INT NOT NULL DEFAULT 0 COMMENT 'se usato quando item_ref =\'faesync\' indica lo stato della fattura di acquisto (1=acquisita) ' AFTER `item_ref`, ADD INDEX `status` (`status`);
 INSERT INTO `gaz_XXXcompany_config` (`description`, `var`, `val`) SELECT 'Numerazione delle Fatture separate da quella di Note Credito/Debito (0=No 1=Si-default)', 'num_note_separate', '1' FROM DUAL WHERE NOT EXISTS (SELECT `var` FROM `gaz_XXXcompany_config` WHERE `var` = 'num_note_separate' LIMIT 1);
 INSERT INTO `gaz_XXXcompany_config` (`description`, `var`, `val`) SELECT 'Numeroi/codicei entei controllo/certificazione (può essere anche json o csv)', 'company_certifications', '' FROM DUAL WHERE NOT EXISTS (SELECT `var` FROM `gaz_XXXcompany_config` WHERE `var` = 'company_certifications' LIMIT 1);
+INSERT INTO `gaz_XXXcompany_config` (`description`, `var`, `val`) SELECT 'Autoincrementa referenza artico (ID) su e-commerce sincronizzato (0=No, 1=Si)', 'autoincrement_id_ecomm', '' FROM DUAL WHERE NOT EXISTS (SELECT `var` FROM `gaz_XXXcompany_config` WHERE `var` = 'autoincrement_id_ecomm' LIMIT 1);
 -- STOP_WHILE ( questo e' un tag che serve per istruire install.php a SMETTERE di eseguire le query su tutte le aziende dell'installazione )

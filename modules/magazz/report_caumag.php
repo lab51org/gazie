@@ -68,26 +68,31 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
-				delete:{ 
-					text:'Elimina', 
-					'class':'btn btn-danger delete-button',
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
+				delete:{
+					text:'Elimina',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
-					$.ajax({
-						data: {'type':'caumag',ref:id},
-						type: 'POST',
-						url: '../magazz/delete.php',
-						success: function(output){
-		                    //alert(output);
-							window.location.replace("./report_caumag.php");
-						}
-					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+            $.ajax({
+              data: {'type':'caumag',ref:id},
+              type: 'POST',
+              url: '../magazz/delete.php',
+              success: function(output){
+                          //alert(output);
+                window.location.replace("./report_caumag.php");
+              }
+            });
+          }
+        }
 			}
 		});
-		$("#dialog_delete" ).dialog( "open" );  
+		$("#dialog_delete" ).dialog( "open" );
 	});
 });
 </script>
@@ -127,7 +132,7 @@ $recordnav = new recordnav($gTables['caumag'], $where, $limit, $passo);
 $recordnav -> output();
 while ($a_row = gaz_dbi_fetch_array($result)) {
     echo "<tr class=\"FacetDataTD\">\n";
-    echo "<td><a class=\"btn btn-xs btn-default\" href=\"admin_caumag.php?codice=".$a_row["codice"]."&Update\" title=\"".ucfirst($script_transl['update'])."!\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;".$a_row["codice"]."</a> &nbsp</td>";
+    echo '<td class="text-center"><a class="btn btn-xs btn-edit" href="admin_caumag.php?codice='.$a_row["codice"].'&Update" title="'.ucfirst($script_transl['update']).'"><i class="glyphicon glyphicon-edit"></i>&nbsp;'.$a_row["codice"]."</a> &nbsp</td>";
     echo "<td align=\"center\">".$a_row["descri"]." &nbsp;</td>";
     echo "<td align=\"center\">".$script_transl[$a_row['clifor']+13]."</td>";
     echo "<td align=\"center\">".$script_transl[$a_row['operat']+9]."</td>";

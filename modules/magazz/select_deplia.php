@@ -155,7 +155,7 @@ echo "<input type=\"hidden\" value=\"".$form['ritorno']."\" name=\"ritorno\" />\
 $gForm = new magazzForm();
 echo "<div align=\"center\" class=\"FacetFormHeaderFont\">".$script_transl['title'];
 echo "</div>\n";
-echo "<table class=\"Tsmall\" align=\"center\">\n";
+echo "<table class=\"Tsmall table-striped\" align=\"center\">\n";
 if (!empty($msg)) {
     echo '<tr><td colspan="2" class="FacetDataTDred">'.$gForm->outputErrors($msg,$script_transl['errors'])."</td></tr>\n";
 }
@@ -190,9 +190,7 @@ echo "<tr>\n";
 echo "<td class=\"FacetFieldCaptionTD\">".$script_transl['art_fin']."</td><td  class=\"FacetDataTD\">\n";
 $gForm->selItem('art_fin',$form['art_fin'],$form['search']['art_fin'],$script_transl['mesg'],$form['hidden_req']);
 echo "</tr>\n";
-echo "\t<tr class=\"FacetFieldCaptionTD\">\n";
-echo "<td align=\"left\"><input type=\"submit\" name=\"return\" value=\"".$script_transl['return']."\">\n";
-echo '<td align="right"> <input type="submit" accesskey="i" name="print" value="';
+echo '<tr><td colspan=2 class="FacetFooterTD text-center"> <input type="submit" class="btn btn-warning" accesskey="i" name="print" value="';
 echo $script_transl['print'];
 echo '" tabindex="100" >';
 echo "\t </td>\n";

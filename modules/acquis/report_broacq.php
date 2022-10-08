@@ -53,11 +53,11 @@ $search_fields = [
 
 // creo l'array (header => campi) per l'ordinamento dei record
 $sortable_headers = array(
-    "ID" => "id_tes",
-    "Numero" => "numdoc",
+    "Numero" => "id_tes",
     "Produzione" => "id_orderman",
     "Data" => "datemi",
     "Fornitore" => "",
+    "Stato" => "",
     "Stampa" => "",
     "Operaz." => "",
     "Mail" => "",
@@ -205,9 +205,16 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
 				delete:{
 					text:'Elimina',
-					'class':'btn btn-danger delete-button',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'broacq',id_tes:id},
@@ -218,10 +225,7 @@ $(function() {
 							window.location.replace("./report_broacq.php?flt_tipo=<?php echo $flt_tipo; ?> ");
 						}
 					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+				}}
 			}
 		});
 		$("#dialog_delete" ).dialog( "open" );
@@ -232,6 +236,9 @@ function printPdf(urlPrintDoc){
 		$('#framePdf').attr('src',urlPrintDoc);
 		$('#framePdf').css({'height': '100%'});
 		$('.framePdf').css({'display': 'block','width': '90%', 'height': '80%', 'z-index':'2000'});
+    $("html, body").delay(100).animate({scrollTop: $('#framePdf').offset().top},'slow', function() {
+        $("#framePdf").focus();
+    });
 		$('#closePdf').on( "click", function() {
 			$('.framePdf').css({'display': 'none'});
 		});
@@ -365,7 +372,7 @@ function printPdf(urlPrintDoc){
                 echo '<tr class="FacetDataTD text-center">';
 
 				// colonna numero documento
-				echo "<td><a class=\"btn btn-xs btn-default\" id=\"tipdoc_".$r['id_tes']."\"  value=\"".$r["tipdoc"]."\" href=\"".$modifi."\"><i class=\"glyphicon glyphicon-edit\"></i> ".$tipodoc." n.".$r["numdoc"]." &nbsp;</a></td>\n";
+				echo "<td align=\"center\"><a class=\"btn btn-xs btn-edit\" id=\"tipdoc_".$r['id_tes']."\"  value=\"".$r["tipdoc"]."\" href=\"".$modifi."\"><i class=\"glyphicon glyphicon-edit\"></i> ".$tipodoc." n.".$r["numdoc"]." &nbsp;</a></td>\n";
 
 
 				// colonna produzione

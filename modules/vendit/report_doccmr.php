@@ -121,9 +121,16 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
-				delete:{ 
-					text:'Elimina', 
-					'class':'btn btn-danger delete-button',
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
+				delete:{
+					text:'Elimina',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'docven',id_tes:id},
@@ -134,13 +141,10 @@ $(function() {
 							window.location.replace("./report_doccmr.php");
 						}
 					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+				}}
 			}
 		});
-		$("#dialog_delete" ).dialog( "open" );  
+		$("#dialog_delete" ).dialog( "open" );
 	});
 });
 </script>
@@ -256,7 +260,7 @@ $(function() {
                         case "CMR":
                             echo "<tr class=\"FacetDataTD\">";
                             // Colonna id
-                            echo "<td align=\"left\"><a class=\"btn btn-xs btn-default btn-edit\" href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . $r['tipdoc'].' '. $r["id_tes"] . "</a></td>";
+                            echo "<td align=\"left\"><a class=\"btn btn-xs btn-edit\" href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . $r['tipdoc'].' '. $r["id_tes"] . "</a></td>";
                             // Colonna protocollo
                             echo "<td align=\"left\"><a href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\">" . $r["numdoc"] . "</a> &nbsp;</td>";
                             // Colonna type
@@ -343,10 +347,10 @@ $(function() {
                             echo "</tr>\n";
                             break;
                         case "FAD":
-                            if ( $r['ddt_type']=='R') { 
+                            if ( $r['ddt_type']=='R') {
                             echo "<tr class=\"FacetDataTD\">";
                             // Colonna id
-                            echo "<td align=\"left\"><a class=\"btn btn-xs btn-default btn-edit\" href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\"><i class=\"glyphicon glyphicon-edit\"></i>".$r['tipdoc']."&nbsp;" . $r["id_tes"] . "</a></td>";
+                            echo "<td align=\"left\"><a class=\"btn btn-xs btn-edit\" href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\"><i class=\"glyphicon glyphicon-edit\"></i>".$r['tipdoc']."&nbsp;" . $r["id_tes"] . "</a></td>";
                             // Colonna protocollo
                             echo "<td align=\"left\"><a href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\">" . $r["numdoc"] . "</a></td>";
                             // Colonna type
@@ -394,9 +398,9 @@ $(function() {
                                 while ( $rigdoc = gaz_dbi_fetch_array($rigdoc_result) ) {
                                     if($rigdoc['id_order']>0){
                                         $tesbro_result = gaz_dbi_dyn_query('*', $gTables['tesbro'], "id_tes = " . $rigdoc['id_order'], 'id_tes');
-                                        $t_r = gaz_dbi_fetch_array($tesbro_result);                           
+                                        $t_r = gaz_dbi_fetch_array($tesbro_result);
                                         echo "<a class=\"btn btn-xs btn-default\" title=\"" . $script_transl['view_ord'] . "\" href=\"stampa_ordcli.php?id_tes=" . $rigdoc['id_order'] . "\" style=\"font-size:10px;\">Ord." . $t_r['numdoc'] . "</a>\n";
-                                    }									
+                                    }
                                 }
                             }
                             echo "</td>";

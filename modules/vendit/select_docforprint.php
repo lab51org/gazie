@@ -294,7 +294,7 @@ for ($counter = 1; $counter <= 9; $counter++) {
 }
 echo "</select>\n";
 echo "</div>";
-echo "<table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" class=\"FacetFormTABLE\" align=\"center\">";
+echo "<table class=\"Tmiddle table-striped\" align=\"center\">";
 if (!empty($msg)) {
    $message = "";
    $rsmsg = array_slice(explode('+', chop($msg)), 0, -1);
@@ -319,17 +319,6 @@ for ($counter = 1; $counter <= 10; $counter++) {
    echo "\t\t <option value=\"" . $counter . "\" $selected >" . $script_transl[0][$counter] . "</option>\n";
 }
 echo "</select></td></tr>\n";
-
-//echo "<tr><td class=\"FacetFieldCaptionTD\">" . $script_transl['tipoSelezione'] . "</td>"
-// . "<td class=\"FacetDataTD\">\n<select name=\"tipo_selezione\" class=\"FacetSelect\">\n"
-// . "<option value=\"1\" selected>Tutti i filtri</option>\n"
-// . "<option value=\"2\">Cliente</option>\n"
-// . "<option value=\"3\">Data</option>\n"
-// . "<option value=\"4\">Numero</option>\n"
-// . "<option value=\"5\">Protocollo</option>\n"
-// . "<option value=\"6\">Agente</option>\n"
-// . "</select></td></tr>\n";
-
 echo "<tr><td class=\"FacetFieldCaptionTD\">$script_transl[8]</td>";
 echo "<td class=\"FacetDataTD\">";
 $messaggio = '';
@@ -376,12 +365,12 @@ for ($counter = 1; $counter <= 31; $counter++) {
 echo "\t </select>\n";
 // select del mese
 echo "\t <select name=\"mesini\" class=\"FacetSelect\">\n";
+$gazTimeFormatter->setPattern('MMMM');
 for ($counter = 1; $counter <= 12; $counter++) {
-   $selected = "";
-   if ($counter == $form['mesini'])
-      $selected = "selected";
-   $nome_mese = ucwords(strftime("%B", mktime(0, 0, 0, $counter, 1, 0)));
-   echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
+  $selected = "";
+  if ($counter == $form['mesini']) $selected = "selected";
+  $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
+  echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
 }
 echo "\t </select>\n";
 // select del anno
@@ -409,11 +398,10 @@ echo "\t </select>\n";
 // select del mese
 echo "\t <select name=\"mesfin\" class=\"FacetSelect\">\n";
 for ($counter = 1; $counter <= 12; $counter++) {
-   $selected = "";
-   if ($counter == $form['mesfin'])
-      $selected = "selected";
-   $nome_mese = ucwords(strftime("%B", mktime(0, 0, 0, $counter, 1, 0)));
-   echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
+  $selected = "";
+  if ($counter == $form['mesfin']) $selected = "selected";
+  $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
+  echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
 }
 echo "\t </select>\n";
 // select del anno
@@ -455,16 +443,8 @@ $select_agente->addSelected($form["id_agente"]);
 $select_agente->output();
 echo "</td></tr>\n";
 
-echo "<tr><td class=\"FacetFieldCaptionTD\">" . $script_transl['tipoStampa'] . "</td>"
- . "<td class=\"FacetDataTD\">\n<select name=\"tipo_stampa\" class=\"FacetSelect\">\n"
- . "<option value=\"0\" selected>Tutti i documenti</option>\n"
- . "<option value=\"1\">Non stampare eMail</option>\n"
- . "<option value=\"2\">Invia solo eMail</option>\n";
-
-echo "<tr>\n
-     <td class=\"FacetFieldCaptionTD\"><input type=\"submit\" name=\"Return\" value=\"" . ucfirst($script_transl['return']) . "\"></td>\n
-     <td align=\"right\" class=\"FacetFooterTD\"><input type=\"submit\" name=\"Print\" value=\"" . ucfirst($script_transl['print']) . "\"></td>\n
-     </tr>\n";
+echo "<tr><td class=\"FacetFieldCaptionTD\">" . $script_transl['tipoStampa'] . "</td><td class=\"FacetDataTD\">\n<select name=\"tipo_stampa\" class=\"FacetSelect\">\n<option value=\"0\" selected>Tutti i documenti</option><option value=\"1\">Non stampare eMail</option><option value=\"2\">Invia solo eMail</option></tr>\n";
+echo '<tr><td class="FacetFooterTD text-center" colspan=2><input type="submit" class="btn btn-warning" name="Print" value="' . ucfirst($script_transl['print']) . "\"></td></tr>\n";
 ?>
 </table>
 </form>

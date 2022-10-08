@@ -138,9 +138,16 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
 				delete:{
 					text:'Elimina',
-					'class':'btn btn-danger delete-button',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'docven',id_tes:id},
@@ -151,10 +158,7 @@ $(function() {
 							window.location.replace("./report_doctra.php");
 						}
 					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+				}}
 			}
 		});
 		$("#dialog_delete" ).dialog( "open" );
@@ -169,6 +173,9 @@ function printPdf(urlPrintDoc){
 		$('#framePdf').attr('src',urlPrintDoc);
 		$('#framePdf').css({'height': '100%'});
 		$('.framePdf').css({'display': 'block','width': '90%', 'height': '80%', 'z-index':'2000'});
+    $("html, body").delay(100).animate({scrollTop: $('#framePdf').offset().top},'slow', function() {
+        $("#framePdf").focus();
+    });
 	});
 };
 </script>
@@ -217,8 +224,8 @@ if (isset($_SESSION['print_request']) && intval($_SESSION['print_request'])>0){
         $ts->output_navbar();
                 ?>
 
-    <div class="box-primary table-responsive">
-        <table class="Tlarge table table-striped table-bordered table-condensed">
+    <div class="table-responsive">
+        <table class="Tlarge table table-striped">
             <tr>
                 <td class="FacetFieldCaptionTD">
                     <?php gaz_flt_disp_int("id_tes", "ID"); ?>
@@ -280,11 +287,11 @@ if (isset($_SESSION['print_request']) && intval($_SESSION['print_request'])>0){
                         case "DDS":
                             echo "<tr class=\"text-center\">";
                             // Colonna id
-                            echo "<td><a class=\"btn btn-xs btn-success\" href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . $r['tipdoc'].' '. $r["id_tes"] . "</a></td>";
+                            echo "<td><a class=\"btn btn-xs btn-edit\" href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . $r['tipdoc'].' '. $r["id_tes"] . "</a></td>";
                             // Colonna protocollo
                             echo "<td class=\"text-center\"><a href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\">" . $r["numdoc"] . "</a> &nbsp;</td>";
                             // Colonna type
-                            echo "<td><a class=\"btn btn-xs btn-primary btn-primary \" href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\">&nbsp;" . $script_transl['ddt_type'][$r["ddt_type"]] . "</a> &nbsp;</td>";
+                            echo "<td><div class=\"btn btn-xs btn-primary btn-primary\" style=\"cursor: default;\">&nbsp;" . $script_transl['ddt_type'][$r["ddt_type"]] . "</div> &nbsp;</td>";
                             // Colonna data emissione
                             echo "<td>" . gaz_format_date($r["datemi"]). " &nbsp;</td>";
                             // Colonna Cliente
@@ -376,7 +383,7 @@ if (isset($_SESSION['print_request']) && intval($_SESSION['print_request'])>0){
                             echo "<td><a class=\"btn btn-xs btn-".$btnclass."\" href=\"../acquis/admin_docacq.php?Update&id_tes=" . $r["id_tes"] . "\"><i class=\"glyphicon glyphicon-edit\"></i>" . $r["tipdoc"] . "" . $r["id_tes"] . "</a></td>";
                             echo "<td><a href=\"../acquis/admin_docacq.php?Update&id_tes=" . $r["id_tes"] . "\">&nbsp;" . $r["numdoc"] . "</a> &nbsp;</td>";
                             // Colonna type
-                            echo "<td><a class=\"btn btn-xs btn-".$btnclass." \" href=\"../acquis/admin_docacq.php?Update&id_tes=" . $r["id_tes"] . "\">&nbsp;" . $script_transl['ddt_type'][$r["tipdoc"]] . "</a> &nbsp;</td>";
+                            echo "<td><div class=\"btn btn-xs btn-".$btnclass."\" style=\"cursor: default;\" >&nbsp;" . $script_transl['ddt_type'][$r["tipdoc"]] . "</div> &nbsp;</td>";
                             echo "<td>" . gaz_format_date($r["datemi"]) . " &nbsp;</td>";
                             ?>
                             <td class="text-left">
@@ -388,7 +395,7 @@ if (isset($_SESSION['print_request']) && intval($_SESSION['print_request'])>0){
                                 <?php echo "<a href=\"admin_destinazioni.php?codice=".$destina["codice"]."&Update\">".$destina["unita_locale1"]."</a>"; ?>
                             </td>
                             <?php
-                            echo "<td class=\"alert alert-danger\" ><div class=\"btn btn-xs btn-".$btnclass."\">" . $script_transl['from_suppl'] . "</div></td>";
+                            echo "<td><div class=\"btn btn-xs btn-".$btnclass."\">" . $script_transl['from_suppl'] . "</div></td>";
 
                             $urlPrintDoc = "../acquis/stampa_docacq.php?id_tes=" . $r["id_tes"] . "&template=DDT";
                             $urlPrintEtichette = "stampa_docven.php?id_tes=" . $r["id_tes"] . "&template=Etichette";
@@ -432,11 +439,11 @@ if (isset($_SESSION['print_request']) && intval($_SESSION['print_request'])>0){
                             if ( $r['ddt_type'] != 'R') {
                             echo "<tr class=\"text-center\">";
                             // Colonna id
-                            echo "<td><a class=\"btn btn-xs btn-success\" href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\"><i class=\"glyphicon glyphicon-edit\"></i>".$r['tipdoc']."&nbsp;" . $r["id_tes"] . "</a></td>";
+                            echo "<td><a class=\"btn btn-xs btn-info\" href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\"><i class=\"glyphicon glyphicon-edit\"></i>".$r['tipdoc']."&nbsp;" . $r["id_tes"] . "</a></td>";
                             // Colonna protocollo
                             echo "<td><a href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\">" . $r["numdoc"] . "</a></td>";
                             // Colonna type
-                            echo "<td><a class=\"btn btn-xs btn-primary btn-primary \" href=\"admin_docven.php?Update&id_tes=" . $r["id_tes"] . "\">&nbsp;" . $script_transl['ddt_type'][$r["ddt_type"]] . "</a> &nbsp;</td>";
+                            echo "<td><div class=\"btn btn-xs btn-primary btn-primary\" style=\"cursor: default;\">&nbsp;" . $script_transl['ddt_type'][$r["ddt_type"]] . "</div> &nbsp;</td>";
                             // Colonna Data emissione
                             echo "<td>" . gaz_format_date($r["datemi"]) . " &nbsp;</td>";
                             // Colonna Cliente
@@ -503,7 +510,7 @@ if (isset($_SESSION['print_request']) && intval($_SESSION['print_request'])>0){
 </form>
 <script>
 $(document).ready(function(){
-  var _sezi = $("select[name='sezione'] option:selected").text();
+  var _sezi = $("select[name='sezione'] option:selected").text().trim();
   $.each(['DDT','CMR'], function( i, v ) {
     var _href = $("a[href*='admin_docven.php?Insert&tipdoc=" + v + "']").attr('href');
     $("a[href*='admin_docven.php?Insert&tipdoc=" + v + "']").attr('href', _href + '&seziva=' + _sezi);

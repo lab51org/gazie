@@ -39,7 +39,7 @@ if(!isset($form['ritorno'])){
 	$form['ritorno']=$_POST['ritorno'];
 }
 if (isset($_GET['codice'])){
-    $codcomp = filter_var($_GET['codice'],FILTER_SANITIZE_STRING);
+    $codcomp = filter_var($_GET['codice'],FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 }else{
    // header("Location: ../magazz/admin_artico_compost.php?codice=".$codcomp )
    // Antonio Germani Se viene aperto senza codice articolo esco e rimando all'elenco articoli
@@ -55,8 +55,8 @@ if(isset($_POST['Update'])||isset($_GET['Update'])){
 
 if (isset($_POST['Insert']) || isset($_POST['Update'])) {   //se non e' il primo accesso
     $form['hidden_req'] = $_POST['hidden_req'];
-    $form['cosear'] = filter_var($_POST['cosear'],FILTER_SANITIZE_STRING);
-    $form['codart'] = filter_var($_POST['codart'],FILTER_SANITIZE_STRING);
+    $form['cosear'] = filter_var($_POST['cosear'],FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $form['codart'] = filter_var($_POST['codart'],FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $form['quanti'] = floatval($_POST['quanti']);
 } elseif (!isset($_POST['Update']) && isset($_GET['Update'])) { //se e' il primo accesso per UPDATE
         $form['hidden_req'] = '';
@@ -128,7 +128,7 @@ $(function(){
     });
 });
 function itemErase(id,descri,codcomp){
-	$(".compost_name").append('ID:'+id+' -'+descri);
+	$(".compost_name").append('ID:'+id+' - '+descri);
 	//alert(descri);
 	$("#confirm_erase").dialog({
 		modal: true,
@@ -165,10 +165,10 @@ function itemErase(id,descri,codcomp){
 		$data=$gForm->getBOM($codcomp);
         echo '<div class="panel panel-default"><div class="panel-heading"><h4>Distinta base della composizione: <a class="btn btn-md btn-success" href="admin_artico.php?Update&codice=' . $codcomp . '">'.$codcomp.'</a> -'.$art['descri']."\n</h4>".'</div><div class="panel-body">';
 		if (count($data)>=1){
-        echo '<ul class="col-xs-12 col-sm-12 col-md-11 col-lg-10">';
+        echo '<ul class="col-xs-12 col-sm-12 col-md-11 col-lg-10 distintabase">';
 		foreach($data as $k0=>$v0) {
 			$icona=(is_array($v0['codice_artico_base']))?'<a class="btn btn-xs btn-warning collapsible" id="'.$v0[2].'" data-toggle="collapse" data-target=".' . $v0[2] . '"><i class="glyphicon glyphicon-list"></i></a>':'';
-			echo '<li><div style="background-color: #'.$color.'"><a class="btn btn-xs btn-success" href="admin_artico.php?Update&amp;codice=' . $v0[2] . '">'.$v0[2].'</a> - '.$v0['descri'].' '.$icona.' _ _ _ _ <a class="btn btn-xs btn-danger" onclick="itemErase('.intval($v0['id']).',\''.addslashes($v0['descri']).'\',\''.$codcomp.'\');">  togli X </a><span class="pull-gazie"> '.$v0['unimis'].':<input type="number" style="height:25px;width:80px;" step="any" min="0.00001" name="qta['.intval($v0['id']).']" value="'.floatval($v0['quantita_artico_base']).'" /> </span>  </div>';
+			echo '<li><div style="background-color: #'.$color.'"><a class="btn btn-xs btn-success" href="admin_artico.php?Update&amp;codice=' . $v0[2] . '">'.$v0[2].'</a> - '.$v0['descri'].' '.$icona.' _ _ _ _ <a class="btn btn-xs btn-danger" onclick="itemErase('.intval($v0['id']).',\''.addslashes(str_replace('"','',$v0['descri'])).'\',\''.$codcomp.'\');">  togli X </a><span class="pull-gazie"> '.$v0['unimis'].':<input type="number" style="height:25px;width:80px;" step="any" min="0.00001" name="qta['.intval($v0['id']).']" value="'.floatval($v0['quantita_artico_base']).'" /> </span>  </div>';
 			$color=($color=='fcfcfc')?'eeeeee':'fcfcfc';
 			if (is_array($v0['codice_artico_base'])){
 			  echo '<ul class="collapse ' . $v0[2] . '">';

@@ -67,7 +67,7 @@ function getDocuments($td = 0, $si = 1, $where_data=['cl'=>0,'ag'=>0]) {
     $numfat=($td==6)?'numdoc':'numfat';
     $where_data['pi']=($td==6||$td==7)?'0':$where_data['pi'];
     $where_data['pf']=($td==6||$td==7)?'999999999':$where_data['pf'];
-    $where =($td==2)?"tipdoc = 'FAI' OR tipdoc = 'FAA'":"tipdoc LIKE '".$type[$td]."'";
+    $where =($td==2)?"(tipdoc = 'FAI' OR tipdoc = 'FAA')":"tipdoc LIKE '".$type[$td]."'";
     $where .= " AND seziva = $si AND $datfat BETWEEN ". $where_data['di'] ." AND ". $where_data['df']." AND protoc BETWEEN ". $where_data['pi'] ." AND ". $where_data['pf']
     ." AND $numfat BETWEEN ". $where_data['ni'] ." AND ". $where_data['nf']. $customer . $agente;
     $from = $gTables['tesdoc'] . ' AS tesdoc
@@ -248,7 +248,8 @@ if (isset($_GET['ag'])&&is_numeric($_GET['ag'])){
     $agente = gaz_dbi_get_row($gTables['agenti'] . " LEFT JOIN " . $gTables['clfoco'] . " ON " . $gTables['agenti'] . ".id_fornitore = " . $gTables['clfoco'] . ".codice LEFT JOIN " . $gTables['anagra'] . ' ON ' . $gTables['clfoco'] . '.id_anagra = ' . $gTables['anagra'] . '.id', $gTables['agenti'] . '.id_agente', intval($_GET['ag']));
     $titolo .= ($agente)? ' - '.$agente['ragso1']:'';
 }
-$luogo_data = $admin_aziend['citspe'] . ", lì " . ucwords(strftime("%d %B %Y", mktime(0, 0, 0, date("m"), date("d"), date("Y"))));
+$gazTimeFormatter->setPattern('dd MMMM yyyy');
+$luogo_data=$admin_aziend['citspe'].", lì ".ucwords($gazTimeFormatter->format(new DateTime()));
 $title = array('luogo_data' => $luogo_data,
 'title' => 'Vendite: '.$titolo.' dal '.gaz_format_date(substr($_GET['di'],0,4).'-'.substr($_GET['di'],4,2).'-'.substr($_GET['di'],6,2)).' al '.gaz_format_date(substr($_GET['df'],0,4).'-'.substr($_GET['df'],4,2).'-'.substr($_GET['df'],6,2)),
 'hile' => array(

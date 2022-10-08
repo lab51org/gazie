@@ -47,14 +47,11 @@ if (count($_GET)==0) { // al primo accesso allo script
 
 // campi ammissibili per la ricerca
 $search_fields = [
-    'movimento'
-        => "{$gTables['tesmov']}.id_tes = %d",
-    'anno'
-        => "YEAR(datreg) = %d",
-    'causale'
-        => "caucon LIKE '%s%%'",
-    'descri'
-        => $partner_select ? "clfoco = '%s'" : "{$gTables['anagra']}.ragso1 LIKE '%%%s%%'"
+    'movimento' => "{$gTables['tesmov']}.id_tes = %d",
+    'mese' => "MONTH(datreg) = %d",
+    'anno' => "YEAR(datreg) = %d",
+    'causale' => "caucon LIKE '%s%%'",
+    'descri' => $partner_select ? "clfoco = '%s'" : "{$gTables['anagra']}.ragso1 LIKE '%%%s%%'"
 ];
 
 // creo l'array (header => campi) per l'ordinamento dei record
@@ -130,10 +127,10 @@ function getDocRef($data) {
 ?>
 <div align="center" class="FacetFormHeaderFont"><?php echo $script_transl['report']; ?></div>
 
-<?php 
+<?php
 $t = new TableSorter(
     !$partner_select && isset($_GET["descri"]) ? $tesmov_e_partners : $gTables['tesmov'],
-    $passo, 
+    $passo,
 	['id_tes' => 'desc'],
 	$default_where
 	);
@@ -145,7 +142,7 @@ $(function() {
 	$('.dialog_delete').click(function() {
 		$("p#idcodice").html($(this).attr("ref"));
 		$("p#iddescri").html($(this).attr("descri"));
-		var id = $(this).attr('ref');		
+		var id = $(this).attr('ref');
 		$( "#dialog_delete" ).dialog({
 			minHeight: 1,
 			width: "auto",
@@ -153,9 +150,16 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
-				delete:{ 
-					text:'Elimina', 
-					'class':'btn btn-danger delete-button',
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
+				delete:{
+					text:'Elimina',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'movcon',id_tes:id},
@@ -166,20 +170,20 @@ $(function() {
 							window.location.replace("./report_movcon.php");
 						}
 					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+				}}
 			}
 		});
-		$("#dialog_delete" ).dialog( "open" );  
+		$("#dialog_delete" ).dialog( "open" );
 	});
 });
 function printPdf(urlPrintDoc){
-	$(function(){			
+	$(function(){
 		$('#framePdf').attr('src',urlPrintDoc);
 		$('#framePdf').css({'height': '100%'});
 		$('.framePdf').css({'display': 'block','width': '90%', 'height': '80%', 'z-index':'2000'});
+    $("html, body").delay(100).animate({scrollTop: $('#framePdf').offset().top},'slow', function() {
+        $("#framePdf").focus();
+    });
 	});
 	$('#closePdf').on( "click", function() {
 		$('.framePdf').css({'display': 'none'});
@@ -209,9 +213,14 @@ function printPdf(urlPrintDoc){
                 <input type="text" placeholder="Movimento" class="input-xs form-control FacetInput" name="movimento"
                        value="<?php if (isset($movimento)) echo $movimento; ?>" maxlength ="6" tabindex="1">
             </td>
-            <td class="FacetFieldCaptionTD">
+            <td class="FacetFieldCaptionTD col-md-2"><div class="col-md-6">Mese:
                 <?php // uso "anno" per selezionare datreg
+                gaz_flt_disp_select("mese", "MONTH(datreg) AS mese", $gTables["tesmov"], "", "mese DESC");?>
+                </div>
+                <div class="col-md-6">Anno:
+                <?php
                 gaz_flt_disp_select("anno", "YEAR(datreg) AS anno", $gTables["tesmov"], "", "anno DESC"); ?>
+                </div>
             </td>
             <td align="right" class="FacetFieldCaptionTD">
                 <?php // uso "causale" per selezionare caucon
@@ -219,7 +228,7 @@ function printPdf(urlPrintDoc){
             </td>
             <td align="right" class="FacetFieldCaptionTD">
                 <?php if ($partner_select) {
-                        gaz_flt_disp_select("descri", "clfoco AS descri, ragso1 as nome", 
+                        gaz_flt_disp_select("descri", "clfoco AS descri, ragso1 as nome",
 					    $tesmov_e_partners,
                                             "", "nome ASC", "nome");
                     } else {
@@ -241,13 +250,12 @@ function printPdf(urlPrintDoc){
         <tr>
 <?php
             $result = gaz_dbi_dyn_query("id_tes, datreg, clfoco, caucon, ".$gTables['tesmov'].".descri, protoc, numdoc, seziva, datdoc", $tesmov_e_partners, $t->where, $t->orderby, $t->getOffset(), $t->getLimit());
-            $t -> output_headers(); 
+            $t -> output_headers();
 ?>
         </tr>
 <?php
 $anagrafica = new Anagrafica();
 while ($a_row = gaz_dbi_fetch_array($result)) {
-    
     $paymov = false;
     if (substr($a_row["clfoco"], 0, 3) == $admin_aziend['mascli'] || substr($a_row["clfoco"], 0, 3) == $admin_aziend['masfor']) {
         if (substr($a_row["clfoco"], 0, 3) == $admin_aziend['mascli']) {
@@ -260,24 +268,24 @@ while ($a_row = gaz_dbi_fetch_array($result)) {
     } elseif(substr($a_row["clfoco"], 0, 3) == $admin_aziend['mas_staff']){
         $account = $anagrafica->getPartner($a_row["clfoco"], true);
         if ((!empty($account['descri']) || !empty($a_row['numdoc'])) && $a_row['caucon'] != 'APE' && $a_row['caucon'] != 'CHI'){
-            $a_row['descri'].=' ('.$account['descri'].')';
+            $a_row['descri'].=' ('.($account==null?'':$account['descri']).')';
         }
-	}
-    // INIZIO crezione tabella per la visualizzazione sul tootip di tutto il movimento e facccio la somma del totale movimento 
+    }
+    // INIZIO crezione tabella per la visualizzazione sul tootip di tutto il movimento e facccio la somma del totale movimento
     $res_rig = gaz_dbi_dyn_query("*", $gTables['rigmoc'], 'id_tes=' . $a_row["id_tes"], 'id_rig');
     $tt = '<table><th colspan=3 >' . $a_row['descri'] . '</th>';
     $tot = 0.00;
     while ($rr = gaz_dbi_fetch_array($res_rig)) {
         $account = $anagrafica->getPartner($rr["codcon"], true);
-        $tt .= '<tr><td>' . (empty($account['descri']))?'':htmlspecialchars( $account['descri'] ) . '</td><td align=right>' . $rr['import'] . '</td><td align=right>' . $rr['darave'] . '</td></tr>';
+        $tt .= '<tr><td align="left">'.($account==null?'':htmlspecialchars($account['descri'])).'</td><td align=right>'.$rr['import'].'</td><td align=right>' . $rr['darave'] . '</td></tr>';
         if ($rr['darave'] == 'D') {
-            $tot += $rr['import'];
+          $tot += $rr['import'];
         }
     }
     $tt .= '</table>';
     // FINE creazione tabella per il tooltip
     echo "<tr class=\"FacetDataTD\">";
-    echo "<td align=\"right\"><a class=\"btn btn-xs btn-default btn-edit\" href=\"admin_movcon.php?id_tes=" . $a_row["id_tes"] . "&Update\" title=\"Modifica\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . $a_row["id_tes"] . "</a> &nbsp</td>";
+    echo "<td align=\"center\"><a class=\"btn btn-xs btn-edit\" href=\"admin_movcon.php?id_tes=" . $a_row["id_tes"] . "&Update\" title=\"Modifica\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . $a_row["id_tes"] . "</a> &nbsp</td>";
     echo "<td align=\"center\">" . gaz_format_date($a_row["datreg"]) . " &nbsp;</td>";
     echo '<td align="center"><div class="gazie-tooltip" data-type="movcon-thumb" data-id="' . $a_row["id_tes"] . '" data-title="' . str_replace("\"", "'", $tt) . '" >' . $a_row["caucon"] . "</div></td>";
     echo '<td><div class="gazie-tooltip" data-type="movcon-thumb" data-id="' . $a_row["id_tes"] . '" data-title="' . str_replace("\"", "'", $tt) . '" >' . $a_row["descri"] . '</div></td>';
@@ -321,14 +329,14 @@ while ($a_row = gaz_dbi_fetch_array($result)) {
 $(document).ready(function(){
     var selects = $("select");
     // la funzione gaz_flt_dsp_select usa "All", qui usiamo invece valori vuoti
-    // (in questo modo i campi non usati possono essere esclusi)        
+    // (in questo modo i campi non usati possono essere esclusi)
     $("option", selects).filter(function(){ return this.value == "All"; }).val("");
 
-    // la stessa funzione imposta onchange="this.form.submit()" sulle select: 
+    // la stessa funzione imposta onchange="this.form.submit()" sulle select:
     // l'azione non lancia un evento "submit" e non può essere intercettata.
     // per non andare a modificare la funzione rimpiazziamo l'attributo onchange:
     selects.attr('onchange', null).change(function() { $(this.form).submit(); });
-    
+
     // così ora possiamo intercettare tutti i submit
     $("form").submit(function() {
         $(this).find(":input").filter(function(){ return !this.value; }).attr("disabled", "disabled");

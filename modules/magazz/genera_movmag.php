@@ -98,7 +98,7 @@ require("../../library/include/header.php");
 $script_transl = HeadMain();
 echo "<form method=\"GET\">\n";
 echo "<div align=\"center\" class=\"FacetFormHeaderFont\">".ucfirst($script_transl[0])."</div>\n";
-echo "<table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" class=\"FacetFormTABLE\" align=\"center\">\n";
+echo "<table class=\"Tmiddle table-striped\" align=\"center\">\n";
 if (!empty($msg)) {
     $message = "";
     $rsmsg = array_slice( explode('+',chop($msg)),0,-1);
@@ -122,12 +122,12 @@ for( $counter = 1; $counter <= 31; $counter++ ){
 }
 echo "\t </select>\n";
 echo "\t <select name=\"mesini\" class=\"FacetSelect\" onchange=\"this.form.submit()\">\n";
+$gazTimeFormatter->setPattern('MMMM');
 for( $counter = 1; $counter <= 12; $counter++ ){
-    $selected = "";
-    if($counter == $_GET['mesini'])
-            $selected = "selected";
-    $nome_mese = ucwords(strftime("%B", mktime (0,0,0,$counter,1,0)));
-    echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
+  $selected = "";
+  if($counter == $_GET['mesini']) $selected = "selected";
+  $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
+  echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
 }
 echo "\t </select>\n";
 echo "\t <select name=\"annini\" class=\"FacetSelect\" onchange=\"this.form.submit()\">\n";
@@ -149,11 +149,10 @@ for( $counter = 1; $counter <= 31; $counter++ ){
 echo "\t </select>\n";
 echo "\t <select name=\"mesfin\" class=\"FacetSelect\" onchange=\"this.form.submit()\">\n";
 for( $counter = 1; $counter <= 12; $counter++ ){
-    $selected = "";
-    if($counter == $_GET['mesfin'])
-            $selected = "selected";
-    $nome_mese = ucwords(strftime("%B", mktime (0,0,0,$counter,1,0)));
-    echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
+  $selected = "";
+  if($counter == $_GET['mesfin']) $selected = "selected";
+  $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
+  echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
 }
 echo "\t </select>\n";
 echo "\t <select name=\"annfin\" class=\"FacetSelect\" onchange=\"this.form.submit()\">\n";

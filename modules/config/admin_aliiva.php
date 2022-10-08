@@ -104,7 +104,7 @@ echo "<form method=\"POST\">";
 echo "<input type=\"hidden\" name=\"ritorno\" value=\"" . $_POST['ritorno'] . "\">\n";
 echo "<input type=\"hidden\" name=\"" . ucfirst($toDo) . "\" value=\"\">";
 echo "<div align=\"center\" class=\"FacetFormHeaderFont\">" . $script_transl[$toDo] . $script_transl[0] . "</div>";
-echo "<table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" class=\"FacetFormTABLE\" align=\"center\">";
+echo "<table class=\"Tmiddle table-striped\" align=\"center\">";
 if (!empty($msg)) {
     $message = "";
     $rsmsg = array_slice(explode('+', chop($msg)), 0, -1);
@@ -164,12 +164,8 @@ echo "<tr><td class=\"FacetFieldCaptionTD\">" . $script_transl['annota'] . "</td
      <td class=\"FacetDataTD\">\n";
 echo '<textarea name="sedleg" rows="2" cols="60" maxlength="254" >'. $form['annota'].'</textarea>';
 echo "</td></tr>";
-echo "<tr>\n
-      <td class=\"FacetFieldCaptionTD\">
-      <input type=\"submit\" name=\"Return\" value=\"" . ucfirst($script_transl['return']) . "\">\n
-      <input type=\"reset\" name=\"Cancel\" value=\"" . ucfirst($script_transl['cancel']) . "\">\n
-      </td><td class=\"FacetDataTD\" align=\"right\">\n";
-echo '<input name="Submit" title="Accetta tutto e modifica" type="submit" value=' . ucfirst($script_transl['submit']) . '>';
+echo '<tr><td colspan=2 class="FacetFooterTD text-center">';
+echo '<input name="Submit" class="btn btn-warning" title="Accetta tutto e modifica" type="submit" value=' . ucfirst($script_transl['submit']) . '>';
 ?>
 </td>
 </tr>

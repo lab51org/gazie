@@ -26,7 +26,9 @@ require("../../library/include/datlib.inc.php");
 $admin_aziend = checkAdmin();
 
 function getDayNameFromDayNumber($day_number) {
-    return ucfirst(utf8_encode(strftime('%A', mktime(0, 0, 0, 3, 19+$day_number, 2017))));
+  global $gazTimeFormatter;
+  $gazTimeFormatter->setPattern('eeee');
+  return ucfirst(utf8_encode($gazTimeFormatter->format(new DateTime('@'.mktime(12,0,0,3,19+$day_number, 2017)))));
 }
 
 // funzione di utilità generale, adatta a mysqli.inc.php
@@ -134,12 +136,12 @@ if (count($_GET)<=1){
 		$default_where=['sezione' => $last['seziva'], 'tipo' => 'F%', 'anno'=>$last['yearde']];
         $_GET['anno']=$last['yearde'];
 	} else {
-		$default_where= ['auxil' => 'VOR', 'anno'=>date("Y")];	
+		$default_where= ['auxil' => 'VOR', 'anno'=>date("Y")];
         $_GET['anno']=date("Y");
 	}
-	
+
 } else {
-   $default_where= ['auxil' => 'VOR'];	
+   $default_where= ['auxil' => 'VOR'];
 }
 $ts = new TableSorter(
     isset($_GET["destinaz"]) ? $tesbro_e_destina :
@@ -196,14 +198,14 @@ function choice_template(modulo) {
 		width: "400",
 		buttons:[{
 			text: "Su carta bianca ",
-			"class": 'btn',
+			"class": 'btn btn-default',
 			click: function () {
 				window.location.href = modulo;
 			},
 		},
 		{
 			text: "Su carta intestata ",
-			"class": 'btn',
+			"class": 'btn btn-info',
 			click: function () {
 				window.location.href = modulo+'&lh';
 			},
@@ -229,9 +231,16 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
 				delete:{
 					text:'Elimina',
-					'class':'btn btn-danger delete-button',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'broven',id_tes:id},
@@ -242,24 +251,21 @@ $(function() {
 							window.location.replace("./report_broven.php?auxil=<?php echo $tipo;?>");
 						}
 					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+				}}
 			}
 		});
 		$("#dialog_delete" ).dialog( "open" );
 	});
 });
 function printPdf(urlPrintDoc){
-	$(function(){			
+	$(function(){
 		$('#framePdf').attr('src',urlPrintDoc);
 		$('#framePdf').css({'height': '100%'});
 		$('.framePdf').css({'display': 'block','width': '90%', 'height': '80%', 'z-index':'2000'});
 		$('#closePdf').on( "click", function() {
 			$('.framePdf').css({'display': 'none'});
-		});	
-	});	
+		});
+	});
 };
 </script>
 <div align="center" class="FacetFormHeaderFont"><?php echo $script_transl['title_value'][substr($tipo,0,2).'R']; ?></div>
@@ -289,8 +295,8 @@ $ts->output_navbar();
         <p id="mail_alert2"><?php echo $script_transl['mail_alert2']; ?></p>
         <p class="ui-state-highlight" id="mail_attc"></p>
     </div>
-    <div class="box-primary table-responsive">
-    <table class="Tlarge table table-striped table-bordered table-condensed">
+    <div class="table-responsive">
+    <table class="Tlarge table table-striped">
         <tr>
             <td class="FacetFieldCaptionTD">
                 <?php gaz_flt_disp_int("id_doc", "Numero Prot."); ?>
@@ -417,7 +423,7 @@ $ts->output_navbar();
 			if ($r['tipdoc']=="VOW"){
 				echo "<td><button title=\"Per modificare un ordine web lo si deve prima cancellare da GAzie, modificarlo nell'e-commerce e poi reimportarlo in GAzie\" class=\"btn btn-xs btn-default disabled\">&nbsp;" . substr($r['tipdoc'], 1, 2) . "&nbsp;" . $r['id_tes'] . " </button></td>";
 			}elseif (!empty($modifi)) {
-                echo "<td><a class=\"btn btn-xs btn-default btn-edit\" title=\"" . $script_transl['type_value'][$r['tipdoc']] . "\" href=\"" . $modifi . "\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . substr($r['tipdoc'], 1, 2) . "&nbsp;" . $r['id_tes'] . "</td>";
+                echo '<td class="text-center"><a class="btn btn-xs btn-edit" title="' . $script_transl['type_value'][$r['tipdoc']] . "\" href=\"" . $modifi . "\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . substr($r['tipdoc'], 1, 2) . "&nbsp;" . $r['id_tes'] . "</td>";
             } else {
                 echo "<td><button class=\"btn btn-xs btn-default disabled\">&nbsp;" . substr($r['tipdoc'], 1, 2) . "&nbsp;" . $r['id_tes'] . " </button></td>";
             }
@@ -473,7 +479,7 @@ $ts->output_navbar();
 			// vedo se è presente un file di template adatto alla stampa su carta già intestata
 			if($enable_lh_print_dialog>0 && withoutLetterHeadTemplate($r['tipdoc'])){
 				echo ' onclick="choice_template(\''.$modulo.'\');" title="Scegli modulo per stampa"';
-			}else{				
+			}else{
 				echo " style=\"cursor:pointer;\" onclick=\"printPdf('".$modulo."')\"";
 			}
 			echo "><i class=\"glyphicon glyphicon-print\" title=\"Stampa documento PDF\"></i></a>";

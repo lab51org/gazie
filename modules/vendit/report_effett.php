@@ -57,7 +57,7 @@ $(function() {
 	$('.dialog_delete').click(function() {
 		$("p#idcodice").html($(this).attr("ref"));
 		$("p#iddescri").html($(this).attr("ragso"));
-		var id = $(this).attr('ref');		
+		var id = $(this).attr('ref');
 		$( "#dialog_delete" ).dialog({
 			minHeight: 1,
 			width: "auto",
@@ -65,9 +65,16 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
-				delete:{ 
-					text:'Elimina', 
-					'class':'btn btn-danger delete-button',
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
+				delete:{
+					text:'Elimina',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'effett',id_tes:id},
@@ -78,13 +85,10 @@ $(function() {
 							window.location.replace("./report_effett.php");
 						}
 					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+				}}
 			}
 		});
-		$("#dialog_delete" ).dialog( "open" );  
+		$("#dialog_delete" ).dialog( "open" );
 	});
 });
 </script>
@@ -144,7 +148,7 @@ $recordnav->output();
             $cliente = $anagrafica->getPartner($r['clfoco']);
             $banapp = gaz_dbi_get_row($gTables['banapp'], "codice", $r['banapp']);
             echo "<tr class=\"FacetDataTD\">";
-            echo "<td align=\"right\"><a class=\"btn btn-xs btn-default btn-edit\" href=\"admin_effett.php?Update&id_tes=" . $r["id_tes"] . "\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . $r["id_tes"] . "</a> &nbsp</td>";
+            echo "<td align=\"right\"><a class=\"btn btn-xs btn-edit\" href=\"admin_effett.php?Update&id_tes=" . $r["id_tes"] . "\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . $r["id_tes"] . "</a> &nbsp</td>";
             echo "<td align=\"right\"><a href=\"admin_effett.php?Update&id=" . $r["id_tes"] . "\">" . $r["progre"] . "</a> &nbsp</td>";
             echo "<td align=\"right\">" . gaz_format_date($r["datemi"]) . "</td>";
             echo "<td align=\"center\">" .  $script_transl['type_value'][$r["tipeff"]] . (($r['status']=='RAGGRUPPA')?' <span class="text-danger">[raggruppato] </span>':'')."</td>";

@@ -116,7 +116,7 @@ $script_transl = HeadMain();
 		padding-left: 0px;
 		padding-right: 0px;
 	}
-	div.panel { 
+	div.panel {
 		border-left:0px;
 		border-right:0px;
 		border-radius:0px;
@@ -127,22 +127,22 @@ $script_transl = HeadMain();
 	}
 	.dataTables_wrapper > div.row > div.col-sm-12{
 		padding-right: 0px;
-	} 
-	.row { 
+	}
+	.row {
 		margin-right: 0px;
 		padding: 0px;
 	}
 }
-.panel { 
+.panel {
 	padding: 0px 0px 5px 0px;
 	margin: 0px 0px 5px 0px;
 }
 
-.btn-full { 
+.btn-full {
 	width: 100%;
 	margin-top: 2px;
 }
-.btn-full>span { 
+.btn-full>span {
 	width: 100%;
 	margin-top: 2px;
 	white-space: normal;
@@ -151,6 +151,7 @@ $script_transl = HeadMain();
     display: flex;
     align-items: center;
 }
+
 </style>
 <script>
 $(function(){
@@ -173,19 +174,19 @@ $(function(){
 	}
 });
 </script>
-<div class="container-fluid gaz-body">
+<div class="container-fluid">
   <form method="POST" name="gaz_form">
     <input type="hidden" value="<?php echo $form['hidden_req'];?>" name="hidden_req" />
     <div class="container" style="width: auto;">
 
         <?php
-		if ( $folderMissing ) 
+		if ( $folderMissing )
 		{
 			echo '<div class="alert alert-danger text-center" role="alert">';
 			echo 'Attenzione manca la cartella all\'interno di "data/files" per l\'azienda corrente';
 			echo '</div>';
 		}
-		
+
         if ( $lastBackup ) {
             ?>
             <div class="alert alert-danger text-center" role="alert">
@@ -220,10 +221,24 @@ $(function(){
 $get_widgets = gaz_dbi_dyn_query("*", $gTables['breadcrumb'],"exec_mode=2 AND adminid='".$admin_aziend['user_name']."'", 'position_order');
 echo '<div id="sortable" class="vertical-align">';
 while ( $grr = gaz_dbi_fetch_array($get_widgets) ) {
-	$col_lg=(!empty($grr['grid_class']))?$grr['grid_class']:''; // se si mette sulla colonna del db "col-lg-12" il widget occuperà l'intera larghezza con "col-lg-3" solo 1/4 del rigo della dashboard
-	echo '<div class="col-xs-12 col-md-6 '.$col_lg.' text-center" id="position-'.$grr['id_bread'].'">';
-	require('../'.$grr['file']);
-	echo '</div>'; 
+  $dfn = explode('/',$grr['file']);
+  $query = 'SELECT am.access, am.custom_field FROM ' . $gTables['admin_module'] . ' AS am' .
+           ' LEFT JOIN ' . $gTables['module'] . ' AS module ON module.id=am.moduleid' .
+           " WHERE am.adminid='" .$admin_aziend['user_name']. "' AND module.name='".$dfn[0]."' AND am.company_id = ".$admin_aziend['codice']." AND am.access >= 3";
+  $result = gaz_dbi_query($query) or gaz_die ( $query, "1030", __FUNCTION__ );
+  if (gaz_dbi_num_rows($result) >= 1) {
+    $row = gaz_dbi_fetch_array($result);
+    $chkes = is_string($row['custom_field'])? json_decode($row['custom_field']) : false;
+    $isexcl = ($chkes && isset($chkes->excluded_script))?$chkes->excluded_script:[];
+    $okaccess = (in_array(substr($dfn[1],0,-4),$isexcl))?false:true;
+    if ($okaccess) {
+      $col_lg=(!empty($grr['grid_class']))?$grr['grid_class']:'';
+      echo '<div class="col-xs-12 col-md-6 '.$col_lg.' text-center" id="position-'.$grr['id_bread'].'">';
+      require('../'.$grr['file']);
+      echo '</div>';
+    }
+  }
+
 }
 echo '</div>';
 
@@ -270,7 +285,7 @@ $(function() {
 				url: './dashboard_update.php',
 				success: function(output){
 					window.location.replace("./admin.php");
-				}			  
+				}
 			  });
 			},
             "Non cambiare": function() {
@@ -278,7 +293,7 @@ $(function() {
             }
 			}
 		});
-		$("#dialog_grid" ).dialog( "open" );  
+		$("#dialog_grid" ).dialog( "open" );
 	});
 });
 

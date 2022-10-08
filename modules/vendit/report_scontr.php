@@ -118,9 +118,16 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
 				delete:{
 					text:'Elimina',
-					'class':'btn btn-danger delete-button',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'docven',id_tes:id},
@@ -131,10 +138,7 @@ $(function() {
 							window.location.replace("./report_scontr.php");
 						}
 					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+				}}
 			}
 		});
 		$("#dialog_delete" ).dialog( "open" );
@@ -145,6 +149,9 @@ function printPdf(urlPrintDoc){
 		$('#framePdf').attr('src',urlPrintDoc);
 		$('#framePdf').css({'height': '100%'});
 		$('.framePdf').css({'display': 'block','width': '90%', 'height': '80%', 'z-index':'2000'});
+    $("html, body").delay(100).animate({scrollTop: $('#framePdf').offset().top},'slow', function() {
+        $("#framePdf").focus();
+    });
 		$('#closePdf').on( "click", function() {
 			$('.framePdf').css({'display': 'none'});
 		});
@@ -289,7 +296,7 @@ echo '</tr>';
 								'protocollo' => $row["numfat"]), 36).".xml";
                 $invoice = "<a href=\"stampa_docven.php?id_tes=" . $row['id_tes'] . "&template=FatturaAllegata\" class=\"btn btn-xs btn-default\" title=\"Stampa\" target=\"_blank\">n." . $row['numfat'] . " del " . gaz_format_date($row['datfat']) . ' a ' . $row['cliente']. "&nbsp;<i class=\"glyphicon glyphicon-print\"></i></a>\n";
 				$invoice .= '<a class="btn btn-xs btn-default btn-xml" onclick="confirFae(this);return false;" id="doc1" '.$row["id_tes"].'" fae_reinvio="'.$row["fae_reinvio"].'" fae_attuale="'.$row["fae_attuale"].'" fae_n_reinvii="'.$row["fattura_elettronica_reinvii"].'" n_fatt="'. $row["numfat"]."/". $row["seziva"].'/SCONTR" target="_blank" href="'.$modulo_fae.'" title="genera il file '.$row["fae_attuale"].' o fai il '.intval($row["fattura_elettronica_reinvii"]+1).'° reinvio ">xml</a><a class="btn btn-xs btn-default" title="Visualizza in stile www.fatturapa.gov.it" href="electronic_invoice.php?id_tes='.$row['id_tes'].'&viewxml"><i class="glyphicon glyphicon-eye-open"></i> </a>';
-				if(strlen($row["fattura_elettronica_zip_package"])>10){
+				if(!empty($row["fattura_elettronica_zip_package"]) && strlen($row["fattura_elettronica_zip_package"])>10){
 					$invoice.='<a class="btn btn-xs btn-edit" title="Pacchetto di fatture elettroniche in cui è contenuta questa fattura" href="download_zip_package.php?fn='.$row['fattura_elettronica_zip_package'].'">zip <i class="glyphicon glyphicon-compressed"></i> </a>';
 				}
             } else {
@@ -298,7 +305,7 @@ echo '</tr>';
 
             echo "<tr class=\"FacetDataTD\">";
             // Colonna ID scontrino
-            echo "<td align=\"center\"><a class=\"btn btn-xs btn-default btn-edit\" href=\"admin_scontr.php?Update&id_tes=" . $row['id_tes'] . "\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . $row["id_tes"] . "</a></td>";
+            echo "<td align=\"center\"><a class=\"btn btn-xs btn-edit\" href=\"admin_scontr.php?Update&id_tes=" . $row['id_tes'] . "\"><i class=\"glyphicon glyphicon-edit\"></i>&nbsp;" . $row["id_tes"] . "</a></td>";
             // Colonna data emissione
             echo "<td align=\"center\">" . gaz_format_date($row['datemi']) . "</td>";
             // Colonna registratore

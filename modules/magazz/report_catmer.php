@@ -62,26 +62,29 @@ $(function() {
 			show: "blind",
 			hide: "explode",
 			buttons: {
-				delete:{ 
-					text:'Elimina', 
-					'class':'btn btn-danger delete-button',
+   			close: {
+					text:'Non eliminare',
+					'class':'btn btn-default',
+          click:function() {
+            $(this).dialog("close");
+          }
+        },
+				delete:{
+					text:'Elimina',
+					'class':'btn btn-danger',
 					click:function (event, ui) {
 					$.ajax({
 						data: {'type':'catmer',ref:id},
 						type: 'POST',
 						url: '../magazz/delete.php',
 						success: function(output){
-		                    //alert(output);
 							window.location.replace("./report_catmer.php");
 						}
 					});
-				}},
-				"Non eliminare": function() {
-					$(this).dialog("close");
-				}
+				}}
 			}
 		});
-		$("#dialog_delete" ).dialog( "open" );  
+		$("#dialog_delete" ).dialog( "open" );
 	});
 });
 </script>
@@ -133,8 +136,8 @@ $recordnav -> output();
 <?php
 while ($a_row = gaz_dbi_fetch_array($result)) {
 ?>		<tr class="FacetDataTD">
-			<td>
-				<a class="btn btn-xs btn-success btn-block" href="admin_catmer.php?Update&codice=<?php echo $a_row["codice"]; ?>">
+			<td align="center">
+				<a class="btn btn-xs btn-edit" href="admin_catmer.php?Update&codice=<?php echo $a_row["codice"]; ?>">
 					<i class="glyphicon glyphicon-edit"></i>&nbsp;<?php echo $a_row["codice"];?>
 				</a>
 			</td>

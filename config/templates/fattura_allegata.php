@@ -31,14 +31,15 @@ class FatturaAllegata extends Template
 
     function setTesDoc()
     {
-        $this->tesdoc = $this->docVars->tesdoc;
-        $this->giorno = substr($this->tesdoc['datfat'],8,2);
-        $this->mese = substr($this->tesdoc['datfat'],5,2);
-        $this->anno = substr($this->tesdoc['datfat'],0,4);
-        $this->data = strftime("%d-%m-%Y", mktime (0,0,0,substr($this->tesdoc['datemi'],5,2),substr($this->tesdoc['datemi'],8,2),substr($this->tesdoc['datemi'],0,4)));
-        $this->sconto = $this->tesdoc['sconto'];
-        $this->tipdoc =$this->tesdoc['numfat']>0?'Fattura n.'.$this->tesdoc['numfat'].'/'.$this->tesdoc['seziva'].' Allegata allo scontrino n.'.$this->tesdoc['numdoc'].' del '.$this->data:'Scontrino n.'.$this->tesdoc['numdoc'].' del '.$this->data;
-        $this->descriptive_last_row = $this->docVars->descriptive_last_row;
+      $this->tesdoc = $this->docVars->tesdoc;
+      $this->giorno = substr($this->tesdoc['datfat'],8,2);
+      $this->mese = substr($this->tesdoc['datfat'],5,2);
+      $this->anno = substr($this->tesdoc['datfat'],0,4);
+      $this->docVars->gazTimeFormatter->setPattern('dd MMMM yyyy');
+      $this->data = $this->docVars->gazTimeFormatter->format(new DateTime($this->tesdoc['datemi']));
+      $this->sconto = $this->tesdoc['sconto'];
+      $this->tipdoc =$this->tesdoc['numfat']>0?'Fattura n.'.$this->tesdoc['numfat'].'/'.$this->tesdoc['seziva'].' Allegata allo scontrino n.'.$this->tesdoc['numdoc'].' del '.$this->data:'Scontrino n.'.$this->tesdoc['numdoc'].' del '.$this->data;
+      $this->descriptive_last_row = $this->docVars->descriptive_last_row;
     }
 
     function newPage() {
@@ -93,7 +94,7 @@ class FatturaAllegata extends Template
                 switch($rigo['tiprig']) {
                 case "0":
                     $this->Cell(23, 5, $rigo['codart'],1,0,'L');
-                    $this->Cell(75, 5, $rigo['descri'],1,0,'L');
+                    $this->Cell(75, 5, $rigo['descri'],1,0,'L', 0, '', 1);
                     $this->Cell(6, 5, $rigo['unimis'],1,0,'C');
                     $this->Cell(14, 5, gaz_format_quantity($rigo['quanti'],1,$this->decimal_quantity),1,0,'R');
                     $this->Cell(15, 5, number_format($rigo['prelis'],$this->decimal_price,',',''),1,0,'R');
@@ -118,6 +119,14 @@ class FatturaAllegata extends Template
                     $this->Cell(23,5,'','L');
                     $this->Cell(75,5,$rigo['descri'],'LR',0,'L');
                     $this->Cell(88,5,'','R',1);
+                    break;
+                case "3":
+                    $this->Cell(23, 5,'');
+                    $this->Cell(75, 5, $rigo['descri'],1,0,'L');
+                    $this->Cell(42, 5, '',1);
+                    $this->Cell(18, 5, '');
+                    $this->Cell(10, 5, '');
+                    $this->Cell(18, 5, gaz_format_number($rigo['totale']),1,1,'R');
                     break;
                 case "11":
                     $this->Cell(25, 5, '', 'L');
@@ -171,7 +180,7 @@ class FatturaAllegata extends Template
     function pageFooter()
     {
         //effettuo il calcolo degli importi delle scadenze
-        $ratpag = CalcolaScadenze($this->docVars->totale, $this->giorno, $this->mese, $this->anno, $this->pagame['tipdec'],$this->pagame['giodec'],$this->pagame['numrat'],$this->pagame['tiprat'],$this->pagame['mesesc'],$this->pagame['giosuc']);
+        $ratpag = CalcolaScadenze($this->docVars->totale+$this->docVars->riporto, $this->giorno, $this->mese, $this->anno, $this->pagame['tipdec'],$this->pagame['giodec'],$this->pagame['numrat'],$this->pagame['tiprat'],$this->pagame['mesesc'],$this->pagame['giosuc']);
         if ($ratpag){
            //allungo l'array fino alla 4^ scadenza
            $ratpag['import'] = array_pad($ratpag['import'],4,'');
@@ -187,7 +196,7 @@ class FatturaAllegata extends Template
            }
         }
         //FINE calcolo scadenze
-        if (!empty($this->descriptive_last_row) ) { // aggiungo alla fine un eventuale rigo descrittivo dalla configurazione avanzata azienda 
+        if (!empty($this->descriptive_last_row) ) { // aggiungo alla fine un eventuale rigo descrittivo dalla configurazione avanzata azienda
                 $this->Cell(186,6,$this->descriptive_last_row,1,1,'L',0,'',1);
 		}
         //stampo i totali

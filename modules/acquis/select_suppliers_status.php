@@ -107,7 +107,7 @@ echo "<input type=\"hidden\" value=\"" . $form['ritorno'] . "\" name=\"ritorno\"
 $gForm = new acquisForm();
 echo "<div align=\"center\" class=\"FacetFormHeaderFont\">" . $script_transl['title'];
 echo "</div>\n";
-echo "<table class=\"Tmiddle\">\n";
+echo "<table class=\"Tmiddle table-striped\">\n";
 if (!empty($msg)) {
     echo '<tr><td colspan="2" class="FacetDataTDred">' . $gForm->outputErrors($msg, $script_transl['errors']) . "</td></tr>\n";
 }
@@ -159,7 +159,7 @@ if (isset($_POST['preview'])) {
             foreach ($paymov->PartnerStatus as $k => $v) {
                 echo "<tr>";
                 echo "<td class=\"FacetDataTDred\" colspan='2'>REF: $k</td>";
-                echo "<td colspan='3'><a class=\"btn btn-xs btn-default btn-edit\" href=\"../contab/admin_movcon.php?Update&id_tes=" . $paymov->docData[$k]['id_tes'] . "\"><i class=\"glyphicon glyphicon-edit\"></i>" .
+                echo "<td colspan='3'><a class=\"btn btn-xs btn-edit\" href=\"../contab/admin_movcon.php?Update&id_tes=" . $paymov->docData[$k]['id_tes'] . "\"><i class=\"glyphicon glyphicon-edit\"></i>" .
                 $paymov->docData[$k]['descri'] . ' n.' .
                 $paymov->docData[$k]['numdoc'] . ' del ' .
                 gaz_format_date($paymov->docData[$k]['datdoc']);

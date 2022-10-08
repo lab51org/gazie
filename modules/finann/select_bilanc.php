@@ -200,7 +200,7 @@ $script_transl = HeadMain();
 
 echo "<form method=\"GET\">\n";
 echo "<div align=\"center\" class=\"FacetFormHeaderFont\">".ucfirst($script_transl[0])."</div>\n";
-echo "<table border=\"0\" cellpadding=\"3\" cellspacing=\"1\" class=\"FacetFormTABLE\" align=\"center\">\n";
+echo "<table class=\"Tmiddle table-striped\" align=\"center\">\n";
 if (!empty($msg)) {
     $message = "";
     $rsmsg = array_slice( explode('+',chop($msg)),0,-1);
@@ -230,11 +230,11 @@ for( $counter = 1; $counter <= 31; $counter++ ){
 }
 echo "\t </select>\n";
 echo "\t <select name=\"mesini\" class=\"FacetSelect\" onchange=\"this.form.submit()\">\n";
+$gazTimeFormatter->setPattern('MMMM');
 for( $counter = 1; $counter <= 12; $counter++ ){
     $selected = "";
-    if($counter == $_GET['mesini'])
-            $selected = "selected";
-    $nome_mese = ucwords(strftime("%B", mktime (0,0,0,$counter,1,0)));
+    if($counter == $_GET['mesini']) $selected = "selected";
+    $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
     echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
 }
 echo "\t </select>\n";
@@ -258,9 +258,8 @@ echo "\t </select>\n";
 echo "\t <select name=\"mesfin\" class=\"FacetSelect\" onchange=\"this.form.submit()\">\n";
 for( $counter = 1; $counter <= 12; $counter++ ){
     $selected = "";
-    if($counter == $_GET['mesfin'])
-            $selected = "selected";
-    $nome_mese = ucwords(strftime("%B", mktime (0,0,0,$counter,1,0)));
+    if($counter == $_GET['mesfin']) $selected = "selected";
+    $nome_mese = $gazTimeFormatter->format(new DateTime("2000-".$counter."-01"));
     echo "\t\t <option value=\"$counter\"  $selected >$nome_mese</option>\n";
 }
 echo "\t </select>\n";
@@ -285,8 +284,7 @@ echo "\t</select>";
 echo "</td>\n</tr>\n";
 
 if ($msg == "") {
-    echo "<tr><td align=\"center\" colspan=\"2\"> <input type=\"submit\" name=\"Return\" value=\"".$script_transl['return']."\"></td>"
-	    ."<td align=\"center\" colspan=\"2\"><input type=\"submit\" name=\"anteprima\" value=\"".$script_transl['view']."\">&nbsp;</td></tr>\n";
+  echo "<tr><td class=\"bg-info text-center\" colspan=4><input type=\"submit\" class=\"btn btn-info\" name=\"anteprima\" value=\"".$script_transl['view']."\">&nbsp;</td></tr>\n";
 }
 echo "</table>\n";
 
@@ -440,10 +438,10 @@ if (!empty($_GET['anteprima']) && empty($msg)) {
            echo "<tr><td colspan=\"2\"></td><td colspan=\"2\"><hr></td><tr>";
            echo "<tr><td colspan=\"3\"></td><td align=\"right\" class=\"FacetDataTD\">".gaz_format_number(-$totmas)."</td><tr>";
 	    }
-        if ($ctrl_bal == 0 ) {
-          echo "<tr><td colspan=\"4\" align=\"center\"><input type=\"submit\" name=\"stampa\" value=\"".ucfirst($script_transl['print'].$script_transl[0])."\"></td></tr>";
-        }
-        echo "</table>\n";
+      if ($ctrl_bal == 0 ) {
+        echo "<tr class=\"FacetFooterTD\"><td colspan=\"4\" align=\"center\"><input type=\"submit\" class=\"btn btn-warning\" name=\"stampa\" value=\"".ucfirst($script_transl['print'].$script_transl[0])."\"></td></tr>";
+      }
+      echo "</table>\n";
     }
 }
 ?>
