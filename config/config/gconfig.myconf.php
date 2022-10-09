@@ -73,17 +73,15 @@ define('NomeDB', $_ENV['NOMEDB']);
 // $Host = "mysql.2freehosting.com:3306";
 //
 define('Host', $_ENV['HOST']);
-
 //
 // Nome della base di dati a cui ci si connette.
 //
 define('Database', $_ENV['DATABASE']);
-
 //
 // Utente della base di dati che ha il permesso di accedervi con tutti
 // i privilegi necessari.
 //
-define('User', $_ENV['USER']);
+define('User', $_ENV['DBUSER']);
 
 //
 // Parola d'ordine necessaria per accedere alla base di dati
