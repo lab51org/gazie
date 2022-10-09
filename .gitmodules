@@ -1,0 +1,3 @@
+[submodule "modules/geag-api"]
+	path = modules/geag-api
+	url = https://github.com/lab51org/gazie-api.git
