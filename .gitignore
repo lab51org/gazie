@@ -10,7 +10,7 @@ library/tcpdf/cache/**
 !/data/files/*/.gitkeep
 !/data/files/1/*/
 !/data/files/1/*/.gitkeep
-!/data/files/backups/*/
+!/data/files/backups/*/*
 !/data/files/backups/*/.gitkeep
 !/data/files/ricevutesdi/*/
 !/data/files/1/ricevutesdi/*/.gitkeep
