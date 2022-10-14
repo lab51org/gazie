@@ -96,9 +96,11 @@ if (isset( $scriptname) && $scriptname != $prev_script && $scriptname != 'admin.
     <link rel="stylesheet" href="../../library/theme/lte/ionicons/css/ionicons.min.css">
     <link rel="stylesheet" href="../../library/theme/lte/adminlte/dist/css/AdminLTE.css">
     <!-- <link rel="stylesheet" href="../../library/theme/lte/adminlte/dist/css/skins/skin-gazie.css">  _all-skins.min.css">-->
-    <link href="../../js/jquery.ui/jquery-ui.css" rel="stylesheet">
-		<script src="../../js/jquery/jquery.js"></script>
-
+    <!-- modifiche di fromthestone: aggiornato jquery.ui il 13/10/2022 -->
+      <link href="../../js/jquery.ui/jquery-ui-1.13.2/jquery-ui.min.css">
+		<!-- modifiche di fromthestone: aggiornato jquery e aggiunto jquery migrate il 13/10/2022 -->
+      <script src="../../js/jquery/jquery-3.6.1.min.js"></script>
+      <script src="../../js/jquery/jquery-migrate-1.4.1.min.js"></script>
 
         <?php
         if (!empty($admin_aziend['style']) && file_exists("../../library/theme/lte/scheletons/" . $admin_aziend['style'])) {
